@@ -1,59 +1,70 @@
-// Your Firebase config — replace with your actual config
+// listener.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
-  databaseURL: "https://project-gdo-default-rtdb.firebaseio.com",
+  databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "project-gdo",
-  storageBucket: "project-gdo.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef123456"
+  storageBucket: "project-gdo.firebasestorage.app",
+  messagingSenderId: "758705115255",
+  appId: "1:758705115255:web:878f5e64c164b75c507672"
 };
 
-// Initialize Firebase app
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const database = firebase.database();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
 
-const statusElem = document.getElementById('status');
-const messageElem = document.getElementById('message');
-const logoutBtn = document.getElementById('logout');
+// Elements
+const signalDisplay = document.getElementById("signalDisplay");
+const logoutBtn = document.getElementById("logoutBtn");
 
-logoutBtn.addEventListener('click', () => {
-  auth.signOut().then(() => {
-    statusElem.textContent = 'Logged out.';
-    messageElem.textContent = '';
-  }).catch(err => {
-    statusElem.textContent = 'Logout failed: ' + err.message;
-  });
-});
-
-// Listen for auth state changes
-auth.onAuthStateChanged(user => {
+// Auth state observer
+onAuthStateChanged(auth, user => {
   if (user) {
-    statusElem.textContent = 'Authenticated as: ' + user.email;
-    startListening();
+    // User logged in, start listening to signals
+    listenForSignals(user.uid);
+    logoutBtn.style.display = "inline-block";
   } else {
-    statusElem.textContent = 'Not authenticated. Redirecting to login...';
-    messageElem.textContent = '';
-    // Redirect or show login page logic here
-    setTimeout(() => {
-      window.location.href = '../login.html'; // adjust as needed
-    }, 2000);
+    // User not logged in, redirect or show message
+    signalDisplay.textContent = "Please log in to receive signals.";
+    logoutBtn.style.display = "none";
   }
 });
 
-function startListening() {
-  // Path to your Firebase Realtime DB signal
-  const signalRef = database.ref('signal');
+// Listen to signal changes from Firebase Realtime Database
+function listenForSignals(userId) {
+  // Adjust the path as needed, e.g. 'signals/alpha-1' or 'signals/bravo-2'
+  const signalRef = ref(database, "signals");
 
-  signalRef.on('value', snapshot => {
-    const val = snapshot.val();
-    if (val) {
-      messageElem.textContent = JSON.stringify(val, null, 2);
-    } else {
-      messageElem.textContent = 'No signal data received yet.';
+  onValue(signalRef, snapshot => {
+    const data = snapshot.val();
+    if (!data) {
+      signalDisplay.textContent = "No signals received.";
+      return;
     }
-  }, error => {
-    statusElem.textContent = 'Listen error: ' + error.message;
+
+    // Show one signal at a time, you can customize how you pick which one
+    // Here, just show first non-null signal found
+    let displayed = false;
+    for (const freq of ["alpha-1", "bravo-2"]) {
+      if (data[freq]) {
+        signalDisplay.textContent = `Signal on ${freq}: ${data[freq]}`;
+        displayed = true;
+        break;
+      }
+    }
+    if (!displayed) {
+      signalDisplay.textContent = "No active signals.";
+    }
   });
 }
+
+// Logout button handler
+logoutBtn.addEventListener("click", () => {
+  signOut(auth).catch(err => {
+    console.error("Logout error:", err);
+  });
+});
