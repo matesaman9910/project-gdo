@@ -1,5 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+// (rest of your code unchanged)
 
 // Firebase config
 const firebaseConfig = {
