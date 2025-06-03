@@ -1,114 +1,161 @@
 <!DOCTYPE html>
 <html lang="en" type="module">
 <head>
-  <meta charset="UTF-8" />
-  <title>SGC Listener</title>
-  <style>
-    #listenerUI { display: none; }
-    body.alert { background-color: #700; color: white; }
-  </style>
+<meta charset="UTF-8" />
+<title>SGC Listener</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+  #listenerUI { display: none; }
+  #log { margin-top: 20px; max-width: 600px; }
+  .signal {
+    background: #222;
+    border-left: 5px solid limegreen;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 4px;
+    opacity: 1;
+    transition: opacity 1s ease-out;
+    position: relative;
+  }
+  .signal.unrecognized { border-color: crimson; }
+  .signal.fading { opacity: 0; }
+  .status {
+    font-weight: bold;
+  }
+  .status.verified { color: limegreen; }
+  .status.unrecognized { color: crimson; }
+  #frequencySelect { padding: 5px; font-size: 1em; }
+  button { padding: 8px 15px; font-size: 1em; cursor: pointer; }
+</style>
 </head>
 <body>
-  <h1>SGC Command Terminal</h1>
 
-  <div id="loginUI">
-    <h2>Sign in to SGC</h2>
-    <button id="googleSignIn">Sign in with Google</button>
-  </div>
+<h1>SGC Command Terminal</h1>
 
-  <div id="listenerUI">
-    <label>Select Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-    </select>
-    <div id="log" style="white-space: pre-wrap; margin-top: 1em;"></div>
-  </div>
+<div id="loginUI">
+  <h2>Sign in to SGC</h2>
+  <button id="googleSignIn">Sign in with Google</button>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getDatabase, ref, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+<div id="listenerUI">
+  <label>Select Frequency:</label>
+  <select id="frequencySelect">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+  </select>
+  <div id="log"></div>
+</div>
 
-    // Firebase config (your values)
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.firebasestorage.app",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+  import { getDatabase, ref, onChildAdded, get, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.firebasestorage.app",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  };
 
-    const loginUI = document.getElementById('loginUI');
-    const listenerUI = document.getElementById('listenerUI');
-    const googleSignInBtn = document.getElementById('googleSignIn');
-    const freqSelect = document.getElementById('frequencySelect');
-    const log = document.getElementById('log');
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-    const provider = new GoogleAuthProvider();
+  const loginUI = document.getElementById('loginUI');
+  const listenerUI = document.getElementById('listenerUI');
+  const googleSignInBtn = document.getElementById('googleSignIn');
+  const freqSelect = document.getElementById('frequencySelect');
+  const log = document.getElementById('log');
 
-    googleSignInBtn.addEventListener('click', () => {
-      signInWithPopup(auth, provider).catch(console.error);
-    });
+  const provider = new GoogleAuthProvider();
 
-    let currentListener = null;
+  googleSignInBtn.addEventListener('click', () => {
+    signInWithPopup(auth, provider).catch(console.error);
+  });
 
-    function listenToFrequency(freq) {
-      if (currentListener) {
-        currentListener(); // Unsubscribe old listener
-        currentListener = null;
-      }
+  let currentListenerUnsub = null;
 
-      log.textContent = `Listening on frequency: ${freq}\n`;
-
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-
-      // Listen for new signals
-      currentListener = onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
-        const code = data.decrypted || data.code || "UNKNOWN";
-
-        const codeRef = ref(db, `codes/${code}`);
-        const codeSnap = await get(codeRef);
-        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
-
-        const isAuthorized = codeInfo?.access ?? false; // use `access` as in your DB structure
-        const owner = codeInfo?.owner || "UNKNOWN";
-
-        const message = `Code: ${code}\nOwner: ${owner}\nStatus: ${isAuthorized ? '✔ Verified' : '✖ Unrecognized Code!'}\n\n`;
-        log.textContent = message + log.textContent;
-
-        if (!isAuthorized) {
-          document.body.classList.add('alert');
-          setTimeout(() => document.body.classList.remove('alert'), 3000);
-        }
-      });
+  function listenToFrequency(freq) {
+    if (currentListenerUnsub) {
+      currentListenerUnsub();  // unsubscribe old listener if any
+      currentListenerUnsub = null;
     }
 
-    freqSelect.addEventListener('change', () => {
-      listenToFrequency(freqSelect.value);
-    });
+    log.textContent = ''; // Clear log when freq changes
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        loginUI.style.display = 'none';
-        listenerUI.style.display = 'block';
-        listenToFrequency(freqSelect.value);
-      } else {
-        loginUI.style.display = 'block';
-        listenerUI.style.display = 'none';
-        if (currentListener) {
-          currentListener();
-          currentListener = null;
-        }
+    const signalsRef = ref(db, `frequencies/${freq}/signals`);
+
+    currentListenerUnsub = onChildAdded(signalsRef, async (snapshot) => {
+      const key = snapshot.key;
+      const data = snapshot.val();
+
+      const code = data.decrypted || data.code || "UNKNOWN";
+
+      const codeRef = ref(db, `codes/${code}`);
+      const codeSnap = await get(codeRef);
+      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+      const isAuthorized = codeInfo?.access ?? false;
+      const owner = codeInfo?.owner || "UNKNOWN";
+
+      const signalDiv = document.createElement('div');
+      signalDiv.classList.add('signal');
+      if (!isAuthorized) signalDiv.classList.add('unrecognized');
+
+      signalDiv.innerHTML = `
+        <div><strong>Code:</strong> ${code}</div>
+        <div><strong>Owner:</strong> ${owner}</div>
+        <div class="status ${isAuthorized ? 'verified' : 'unrecognized'}">${isAuthorized ? '✔ Verified' : '✖ Unrecognized Code!'}</div>
+      `;
+
+      // Prepend so newest is on top
+      log.prepend(signalDiv);
+
+      if (!isAuthorized) {
+        document.body.classList.add('alert');
+        setTimeout(() => document.body.classList.remove('alert'), 3000);
       }
+
+      // After 15 seconds fade out and remove from view + database
+      setTimeout(() => {
+        // Fade out visually
+        signalDiv.classList.add('fading');
+
+        // Remove from database
+        remove(ref(db, `frequencies/${freq}/signals/${key}`))
+          .catch(console.error);
+
+        // Remove from DOM after fade out (1s transition)
+        setTimeout(() => {
+          signalDiv.remove();
+        }, 1000);
+
+      }, 15000); // 15 seconds visible
     });
-  </script>
+  }
+
+  freqSelect.addEventListener('change', () => {
+    listenToFrequency(freqSelect.value);
+  });
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      loginUI.style.display = 'none';
+      listenerUI.style.display = 'block';
+      listenToFrequency(freqSelect.value);
+    } else {
+      loginUI.style.display = 'block';
+      listenerUI.style.display = 'none';
+      if (currentListenerUnsub) {
+        currentListenerUnsub();
+        currentListenerUnsub = null;
+      }
+    }
+  });
+</script>
 </body>
 </html>
