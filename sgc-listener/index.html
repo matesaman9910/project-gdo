@@ -1,161 +1,69 @@
 <!DOCTYPE html>
-<html lang="en" type="module">
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>SGC Listener</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
-  #listenerUI { display: none; }
-  #log { margin-top: 20px; max-width: 600px; }
-  .signal {
-    background: #222;
-    border-left: 5px solid limegreen;
-    margin-bottom: 10px;
-    padding: 10px 15px;
-    border-radius: 4px;
-    opacity: 1;
-    transition: opacity 1s ease-out;
-    position: relative;
-  }
-  .signal.unrecognized { border-color: crimson; }
-  .signal.fading { opacity: 0; }
-  .status {
-    font-weight: bold;
-  }
-  .status.verified { color: limegreen; }
-  .status.unrecognized { color: crimson; }
-  #frequencySelect { padding: 5px; font-size: 1em; }
-  button { padding: 8px 15px; font-size: 1em; cursor: pointer; }
-</style>
+  <meta charset="UTF-8" />
+  <title>SGC Listener</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #0d1117;
+      color: #f0f0f0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #161b22;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00f7ff33;
+      width: 400px;
+      text-align: center;
+    }
+    select {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      width: 100%;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+    }
+    .codeBox {
+      margin-top: 2rem;
+      padding: 1rem;
+      border-radius: 10px;
+      background-color: #20232a;
+      font-size: 1.1rem;
+      border: 2px solid transparent;
+    }
+    .valid {
+      border-color: limegreen;
+    }
+    .invalid {
+      border-color: red;
+    }
+    .alert {
+      animation: flashRed 0.5s alternate 6;
+    }
+    @keyframes flashRed {
+      from { background-color: #0d1117; }
+      to { background-color: #440000; }
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h2>SGC Listener</h2>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+    </select>
+    <div id="log" class="codeBox"></div>
+  </div>
 
-<h1>SGC Command Terminal</h1>
-
-<div id="loginUI">
-  <h2>Sign in to SGC</h2>
-  <button id="googleSignIn">Sign in with Google</button>
-</div>
-
-<div id="listenerUI">
-  <label>Select Frequency:</label>
-  <select id="frequencySelect">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-  </select>
-  <div id="log"></div>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-  import { getDatabase, ref, onChildAdded, get, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-    authDomain: "project-gdo.firebaseapp.com",
-    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "project-gdo",
-    storageBucket: "project-gdo.firebasestorage.app",
-    messagingSenderId: "758705115255",
-    appId: "1:758705115255:web:878f5e64c164b75c507672"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-
-  const loginUI = document.getElementById('loginUI');
-  const listenerUI = document.getElementById('listenerUI');
-  const googleSignInBtn = document.getElementById('googleSignIn');
-  const freqSelect = document.getElementById('frequencySelect');
-  const log = document.getElementById('log');
-
-  const provider = new GoogleAuthProvider();
-
-  googleSignInBtn.addEventListener('click', () => {
-    signInWithPopup(auth, provider).catch(console.error);
-  });
-
-  let currentListenerUnsub = null;
-
-  function listenToFrequency(freq) {
-    if (currentListenerUnsub) {
-      currentListenerUnsub();  // unsubscribe old listener if any
-      currentListenerUnsub = null;
-    }
-
-    log.textContent = ''; // Clear log when freq changes
-
-    const signalsRef = ref(db, `frequencies/${freq}/signals`);
-
-    currentListenerUnsub = onChildAdded(signalsRef, async (snapshot) => {
-      const key = snapshot.key;
-      const data = snapshot.val();
-
-      const code = data.decrypted || data.code || "UNKNOWN";
-
-      const codeRef = ref(db, `codes/${code}`);
-      const codeSnap = await get(codeRef);
-      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
-
-      const isAuthorized = codeInfo?.access ?? false;
-      const owner = codeInfo?.owner || "UNKNOWN";
-
-      const signalDiv = document.createElement('div');
-      signalDiv.classList.add('signal');
-      if (!isAuthorized) signalDiv.classList.add('unrecognized');
-
-      signalDiv.innerHTML = `
-        <div><strong>Code:</strong> ${code}</div>
-        <div><strong>Owner:</strong> ${owner}</div>
-        <div class="status ${isAuthorized ? 'verified' : 'unrecognized'}">${isAuthorized ? '✔ Verified' : '✖ Unrecognized Code!'}</div>
-      `;
-
-      // Prepend so newest is on top
-      log.prepend(signalDiv);
-
-      if (!isAuthorized) {
-        document.body.classList.add('alert');
-        setTimeout(() => document.body.classList.remove('alert'), 3000);
-      }
-
-      // After 15 seconds fade out and remove from view + database
-      setTimeout(() => {
-        // Fade out visually
-        signalDiv.classList.add('fading');
-
-        // Remove from database
-        remove(ref(db, `frequencies/${freq}/signals/${key}`))
-          .catch(console.error);
-
-        // Remove from DOM after fade out (1s transition)
-        setTimeout(() => {
-          signalDiv.remove();
-        }, 1000);
-
-      }, 15000); // 15 seconds visible
-    });
-  }
-
-  freqSelect.addEventListener('change', () => {
-    listenToFrequency(freqSelect.value);
-  });
-
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      loginUI.style.display = 'none';
-      listenerUI.style.display = 'block';
-      listenToFrequency(freqSelect.value);
-    } else {
-      loginUI.style.display = 'block';
-      listenerUI.style.display = 'none';
-      if (currentListenerUnsub) {
-        currentListenerUnsub();
-        currentListenerUnsub = null;
-      }
-    }
-  });
-</script>
+  <script type="module" src="listener.js"></script>
 </body>
 </html>
