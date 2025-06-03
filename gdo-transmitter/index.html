@@ -4,52 +4,71 @@
   <meta charset="UTF-8" />
   <title>GDO Transmitter</title>
   <style>
+    /* Center everything */
     body {
-      background: #0d1117;
-      color: #f0f0f0;
-      font-family: sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
       margin: 0;
     }
-    .container {
-      background: #161b22;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #00f7ff33;
-      width: 400px;
-      text-align: center;
+    label, input, select, button {
+      margin: 10px 0;
+      font-size: 1.2em;
     }
-    input, select, button {
-      margin-top: 1rem;
-      padding: 0.5rem;
-      width: 100%;
-      font-size: 1rem;
-      border-radius: 6px;
+    input, select {
+      padding: 5px;
+      width: 200px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #222;
+      color: #eee;
+    }
+    button {
+      cursor: pointer;
+      padding: 10px 20px;
+      background: #28a745;
       border: none;
+      border-radius: 5px;
+      color: white;
+      transition: background 0.3s ease;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #218838;
     }
     #status {
-      margin-top: 1rem;
-      height: 1.5rem;
+      margin-top: 15px;
+      min-height: 24px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>GDO Transmitter</h2>
-    <input type="text" id="codeInput" placeholder="Enter 9-digit code" maxlength="9" />
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-      <option value="delta-4">Delta-4</option>
-      <option value="echo-5">Echo-5</option>
-    </select>
-    <button id="transmitBtn">Transmit</button>
-    <div id="status"></div>
-  </div>
+  <h1>GDO Transmitter</h1>
+
+  <label for="codeInput">Enter Code:</label>
+  <input type="text" id="codeInput" placeholder="Enter 9-digit code" maxlength="9" />
+
+  <label for="frequencySelect">Select Frequency:</label>
+  <select id="frequencySelect">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+    <option value="charlie-3">Charlie-3</option>
+    <option value="delta-4">Delta-4</option>
+    <option value="echo-5">Echo-5</option>
+  </select>
+
+  <button id="transmitBtn">Transmit</button>
+
+  <div id="status"></div>
 
   <script type="module" src="transmitter.js"></script>
 </body>
