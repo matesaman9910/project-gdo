@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       background: #0d1117;
@@ -20,37 +19,28 @@
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 0 20px #00f7ff33;
-      width: 400px;
+      width: 450px;
       text-align: center;
     }
     select {
-      margin-top: 1rem;
+      margin: 1rem 0;
       padding: 0.5rem;
       width: 100%;
       font-size: 1rem;
       border-radius: 6px;
       border: none;
     }
-    .codeBox {
-      margin-top: 2rem;
+    #log {
+      margin-top: 1rem;
+      min-height: 60px;
+      background: #0a111a;
+      border-radius: 6px;
       padding: 1rem;
-      border-radius: 10px;
-      background-color: #20232a;
+      font-family: monospace;
       font-size: 1.1rem;
-      border: 2px solid transparent;
-    }
-    .valid {
-      border-color: limegreen;
     }
     .invalid {
-      border-color: red;
-    }
-    .alert {
-      animation: flashRed 0.5s alternate 6;
-    }
-    @keyframes flashRed {
-      from { background-color: #0d1117; }
-      to { background-color: #440000; }
+      color: #ff4c4c;
     }
   </style>
 </head>
@@ -60,8 +50,12 @@
     <select id="frequencySelect">
       <option value="alpha-1">Alpha-1</option>
       <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+      <option value="delta-4">Delta-4</option>
+      <option value="echo-5">Echo-5</option>
     </select>
-    <div id="log" class="codeBox"></div>
+
+    <div id="log">Waiting for signals...</div>
   </div>
 
   <script type="module" src="listener.js"></script>
