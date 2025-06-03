@@ -2,62 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SGC Listener</title>
   <style>
     body {
-      background: #0d1117;
-      color: #f0f0f0;
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: #161b22;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #00f7ff33;
-      width: 450px;
+      font-family: Arial, sans-serif;
       text-align: center;
+      padding: 2rem;
+      background: #111;
+      color: #eee;
     }
-    select {
-      margin: 1rem 0;
-      padding: 0.5rem;
-      width: 100%;
-      font-size: 1rem;
-      border-radius: 6px;
+    #logout {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #c00;
       border: none;
-    }
-    #log {
-      margin-top: 1rem;
-      min-height: 60px;
-      background: #0a111a;
-      border-radius: 6px;
-      padding: 1rem;
-      font-family: monospace;
-      font-size: 1.1rem;
-    }
-    .invalid {
-      color: #ff4c4c;
+      color: white;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>SGC Listener</h2>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-      <option value="delta-4">Delta-4</option>
-      <option value="echo-5">Echo-5</option>
-    </select>
 
-    <div id="log">Waiting for signals...</div>
-  </div>
+  <h1>SGC Listener</h1>
+  <div id="status">Checking authentication...</div>
+  <pre id="message"></pre>
+  <button id="logout">Logout</button>
 
-  <script type="module" src="listener.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="listener.js"></script>
 </body>
 </html>
