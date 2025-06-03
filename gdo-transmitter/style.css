@@ -1,0 +1,23 @@
+body {
+  background-color: #111;
+  color: lime;
+  font-family: monospace;
+  padding: 20px;
+}
+
+input, select, button {
+  font-size: 1.2em;
+  margin-top: 5px;
+  background: black;
+  color: lime;
+  border: 1px solid lime;
+}
+
+button:disabled {
+  color: red;
+  border-color: red;
+}
+
+#status {
+  margin-top: 20px;
+}

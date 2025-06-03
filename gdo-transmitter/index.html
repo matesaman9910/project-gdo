@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GDO Transmitter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>GDO Device</h1>
+
+  <label for="codeInput">Enter Code:</label>
+  <input type="text" id="codeInput" placeholder="Enter GDO code"><br><br>
+
+  <label for="frequencySelect">Select Frequency:</label>
+  <select id="frequencySelect">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+  </select><br><br>
+
+  <button id="transmitBtn">Transmit</button>
+
+  <div id="status"></div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>

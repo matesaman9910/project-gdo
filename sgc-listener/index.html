@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" type="module">
+<head>
+  <meta charset="UTF-8" />
+  <title>SGC Listener</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Simple styles to toggle login and main UI */
+    #listenerUI { display: none; }
+  </style>
+</head>
+<body>
+  <h1>SGC Command Terminal</h1>
+
+  <!-- Login UI -->
+  <div id="loginUI">
+    <h2>Sign in to SGC</h2>
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <!-- Listener UI (hidden until login) -->
+  <div id="listenerUI">
+    <div>
+      <label>Select Frequency:</label>
+      <select id="frequencySelect">
+        <option value="alpha-1">Alpha-1</option>
+        <option value="bravo-2">Bravo-2</option>
+      </select>
+    </div>
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    import { auth } from './firebase-config.js';
+    import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+
+    const provider = new GoogleAuthProvider();
+
+    const loginUI = document.getElementById('loginUI');
+    const listenerUI = document.getElementById('listenerUI');
+    const googleSignInBtn = document.getElementById('googleSignIn');
+
+    googleSignInBtn.addEventListener('click', () => {
+      signInWithPopup(auth, provider).catch(console.error);
+    });
+
+    // Listen for auth state changes
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        // User is signed in, show listener UI and hide login UI
+        loginUI.style.display = 'none';
+        listenerUI.style.display = 'block';
+
+        // TODO: initialize listener UI functionality here or import script.js logic
+        initListener();
+      } else {
+        // User is signed out, show login UI and hide listener UI
+        loginUI.style.display = 'block';
+        listenerUI.style.display = 'none';
+      }
+    });
+
+    // Example placeholder for your existing listener UI logic from script.js
+    function initListener() {
+      const log = document.getElementById('log');
+      const freqSelect = document.getElementById('frequencySelect');
+
+      // Clear log on frequency change
+      freqSelect.addEventListener('change', () => {
+        log.textContent = '';
+      });
+
+      // Simulated listener message for demo
+      log.textContent = 'Waiting for signals on frequency: ' + freqSelect.value;
+
+      // Here you can import or replicate your real-time Firebase listener logic from script.js
+      // e.g., subscribe to database changes and update #log accordingly
+    }
+  </script>
+</body>
+</html>
