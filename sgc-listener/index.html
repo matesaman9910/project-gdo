@@ -5,7 +5,6 @@
   <title>SGC Listener</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Simple styles to toggle login and main UI */
     #listenerUI { display: none; }
   </style>
 </head>
@@ -18,7 +17,7 @@
     <button id="googleSignIn">Sign in with Google</button>
   </div>
 
-  <!-- Listener UI (hidden until login) -->
+  <!-- Listener UI -->
   <div id="listenerUI">
     <div>
       <label>Select Frequency:</label>
@@ -31,11 +30,27 @@
   </div>
 
   <script type="module">
-    import { auth } from './firebase-config.js';
-    import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+    // Firebase CDN imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
+    // Your Firebase config (from your snippet)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+      authDomain: "project-gdo.firebaseapp.com",
+      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "project-gdo",
+      storageBucket: "project-gdo.firebasestorage.app",
+      messagingSenderId: "758705115255",
+      appId: "1:758705115255:web:878f5e64c164b75c507672"
+    };
+
+    // Initialize Firebase app and auth
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // UI elements
     const loginUI = document.getElementById('loginUI');
     const listenerUI = document.getElementById('listenerUI');
     const googleSignInBtn = document.getElementById('googleSignIn');
@@ -44,37 +59,31 @@
       signInWithPopup(auth, provider).catch(console.error);
     });
 
-    // Listen for auth state changes
     onAuthStateChanged(auth, user => {
       if (user) {
-        // User is signed in, show listener UI and hide login UI
+        // User signed in — show listener UI
         loginUI.style.display = 'none';
         listenerUI.style.display = 'block';
-
-        // TODO: initialize listener UI functionality here or import script.js logic
         initListener();
       } else {
-        // User is signed out, show login UI and hide listener UI
+        // User signed out — show login UI
         loginUI.style.display = 'block';
         listenerUI.style.display = 'none';
       }
     });
 
-    // Example placeholder for your existing listener UI logic from script.js
+    // Placeholder for listener logic — replace with your script.js code here
     function initListener() {
       const log = document.getElementById('log');
       const freqSelect = document.getElementById('frequencySelect');
 
-      // Clear log on frequency change
-      freqSelect.addEventListener('change', () => {
-        log.textContent = '';
-      });
-
-      // Simulated listener message for demo
       log.textContent = 'Waiting for signals on frequency: ' + freqSelect.value;
 
-      // Here you can import or replicate your real-time Firebase listener logic from script.js
-      // e.g., subscribe to database changes and update #log accordingly
+      freqSelect.addEventListener('change', () => {
+        log.textContent = 'Waiting for signals on frequency: ' + freqSelect.value;
+      });
+
+      // TODO: Add your Firebase Realtime Database listener here to update #log
     }
   </script>
 </body>
