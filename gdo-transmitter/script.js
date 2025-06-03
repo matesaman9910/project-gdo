@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
@@ -15,52 +14,56 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const codeInput = document.getElementById("codeInput");
-const frequencySelect = document.getElementById("frequencySelect");
-const transmitBtn = document.getElementById("transmitBtn");
-const status = document.getElementById("status");
+window.addEventListener('DOMContentLoaded', () => {
+  const codeInput = document.getElementById("codeInput");
+  const frequencySelect = document.getElementById("frequencySelect");
+  const transmitBtn = document.getElementById("transmitBtn");
+  const status = document.getElementById("status");
 
-let cooldown = false;
+  let cooldown = false;
 
-transmitBtn.addEventListener("click", async () => {
-  if (cooldown) return;
+  transmitBtn.addEventListener("click", async () => {
+    if (cooldown) return;
 
-  const code = codeInput.value.trim();
+    const code = codeInput.value.trim();
 
-  // Validate code: must be exactly 9 digits (numbers)
-  if (!/^\d{9}$/.test(code)) {
-    status.innerText = "⚠️ Code must be exactly 9 digits.";
-    return;
-  }
+    // Validate 9-digit numeric code
+    if (!/^\d{9}$/.test(code)) {
+      status.innerText = "⚠️ Please enter a 9-digit numeric code.";
+      return;
+    }
 
-  const frequency = frequencySelect.value;
+    const frequency = frequencySelect.value;
 
-  cooldown = true;
-  transmitBtn.disabled = true;
-  status.innerText = "Encrypting...";
+    cooldown = true;
+    transmitBtn.disabled = true;
+    status.innerText = "Encrypting...";
 
-  // Simulate encryption delay
-  await new Promise(res => setTimeout(res, 1500));
+    // Simulate encryption delay
+    await new Promise(res => setTimeout(res, 1500));
 
-  const encrypted = btoa(code); // simple base64 encryption placeholder
-  const signalRef = ref(db, `frequencies/${frequency}/signals`);
+    const encrypted = btoa(code); // fake base64 encryption
+    const signalRef = ref(db, `frequencies/${frequency}/signals`);
 
-  push(signalRef, {
-    code: code,
-    encrypted: encrypted,
-    decrypted: code,
-    timestamp: serverTimestamp()
-  }).then(() => {
-    status.innerText = "✅ Signal transmitted!";
-    codeInput.value = "";
-  }).catch(err => {
-    status.innerText = "❌ Transmission failed.";
-    console.error(err);
+    try {
+      await push(signalRef, {
+        code: code,
+        encrypted: encrypted,
+        decrypted: code,
+        timestamp: serverTimestamp()
+      });
+
+      status.innerText = "✅ Signal transmitted!";
+      codeInput.value = ""; // Clear input after transmit
+    } catch (error) {
+      status.innerText = "❌ Failed to transmit signal.";
+      console.error(error);
+    }
+
+    setTimeout(() => {
+      status.innerText = "";
+      cooldown = false;
+      transmitBtn.disabled = false;
+    }, 10000); // 10-second cooldown
   });
-
-  setTimeout(() => {
-    status.innerText = "";
-    cooldown = false;
-    transmitBtn.disabled = false;
-  }, 10000); // 10 second cooldown
 });
