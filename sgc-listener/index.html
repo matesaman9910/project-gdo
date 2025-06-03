@@ -2,47 +2,118 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SGC Listener</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 2rem;
-      background-color: #121212;
-      color: #e0e0e0;
-    }
-    #signalDisplay {
-      font-size: 1.8rem;
-      margin: 2rem 0;
-      padding: 1rem;
-      border: 2px solid #444;
-      border-radius: 8px;
-      background-color: #222;
-      min-height: 60px;
-      user-select: none;
-    }
-    #logoutBtn {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      background-color: #ff3b3b;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      display: none;
-      transition: background-color 0.3s ease;
-    }
-    #logoutBtn:hover {
-      background-color: #ff1a1a;
-    }
+    #listenerUI { display: none; }
+    body.alert { background-color: #700; color: white; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <h1>SGC Signal Listener</h1>
-  <div id="signalDisplay">Loading signals...</div>
-  <button id="logoutBtn">Log Out</button>
+  <h1>SGC Command Terminal</h1>
 
-  <script type="module" src="listener.js"></script>
+  <div id="loginUI">
+    <h2>Sign in to SGC</h2>
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <div id="listenerUI">
+    <label>Select Frequency:</label>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+    </select>
+    <button id="logoutBtn">Logout</button>
+    <div id="log" style="white-space: pre-wrap; margin-top: 1em;"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getDatabase, ref, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+    // 🔐 Firebase config (keep secure in real deployment)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+      authDomain: "project-gdo.firebaseapp.com",
+      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "project-gdo",
+      storageBucket: "project-gdo.appspot.com",
+      messagingSenderId: "758705115255",
+      appId: "1:758705115255:web:878f5e64c164b75c507672"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    const loginUI = document.getElementById('loginUI');
+    const listenerUI = document.getElementById('listenerUI');
+    const googleSignInBtn = document.getElementById('googleSignIn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const freqSelect = document.getElementById('frequencySelect');
+    const log = document.getElementById('log');
+
+    let currentListener = null;
+
+    googleSignInBtn.addEventListener('click', () => {
+      signInWithPopup(auth, provider).catch(console.error);
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).catch(console.error);
+    });
+
+    function listenToFrequency(freq) {
+      if (currentListener) {
+        currentListener(); // Unsubscribe old listener
+        currentListener = null;
+      }
+
+      log.textContent = `Listening on frequency: ${freq}\n`;
+
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+
+      currentListener = onChildAdded(signalsRef, async (snapshot) => {
+        const data = snapshot.val();
+        const code = data.decrypted || data.code || "UNKNOWN";
+
+        const codeRef = ref(db, `codes/${code}`);
+        const codeSnap = await get(codeRef);
+        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+        const isAuthorized = codeInfo?.access ?? false;
+        const owner = codeInfo?.owner || "UNKNOWN";
+
+        const message = `Code: ${code}\nOwner: ${owner}\nStatus: ${isAuthorized ? '✔ Verified' : '✖ Unrecognized Code!'}\n\n`;
+        log.textContent = message + log.textContent;
+
+        if (!isAuthorized) {
+          document.body.classList.add('alert');
+          setTimeout(() => document.body.classList.remove('alert'), 3000);
+        }
+      });
+    }
+
+    freqSelect.addEventListener('change', () => {
+      listenToFrequency(freqSelect.value);
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        loginUI.style.display = 'none';
+        listenerUI.style.display = 'block';
+        listenToFrequency(freqSelect.value);
+      } else {
+        loginUI.style.display = 'block';
+        listenerUI.style.display = 'none';
+        if (currentListener) {
+          currentListener(); // Unsubscribe on logout
+          currentListener = null;
+        }
+      }
+    });
+  </script>
 </body>
 </html>
