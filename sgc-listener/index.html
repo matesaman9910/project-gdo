@@ -9,31 +9,40 @@
       font-family: Arial, sans-serif;
       text-align: center;
       padding: 2rem;
-      background: #111;
-      color: #eee;
+      background-color: #121212;
+      color: #e0e0e0;
     }
-    #logout {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      background: #c00;
-      border: none;
+    #signalDisplay {
+      font-size: 1.8rem;
+      margin: 2rem 0;
+      padding: 1rem;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background-color: #222;
+      min-height: 60px;
+      user-select: none;
+    }
+    #logoutBtn {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #ff3b3b;
       color: white;
-      border-radius: 4px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+      transition: background-color 0.3s ease;
+    }
+    #logoutBtn:hover {
+      background-color: #ff1a1a;
     }
   </style>
 </head>
 <body>
+  <h1>SGC Signal Listener</h1>
+  <div id="signalDisplay">Loading signals...</div>
+  <button id="logoutBtn">Log Out</button>
 
-  <h1>SGC Listener</h1>
-  <div id="status">Checking authentication...</div>
-  <pre id="message"></pre>
-  <button id="logout">Logout</button>
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="listener.js"></script>
+  <script type="module" src="listener.js"></script>
 </body>
 </html>
