@@ -1,7 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-
-// (rest of your code unchanged)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -28,21 +26,23 @@ transmitBtn.addEventListener("click", async () => {
   if (cooldown) return;
 
   const code = codeInput.value.trim();
-  const frequency = frequencySelect.value;
 
-  if (!code) {
-    status.innerText = "⚠️ Enter a code.";
+  // Validate code: must be exactly 9 digits (numbers)
+  if (!/^\d{9}$/.test(code)) {
+    status.innerText = "⚠️ Code must be exactly 9 digits.";
     return;
   }
+
+  const frequency = frequencySelect.value;
 
   cooldown = true;
   transmitBtn.disabled = true;
   status.innerText = "Encrypting...";
 
-  // Simulated encryption effect
+  // Simulate encryption delay
   await new Promise(res => setTimeout(res, 1500));
 
-  const encrypted = btoa(code); // Base64 fake encryption
+  const encrypted = btoa(code); // simple base64 encryption placeholder
   const signalRef = ref(db, `frequencies/${frequency}/signals`);
 
   push(signalRef, {
@@ -50,12 +50,17 @@ transmitBtn.addEventListener("click", async () => {
     encrypted: encrypted,
     decrypted: code,
     timestamp: serverTimestamp()
+  }).then(() => {
+    status.innerText = "✅ Signal transmitted!";
+    codeInput.value = "";
+  }).catch(err => {
+    status.innerText = "❌ Transmission failed.";
+    console.error(err);
   });
 
-  status.innerText = "✅ Signal transmitted!";
   setTimeout(() => {
     status.innerText = "";
     cooldown = false;
     transmitBtn.disabled = false;
-  }, 10000); // 10-second cooldown
+  }, 10000); // 10 second cooldown
 });
