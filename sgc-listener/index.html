@@ -3,38 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     #listenerUI { display: none; }
+    body.alert { background-color: #700; color: white; }
   </style>
 </head>
 <body>
   <h1>SGC Command Terminal</h1>
 
-  <!-- Login UI -->
   <div id="loginUI">
     <h2>Sign in to SGC</h2>
     <button id="googleSignIn">Sign in with Google</button>
   </div>
 
-  <!-- Listener UI -->
   <div id="listenerUI">
-    <div>
-      <label>Select Frequency:</label>
-      <select id="frequencySelect">
-        <option value="alpha-1">Alpha-1</option>
-        <option value="bravo-2">Bravo-2</option>
-      </select>
-    </div>
-    <div id="log"></div>
+    <label>Select Frequency:</label>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+    </select>
+    <div id="log" style="white-space: pre-wrap; margin-top: 1em;"></div>
   </div>
 
   <script type="module">
-    // Firebase CDN imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getDatabase, ref, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
-    // Your Firebase config (from your snippet)
+    // Firebase config (your values)
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
@@ -45,46 +41,74 @@
       appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
 
-    // Initialize Firebase app and auth
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+    const db = getDatabase(app);
 
-    // UI elements
     const loginUI = document.getElementById('loginUI');
     const listenerUI = document.getElementById('listenerUI');
     const googleSignInBtn = document.getElementById('googleSignIn');
+    const freqSelect = document.getElementById('frequencySelect');
+    const log = document.getElementById('log');
+
+    const provider = new GoogleAuthProvider();
 
     googleSignInBtn.addEventListener('click', () => {
       signInWithPopup(auth, provider).catch(console.error);
     });
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        // User signed in — show listener UI
-        loginUI.style.display = 'none';
-        listenerUI.style.display = 'block';
-        initListener();
-      } else {
-        // User signed out — show login UI
-        loginUI.style.display = 'block';
-        listenerUI.style.display = 'none';
+    let currentListener = null;
+
+    function listenToFrequency(freq) {
+      if (currentListener) {
+        currentListener(); // Unsubscribe old listener
+        currentListener = null;
       }
+
+      log.textContent = `Listening on frequency: ${freq}\n`;
+
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+
+      // Listen for new signals
+      currentListener = onChildAdded(signalsRef, async (snapshot) => {
+        const data = snapshot.val();
+        const code = data.decrypted || data.code || "UNKNOWN";
+
+        const codeRef = ref(db, `codes/${code}`);
+        const codeSnap = await get(codeRef);
+        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+        const isAuthorized = codeInfo?.access ?? false; // use `access` as in your DB structure
+        const owner = codeInfo?.owner || "UNKNOWN";
+
+        const message = `Code: ${code}\nOwner: ${owner}\nStatus: ${isAuthorized ? '✔ Verified' : '✖ Unrecognized Code!'}\n\n`;
+        log.textContent = message + log.textContent;
+
+        if (!isAuthorized) {
+          document.body.classList.add('alert');
+          setTimeout(() => document.body.classList.remove('alert'), 3000);
+        }
+      });
+    }
+
+    freqSelect.addEventListener('change', () => {
+      listenToFrequency(freqSelect.value);
     });
 
-    // Placeholder for listener logic — replace with your script.js code here
-    function initListener() {
-      const log = document.getElementById('log');
-      const freqSelect = document.getElementById('frequencySelect');
-
-      log.textContent = 'Waiting for signals on frequency: ' + freqSelect.value;
-
-      freqSelect.addEventListener('change', () => {
-        log.textContent = 'Waiting for signals on frequency: ' + freqSelect.value;
-      });
-
-      // TODO: Add your Firebase Realtime Database listener here to update #log
-    }
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        loginUI.style.display = 'none';
+        listenerUI.style.display = 'block';
+        listenToFrequency(freqSelect.value);
+      } else {
+        loginUI.style.display = 'block';
+        listenerUI.style.display = 'none';
+        if (currentListener) {
+          currentListener();
+          currentListener = null;
+        }
+      }
+    });
   </script>
 </body>
 </html>
