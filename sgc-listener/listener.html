@@ -1,90 +1,204 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
+    /* Stargate-themed styling */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
     body {
-      background: #000;
-      color: #0ff;
-      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+      color: #8df9ff;
+      font-family: 'Orbitron', monospace, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      user-select: none;
+      overflow: hidden;
       text-align: center;
-      padding: 3rem;
+      padding: 2rem;
     }
 
     h1 {
-      color: #0ff;
+      font-size: 3rem;
+      margin-bottom: 0.2em;
+      text-shadow: 0 0 8px #00ffff;
+      letter-spacing: 0.1em;
+    }
+
+    #status {
+      font-size: 1.5rem;
+      margin-bottom: 1.5em;
+      text-shadow: 0 0 10px #00ffffcc;
+    }
+
+    #incoming {
       font-size: 2.5rem;
+      font-weight: 900;
+      color: #00ffff;
+      text-shadow:
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 30px #00ffff,
+        0 0 40px #00ffff;
+      animation: blink 1s infinite;
       margin-bottom: 1rem;
     }
 
-    #loginUI, #listenerUI {
-      margin-top: 2rem;
-    }
-
-    select {
-      font-size: 1rem;
-      padding: 0.5rem;
-      margin-top: 1rem;
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
     }
 
     #log {
+      background: rgba(0, 20, 30, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      width: 420px;
+      max-width: 90vw;
+      min-height: 180px;
+      color: #00ffff;
+      font-size: 1.25rem;
       white-space: pre-wrap;
-      margin-top: 2rem;
-      font-size: 1.2rem;
+      box-shadow:
+        0 0 10px #00ffff88,
+        inset 0 0 15px #00ffff66;
+      user-select: text;
     }
 
-    #statusMessage {
-      font-size: 2rem;
-      margin-top: 2rem;
-      color: #0ff;
-    }
-
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-
-    .blink {
-      animation: blink 1s steps(2, start) infinite;
-      color: yellow;
-    }
-
-    button {
-      background: #0ff;
-      color: black;
-      padding: 10px 20px;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-top: 1rem;
+    #waiting {
+      font-style: italic;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
-  <h1>SGC Command Terminal</h1>
 
-  <div id="loginUI">
-    <h2>Sign in to SGC</h2>
-    <button id="googleSignIn">Sign in with Google</button>
+  <h1>SGC COMMAND TERMINAL</h1>
+
+  <div id="status">
+    <div id="waiting">Awaiting Signal...</div>
+    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
   </div>
 
-  <div id="listenerUI" style="display: none;">
-    <label>Select Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
-    <div id="statusMessage">Awaiting Signal...</div>
-    <div id="log"></div>
-    <button id="logout">Logout</button>
+  <div id="log">
+    <div id="message">No signals received yet.</div>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
+  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
-  <script src="listener.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+    // Your Firebase config here
+    const firebaseConfig = {
+      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+      authDomain: "project-gdo.firebaseapp.com",
+      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "project-gdo",
+      storageBucket: "project-gdo.firebasestorage.app",
+      messagingSenderId: "758705115255",
+      appId: "1:758705115255:web:878f5e64c164b75c507672"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const waitingEl = document.getElementById('waiting');
+    const incomingEl = document.getElementById('incoming');
+    const messageEl = document.getElementById('message');
+    const travelerSound = document.getElementById('travelerSound');
+    travelerSound.volume = 1.0; // Max volume
+
+    const frequency = "alpha-1";  // You can change to bravo-2 or charlie-3 if you want.
+
+    const signalsRef = ref(db, `frequencies/${frequency}/signals`);
+
+    let displayTimeout = null;
+
+    function clearMessage() {
+      messageEl.textContent = "No signals received yet.";
+      waitingEl.style.display = "block";
+      incomingEl.style.display = "none";
+    }
+
+    clearMessage();
+
+    onChildAdded(signalsRef, async (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      // Show incoming alert
+      waitingEl.style.display = "none";
+      incomingEl.style.display = "block";
+
+      // Play sound louder, restart if already playing
+      travelerSound.pause();
+      travelerSound.currentTime = 0;
+      travelerSound.play().catch(() => {});
+
+      // Determine code and check validity from /codes path
+      const code = data.decrypted || data.code || "UNKNOWN";
+
+      // Fetch code info from codes node
+      const codeRef = ref(db, `codes/${code}`);
+      const codeSnap = await new Promise((resolve) => {
+        const dbRef = codeRef;
+        const onVal = (snap) => {
+          resolve(snap);
+        };
+        import("https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js").then(({ get }) => get(dbRef).then(resolve));
+      });
+
+      // To fix above, simpler way:
+      // Using onValue is not available in import dynamic, so let's use get() directly:
+      // We'll rewrite codeSnap retrieval without the above confusing promise.
+
+      // Correct approach:
+      import("https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js").then(({ get }) => {
+        get(codeRef).then(codeSnap => {
+          const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+          // Interpret status
+          let statusText = "";
+          if (codeInfo) {
+            if (codeInfo.valid === false) {
+              statusText = "Received INVALID";
+            } else if (codeInfo.valid === true) {
+              statusText = "Received and Verified";
+            } else {
+              statusText = "Received Unknown";
+            }
+          } else {
+            statusText = "Received Unknown";
+          }
+
+          const owner = codeInfo?.owner || "UNKNOWN";
+
+          messageEl.textContent =
+            `Owner: ${owner}\n` +
+            `Code: ${code}\n` +
+            `Status: ${statusText}`;
+
+          // Remove the signal after 15 seconds
+          setTimeout(() => {
+            remove(snapshot.ref).catch(console.error);
+          }, 15000);
+
+          // Hide the message after 10 seconds, revert to waiting state
+          if (displayTimeout) clearTimeout(displayTimeout);
+          displayTimeout = setTimeout(() => {
+            clearMessage();
+          }, 10000);
+        });
+      });
+    });
+  </script>
 </body>
 </html>
