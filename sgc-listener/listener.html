@@ -9,76 +9,112 @@
       margin: 0;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
       color: #8df9ff;
-      font-family: 'Orbitron', monospace, sans-serif;
+      font-family: 'Orbitron', monospace;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       height: 100vh;
+      overflow: hidden;
+      padding: 2rem;
       user-select: none;
       text-align: center;
-      padding-top: 4rem;
     }
     h1 {
-      font-size: 2.5rem;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
       text-shadow: 0 0 8px #00ffff;
-      letter-spacing: 0.1em;
+    }
+    #auth {
       margin-bottom: 1rem;
     }
-    #authBanner {
-      background: rgba(0, 255, 255, 0.1);
-      border: 1px solid #00ffff;
-      border-radius: 8px;
-      padding: 0.5rem 1rem;
-      margin-bottom: 1.5rem;
-      font-size: 1rem;
+    #auth input {
+      font-family: 'Orbitron', monospace;
+      padding: 5px;
+      margin: 2px;
     }
-    #status, #log, #controls {
-      display: none;
+    #auth button {
+      background-color: #003344;
+      color: #00ffff;
+      border: 1px solid #00ffff88;
+      font-family: 'Orbitron', monospace;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    #controls {
+      margin-bottom: 1.5rem;
+    }
+    select {
+      background-color: #001d22;
+      color: #00ffff;
+      font-family: 'Orbitron', monospace;
+      border: 1px solid #00ffff88;
+      padding: 6px;
+    }
+    #status {
+      font-size: 1.5rem;
+      margin-bottom: 1em;
     }
     #incoming {
       font-size: 2.5rem;
       font-weight: bold;
       color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
       animation: blink 1s infinite;
-      margin-bottom: 1rem;
+      display: none;
+    }
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.3; }
     }
     #log {
       background: rgba(0, 20, 30, 0.8);
       border: 2px solid #00ffff;
       border-radius: 12px;
-      padding: 1rem 2rem;
+      padding: 1.5rem;
+      width: 420px;
       max-width: 90vw;
-      width: 400px;
+      min-height: 180px;
       color: #00ffff;
       font-size: 1.25rem;
-      box-shadow: inset 0 0 15px #00ffff66;
-    }
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
+      white-space: pre-wrap;
+      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
     }
   </style>
 </head>
 <body>
+
   <h1>SGC COMMAND TERMINAL</h1>
-  <div id="authBanner">Please sign in to begin receiving signals.</div>
+
+  <div id="auth">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Sign In</button>
+    <button onclick="logout()">Sign Out</button>
+  </div>
+
+  <div id="controls">
+    Frequency:
+    <select id="frequencySelector">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+    </select>
+  </div>
 
   <div id="status">
-    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+    <div id="incoming">!INCOMING TRAVELER!</div>
+    <div id="waiting">Awaiting Signal...</div>
   </div>
 
-  <div id="log">
-    <div id="message">No signals received yet.</div>
-  </div>
+  <div id="log"><div id="message">No signals received yet.</div></div>
 
   <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -94,74 +130,81 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
+    const waitingEl = document.getElementById('waiting');
     const incomingEl = document.getElementById('incoming');
     const messageEl = document.getElementById('message');
-    const authBanner = document.getElementById('authBanner');
-    const statusEl = document.getElementById('status');
-    const logEl = document.getElementById('log');
     const travelerSound = document.getElementById('travelerSound');
     travelerSound.volume = 1.0;
 
-    const frequencies = ["alpha-1", "bravo-2", "charlie-3"];
-    let listenersActive = false;
+    const frequencySelector = document.getElementById("frequencySelector");
 
-    function displaySignal(code, owner, statusText) {
-      incomingEl.style.display = "block";
-      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
-      travelerSound.pause();
-      travelerSound.currentTime = 0;
-      travelerSound.play().catch(() => {});
-      setTimeout(() => {
-        incomingEl.style.display = "none";
-        messageEl.textContent = "No signals received yet.";
-      }, 10000);
+    let currentListener = null;
+    let displayTimeout = null;
+    let currentUser = null;
+
+    function clearMessage() {
+      messageEl.textContent = "No signals received yet.";
+      incomingEl.style.display = "none";
+      waitingEl.style.display = "block";
     }
 
-    function startListeners() {
-      if (listenersActive) return;
-      listenersActive = true;
+    function attachListener(frequency) {
+      if (currentListener) currentListener(); // detach previous
 
-      frequencies.forEach(freq => {
-        const refPath = ref(db, `frequencies/${freq}/signals`);
-        onChildAdded(refPath, async (snapshot) => {
-          const data = snapshot.val();
-          const code = data.decrypted || data.code || "UNKNOWN";
+      const signalsRef = ref(db, `frequencies/${frequency}/signals`);
+      currentListener = onChildAdded(signalsRef, async (snapshot) => {
+        if (!currentUser) return; // don't show anything if not signed in
 
-          const codeSnap = await get(ref(db, `codes/${code}`));
-          const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+        const data = snapshot.val();
+        if (!data) return;
 
-          let statusText = "Received Unknown";
-          if (codeInfo) {
-            if (codeInfo.valid === false) statusText = "Received INVALID";
-            else if (codeInfo.valid === true) statusText = "Received and Verified";
-          }
+        waitingEl.style.display = "none";
+        incomingEl.style.display = "block";
 
-          const owner = codeInfo?.owner || "UNKNOWN";
-          displaySignal(code, owner, statusText);
+        travelerSound.pause();
+        travelerSound.currentTime = 0;
+        travelerSound.play().catch(() => {});
 
-          setTimeout(() => {
-            remove(snapshot.ref).catch(console.error);
-          }, 15000);
-        });
+        const code = data.decrypted || data.code || "UNKNOWN";
+        const codeRef = ref(db, `codes/${code}`);
+        const codeSnap = await get(codeRef);
+        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+        let status = "Received Unknown";
+        if (codeInfo?.valid === false) status = "Received INVALID";
+        else if (codeInfo?.valid === true) status = "Received and Verified";
+
+        const owner = codeInfo?.owner || "UNKNOWN";
+
+        messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${status}`;
+
+        setTimeout(() => remove(snapshot.ref).catch(console.error), 15000);
+        if (displayTimeout) clearTimeout(displayTimeout);
+        displayTimeout = setTimeout(() => clearMessage(), 10000);
       });
     }
 
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        // Signed in
-        authBanner.style.display = "none";
-        statusEl.style.display = "block";
-        logEl.style.display = "block";
-        startListeners();
-      } else {
-        // Not signed in
-        authBanner.style.display = "block";
-        statusEl.style.display = "none";
-        logEl.style.display = "none";
-        incomingEl.style.display = "none";
-        messageEl.textContent = "No signals received yet.";
-      }
+    frequencySelector.addEventListener("change", () => {
+      attachListener(frequencySelector.value);
     });
+
+    window.login = () => {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      signInWithEmailAndPassword(auth, email, pass).catch(alert);
+    };
+
+    window.logout = () => {
+      signOut(auth).catch(alert);
+    };
+
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      clearMessage();
+      attachListener(frequencySelector.value);
+    });
+
+    clearMessage(); // Initial state
   </script>
 </body>
 </html>
