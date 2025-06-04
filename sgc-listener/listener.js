@@ -1,71 +1,121 @@
-// Firebase config
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  onChildAdded,
+  off,
+  get
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+// Your Firebase config (replace with your actual config)
 const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
   databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "project-gdo",
+  storageBucket: "project-gdo.firebasestorage.app",
+  messagingSenderId: "758705115255",
+  appId: "1:758705115255:web:878f5e64c164b75c507672"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
+const loginUI = document.getElementById('loginUI');
+const listenerUI = document.getElementById('listenerUI');
+const googleSignInBtn = document.getElementById('googleSignIn');
 const freqSelect = document.getElementById('frequencySelect');
-const logDiv = document.getElementById('log');
-let currentListener = null;
+const log = document.getElementById('log');
+const logoutBtn = document.getElementById('logout');
 
-function logMessage(message, isAlert = false) {
-  if (isAlert) {
-    document.body.classList.add('alert');
-    setTimeout(() => document.body.classList.remove('alert'), 3000);
+const provider = new GoogleAuthProvider();
+
+googleSignInBtn.addEventListener('click', () => {
+  signInWithPopup(auth, provider).catch(console.error);
+});
+
+logoutBtn.addEventListener('click', () => {
+  signOut(auth);
+});
+
+// Variable to hold the unsubscribe function for the current frequency listener
+let currentListenerUnsubscribe = null;
+
+function listenToFrequency(freq) {
+  // Unsubscribe from old listener if exists
+  if (currentListenerUnsubscribe) {
+    currentListenerUnsubscribe();
+    currentListenerUnsubscribe = null;
   }
-  logDiv.textContent = `!INCOMING TRAVELER!\nDecrypting...\n\n${message}\n\n` + logDiv.textContent;
-}
 
-function startListening(freq) {
-  if (currentListener) {
-    currentListener.off();
-  }
+  log.textContent = `Listening on frequency: ${freq}\n`;
 
-  const signalRef = db.ref(`frequencies/${freq}/signals`);
-  signalRef.off(); // remove old listeners
+  const signalsRef = ref(db, `frequencies/${freq}/signals`);
 
-  signalRef.on('child_added', async (snapshot) => {
+  // Listen for new signals
+  currentListenerUnsubscribe = onChildAdded(signalsRef, async (snapshot) => {
     const data = snapshot.val();
-    const code = data.code || "UNKNOWN";
+    console.log("Received new signal data:", data);
 
-    const codeRef = db.ref(`codes/${code}`);
-    const codeSnap = await codeRef.get();
+    const code = data.decrypted || data.code || "UNKNOWN";
 
-    let owner = "UNKNOWN";
-    let status = "Received Unknown";
+    // Fetch code info from 'codes' path
+    const codeRef = ref(db, `codes/${code}`);
+    const codeSnap = await get(codeRef);
+    const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-    if (codeSnap.exists()) {
-      const codeData = codeSnap.val();
-      owner = codeData.owner || "UNKNOWN";
-      if (codeData.valid === false) {
-        status = "❌ Received INVALID";
-        logMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${status}`, true);
+    let statusText = "";
+    if (codeInfo) {
+      if (codeInfo.valid === false) {
+        statusText = "Received INVALID";
+      } else if (codeInfo.access) {
+        statusText = "Received and Verified";
       } else {
-        status = "✅ Received and Verified";
-        logMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${status}`);
+        statusText = "Received Unknown";
       }
     } else {
-      logMessage(`Owner: UNKNOWN\nCode: ${code}\nStatus: ❓ Received Unknown`);
+      statusText = "Received Unknown";
     }
 
-    // Delete signal after 15 seconds
+    const owner = codeInfo?.owner || "UNKNOWN";
+
+    const message = `!INCOMING TRAVELER!\nOwner: ${owner}\nCode: ${code}\nStatus: ${statusText}\n\n`;
+
+    log.textContent = message + log.textContent;
+
+    // Remove the signal after 15 seconds to auto-delete
     setTimeout(() => {
-      db.ref(`frequencies/${freq}/signals/${snapshot.key}`).remove();
+      const signalRef = ref(db, `frequencies/${freq}/signals/${snapshot.key}`);
+      signalRef.remove().catch(console.error);
     }, 15000);
   });
-
-  currentListener = signalRef;
 }
 
 freqSelect.addEventListener('change', () => {
-  startListening(freqSelect.value);
+  listenToFrequency(freqSelect.value);
 });
 
-// Start listening on page load with default frequency
-startListening(freqSelect.value);
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loginUI.style.display = 'none';
+    listenerUI.style.display = 'block';
+    listenToFrequency(freqSelect.value);
+  } else {
+    loginUI.style.display = 'block';
+    listenerUI.style.display = 'none';
+
+    if (currentListenerUnsubscribe) {
+      currentListenerUnsubscribe();
+      currentListenerUnsubscribe = null;
+    }
+    log.textContent = "";
+  }
+});
