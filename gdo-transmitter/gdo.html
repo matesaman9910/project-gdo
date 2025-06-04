@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SGC GDO Transmitter</title>
+  <style>
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', Courier, monospace;
+      text-align: center;
+      padding-top: 50px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 1em;
+    }
+    input, select, button {
+      background: black;
+      color: #0f0;
+      border: 2px solid #0f0;
+      padding: 10px;
+      font-size: 18px;
+      margin: 10px;
+    }
+    #status {
+      margin-top: 30px;
+      font-size: 1.3em;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>SGC GDO TRANSMITTER</h1>
+
+  <input id="codeInput" placeholder="Enter Access Code" />
+  <select id="freqInput">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+  </select>
+  <button onclick="transmit()">Transmit</button>
+
+  <div id="status"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+      authDomain: "project-gdo.firebaseapp.com",
+      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "project-gdo",
+      storageBucket: "project-gdo.appspot.com",
+      messagingSenderId: "758705115255",
+      appId: "1:758705115255:web:878f5e64c164b75c507672"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const statusBox = document.getElementById('status');
+
+    function transmit() {
+      const code = document.getElementById('codeInput').value.trim();
+      const freq = document.getElementById('freqInput').value;
+
+      if (!code) {
+        statusBox.textContent = "ERROR: CODE REQUIRED";
+        return;
+      }
+
+      statusBox.textContent = "Encrypting...\n";
+      setTimeout(() => {
+        statusBox.textContent += "Transmitting...\n";
+
+        const signalsRef = ref(db, `frequencies/${freq}/signals`);
+        push(signalsRef, { code });
+
+        setTimeout(() => {
+          statusBox.textContent += "✔ Transmitted.";
+        }, 1000);
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
