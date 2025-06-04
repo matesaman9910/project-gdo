@@ -10,106 +10,109 @@
       margin: 0;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
       color: #8df9ff;
-      font-family: 'Orbitron', monospace;
+      font-family: 'Orbitron', monospace, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      min-height: 100vh;
+      height: 100vh;
+      user-select: none;
       text-align: center;
-      padding: 2rem;
+      padding-top: 5rem;
+      overflow: hidden;
     }
 
     h1 {
       font-size: 2.5rem;
-      margin-bottom: 0.5em;
       text-shadow: 0 0 8px #00ffff;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5em;
     }
 
     #status {
-      font-size: 1.25rem;
-      margin-bottom: 1.5em;
+      font-size: 1.5rem;
+      margin-bottom: 1em;
+      text-shadow: 0 0 10px #00ffffcc;
     }
 
     #incoming {
-      font-size: 2rem;
+      font-size: 2.5rem;
       font-weight: bold;
       color: #00ffff;
-      text-shadow: 0 0 20px #00ffff;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
       animation: blink 1s infinite;
-      display: none;
-      margin-bottom: 1em;
+      margin-bottom: 1rem;
     }
 
     @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
     }
 
     #log {
       background: rgba(0, 20, 30, 0.8);
       border: 2px solid #00ffff;
-      border-radius: 10px;
-      padding: 1rem;
-      width: 90%;
-      max-width: 500px;
-      font-size: 1rem;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      width: 420px;
+      max-width: 90vw;
+      min-height: 180px;
+      color: #00ffff;
+      font-size: 1.2rem;
       white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88;
+      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
     }
 
-    #controls {
-      margin: 1rem 0;
-    }
-
-    button {
-      font-family: 'Orbitron', monospace;
-      background: #003344;
-      color: #8df9ff;
-      border: 2px solid #00ffff88;
-      padding: 0.5rem 1rem;
-      margin: 0.25rem;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    button:hover {
-      background: #005566;
-    }
-
-    #loginBanner {
-      background: #001a1a;
-      padding: 1em;
-      border-bottom: 2px solid #00ffff;
-      margin-bottom: 1em;
+    #banner {
+      position: fixed;
+      top: 0;
       width: 100%;
+      background-color: #002e2e;
+      color: #00ffff;
+      padding: 0.75rem;
+      font-size: 1rem;
       text-align: center;
-      display: none;
+      z-index: 999;
+      box-shadow: 0 2px 8px #00ffff66;
+      cursor: pointer;
+    }
+
+    #frequencySelect, #authBtn {
+      margin: 0.5rem;
+      font-size: 1rem;
+      background-color: #001a1a;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      padding: 0.5rem;
+      font-family: 'Orbitron', monospace;
     }
   </style>
 </head>
 <body>
-  <div id="loginBanner">
-    <span>This site uses sounds and requires login to view data.</span>
-    <button onclick="signIn()">Sign In with Google</button>
+
+  <div id="banner">
+    This site uses sounds. Please click here to enable them.
   </div>
 
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div id="controls" style="display: none;">
-    Frequency:
-    <button onclick="setFrequency('alpha-1')">Alpha-1</button>
-    <button onclick="setFrequency('bravo-2')">Bravo-2</button>
-    <button onclick="setFrequency('charlie-3')">Charlie-3</button>
-    <button onclick="signOut()">Sign Out</button>
+  <div>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+    </select>
+    <button id="authBtn">Sign In</button>
   </div>
 
   <div id="status">
     <div id="waiting">Awaiting Signal...</div>
-    <div id="incoming">!INCOMING TRAVELER!</div>
+    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
   </div>
 
-  <div id="log">No signals received yet.</div>
+  <div id="log">
+    <div id="message">No signals received yet.</div>
+  </div>
 
   <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
@@ -119,15 +122,15 @@
       getDatabase,
       ref,
       onChildAdded,
-      remove,
-      get
+      get,
+      remove
     } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
     import {
       getAuth,
-      GoogleAuthProvider,
       signInWithPopup,
-      onAuthStateChanged,
-      signOut as firebaseSignOut
+      signOut,
+      GoogleAuthProvider,
+      onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -143,91 +146,93 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-    const waitingEl = document.getElementById("waiting");
-    const incomingEl = document.getElementById("incoming");
-    const messageEl = document.getElementById("log");
-    const loginBanner = document.getElementById("loginBanner");
-    const travelerSound = document.getElementById("travelerSound");
+    const banner = document.getElementById('banner');
+    const freqSelect = document.getElementById('frequencySelect');
+    const waitingEl = document.getElementById('waiting');
+    const incomingEl = document.getElementById('incoming');
+    const messageEl = document.getElementById('message');
+    const travelerSound = document.getElementById('travelerSound');
+    const authBtn = document.getElementById('authBtn');
+
     travelerSound.volume = 1.0;
+    let displayTimeout = null;
+    let listenerUnsub = null;
 
-    let frequency = "alpha-1";
-    let unsubscribe = null;
+    banner.addEventListener('click', () => {
+      travelerSound.play().then(() => {
+        travelerSound.pause();
+        banner.style.display = 'none';
+      }).catch(() => {});
+    });
 
-    function setFrequency(freq) {
-      frequency = freq;
-      listenToSignals();
-    }
+    authBtn.addEventListener('click', () => {
+      const user = auth.currentUser;
+      if (user) {
+        signOut(auth);
+      } else {
+        signInWithPopup(auth, provider).catch(console.error);
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      authBtn.textContent = user ? "Sign Out" : "Sign In";
+    });
 
     function clearMessage() {
+      messageEl.textContent = "No signals received yet.";
       waitingEl.style.display = "block";
       incomingEl.style.display = "none";
-      messageEl.textContent = "No signals received yet.";
     }
 
-    function showIncomingMessage(code, statusText, owner) {
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
-    }
+    function listenToFrequency(freq) {
+      if (listenerUnsub) listenerUnsub();
+      clearMessage();
 
-    function listenToSignals() {
-      if (unsubscribe) unsubscribe();
-
-      const signalsRef = ref(db, `frequencies/${frequency}/signals`);
-      unsubscribe = onChildAdded(signalsRef, async (snapshot) => {
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+      listenerUnsub = onChildAdded(signalsRef, async (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
+
+        waitingEl.style.display = "none";
+        incomingEl.style.display = "block";
 
         travelerSound.pause();
         travelerSound.currentTime = 0;
         travelerSound.play().catch(() => {});
 
         const code = data.decrypted || data.code || "UNKNOWN";
-        const codeSnap = await get(ref(db, `codes/${code}`));
+        const codeRef = ref(db, `codes/${code}`);
+        const codeSnap = await get(codeRef);
         const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
         let statusText = "Received Unknown";
-        if (codeInfo?.valid === false) {
-          statusText = "Received INVALID";
-        } else if (codeInfo?.valid === true) {
-          statusText = "Received and Verified";
+        if (codeInfo) {
+          if (codeInfo.valid === false) statusText = "Received INVALID";
+          else if (codeInfo.valid === true) statusText = "Received and Verified";
         }
 
         const owner = codeInfo?.owner || "UNKNOWN";
-        showIncomingMessage(code, statusText, owner);
 
+        messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
+
+        // Remove signal after 15s
         setTimeout(() => {
           remove(snapshot.ref).catch(console.error);
         }, 15000);
 
-        setTimeout(() => {
-          clearMessage();
-        }, 10000);
+        // Clear message after 10s
+        if (displayTimeout) clearTimeout(displayTimeout);
+        displayTimeout = setTimeout(clearMessage, 10000);
       });
     }
 
-    function signIn() {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(console.error);
-    }
-
-    function signOut() {
-      firebaseSignOut(auth);
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      const isLoggedIn = !!user;
-      loginBanner.style.display = isLoggedIn ? "none" : "block";
-      document.getElementById("controls").style.display = isLoggedIn ? "block" : "none";
-
-      if (isLoggedIn) {
-        listenToSignals();
-      } else {
-        if (unsubscribe) unsubscribe();
-        clearMessage();
-      }
+    freqSelect.addEventListener('change', () => {
+      listenToFrequency(freqSelect.value);
     });
+
+    listenToFrequency(freqSelect.value);
   </script>
 </body>
 </html>
