@@ -1,76 +1,230 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
-  <title>SGC GDO Transmitter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SGC Transmitter</title>
   <style>
     body {
-      background-color: black;
-      color: #0f0;
-      font-family: 'Courier New', Courier, monospace;
+      background: #0b121c;
+      color: #00ffcc;
+      font-family: 'Orbitron', sans-serif;
       text-align: center;
-      padding: 2em;
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      user-select: none;
     }
-    input, select, button {
-      font-size: 1.2em;
+    h1 {
+      margin-bottom: 0.5em;
+      font-weight: 900;
+      font-size: 2.8rem;
+      text-shadow: 0 0 10px #00ffccaa;
+    }
+    #loginUI, #transmitterUI {
+      width: 100%;
+      max-width: 500px;
+      background: #001622;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 0 25px #00ffcc44 inset;
+    }
+    button {
+      cursor: pointer;
+      padding: 0.6em 1.2em;
+      background: #00ffcc;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      color: #001622;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #00ccaa;
+    }
+    select, input[type="text"] {
+      font-size: 1.1rem;
       padding: 0.5em;
-      margin: 1em;
+      margin-top: 0.8em;
+      width: 100%;
+      border-radius: 6px;
+      border: none;
+      background: #003344;
+      color: #00ffcc;
+      box-shadow: 0 0 10px #00ffcc33 inset;
+      user-select: text;
     }
-    #status {
-      margin-top: 1em;
-      font-weight: bold;
+    #statusMsg {
+      margin-top: 1rem;
+      font-family: monospace;
+      font-size: 1.3rem;
+      min-height: 2em;
+      text-shadow: 0 0 8px #00ffcccc;
+    }
+    #logoutBtn {
+      margin-top: 1.5rem;
+      background: #c00;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <h1>GDO Transmission Console</h1>
-  <label>Enter Code:</label>
-  <input type="text" id="codeInput" />
-  <br />
-  <label>Select Frequency:</label>
-  <select id="freqSelect">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-    <option value="charlie-3">Charlie-3</option>
-  </select>
-  <br />
-  <button onclick="transmit()">Transmit</button>
-  <div id="status"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script>
+  <h1>SGC Transmitter</h1>
+
+  <div id="loginUI">
+    <h2>Please sign in to transmit</h2>
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <div id="transmitterUI" style="display:none;">
+    <label for="frequencySelect">Select Frequency:</label>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+    </select>
+
+    <label for="codeInput">Enter Code:</label>
+    <input type="text" id="codeInput" placeholder="Enter code here" maxlength="12" autocomplete="off" />
+
+    <button id="transmitBtn">Transmit</button>
+
+    <div id="statusMsg"></div>
+
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      push,
+      set,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
       databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "project-gdo",
+      storageBucket: "project-gdo.firebasestorage.app",
+      messagingSenderId: "758705115255",
+      appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    // Init Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-    function transmit() {
-      const code = document.getElementById('codeInput').value.trim();
-      const freq = document.getElementById('freqSelect').value;
-      const status = document.getElementById('status');
+    // Elements
+    const loginUI = document.getElementById("loginUI");
+    const transmitterUI = document.getElementById("transmitterUI");
+    const googleSignInBtn = document.getElementById("googleSignIn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const freqSelect = document.getElementById("frequencySelect");
+    const codeInput = document.getElementById("codeInput");
+    const transmitBtn = document.getElementById("transmitBtn");
+    const statusMsg = document.getElementById("statusMsg");
+
+    // Google Sign-In
+    googleSignInBtn.addEventListener("click", () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(e => {
+        console.error("Sign-in error:", e);
+        alert("Sign-in failed, see console.");
+      });
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).catch(console.error);
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        console.log("User logged in:", user.email);
+        loginUI.style.display = "none";
+        transmitterUI.style.display = "block";
+      } else {
+        console.log("User logged out");
+        loginUI.style.display = "block";
+        transmitterUI.style.display = "none";
+        resetStatus();
+      }
+    });
+
+    // Transmit button click handler
+    transmitBtn.addEventListener("click", async () => {
+      const code = codeInput.value.trim();
+      const freq = freqSelect.value;
 
       if (!code) {
-        status.textContent = "Please enter a code.";
+        alert("Please enter a code.");
         return;
       }
 
-      const signalRef = db.ref(`frequencies/${freq}/signals`).push();
-      signalRef.set({ code });
+      resetStatus();
+      try {
+        statusMsg.textContent = "Encrypting...";
+        await delay(1000);
 
-      status.textContent = "Encrypting...";
+        statusMsg.textContent = "Transmitting...";
+        await delay(1500);
 
-      setTimeout(() => {
-        status.textContent = "Transmitting...";
-        setTimeout(() => {
-          status.textContent = "Transmitted!";
-        }, 1000);
-      }, 1000);
+        // Push the signal to the frequency path
+        const signalsRef = ref(db, `frequencies/${freq}/signals`);
+        const newSignalRef = push(signalsRef);
+
+        // Store signal with "code" and "decrypted" fields for demo
+        await set(newSignalRef, {
+          code,
+          decrypted: code,
+          timestamp: serverTimestamp()
+        });
+
+        // Optionally set the code info in /codes/ if it doesn't exist (demo)
+        const codeRef = ref(db, `codes/${code}`);
+        // For demonstration, we can set valid=true and access=true for all transmitted codes,
+        // you can customize this logic or preload your DB with codes.
+        await set(codeRef, {
+          owner: auth.currentUser.email || "Unknown Owner",
+          valid: true,
+          access: true
+        });
+
+        statusMsg.textContent = "Transmitted ✔";
+
+        // Clear input
+        codeInput.value = "";
+      } catch (e) {
+        console.error("Transmit error:", e);
+        statusMsg.textContent = "Transmit failed!";
+      }
+    });
+
+    function resetStatus() {
+      statusMsg.textContent = "";
+    }
+
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
   </script>
 </body>
