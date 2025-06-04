@@ -1,51 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
     body {
-      font-family: "Orbitron", monospace;
-      background: radial-gradient(ellipse at center, #000000 0%, #111111 100%);
-      color: #33ff33;
-      text-align: center;
       margin: 0; padding: 0;
       height: 100vh;
+      background: radial-gradient(ellipse at center, #000000 0%, #111111 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      font-family: 'Orbitron', monospace;
+      color: #33ff33;
       user-select: none;
       overflow: hidden;
-    }
-    #banner {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      background: #222;
-      color: #eee;
-      padding: 12px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      z-index: 9999;
-      box-shadow: 0 2px 6px #000;
-    }
-    #banner button {
-      background: #33ff33;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-      color: #000;
-      font-family: "Orbitron", monospace;
-      transition: background 0.3s ease;
-    }
-    #banner button:hover {
-      background: #22cc22;
     }
 
     h1 {
@@ -55,70 +26,88 @@
         0 0 10px #33ff33,
         0 0 20px #33ff33,
         0 0 30px #33ff33;
-    }
-    #status {
-      font-size: 1.8rem;
-      margin-bottom: 0.3rem;
-      height: 2.2rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
       user-select: none;
     }
-    #status.blink {
-      animation: blinkgreen 1.2s linear infinite;
+
+    #statusBanner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #111;
+      color: #33ff33;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      text-align: center;
+      box-shadow: 0 2px 5px #33ff33;
+      user-select: none;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
     }
-    @keyframes blinkgreen {
-      0%, 100% { color: #33ff33; text-shadow: 0 0 15px #33ff33; }
-      50% { color: #000; text-shadow: none; }
+
+    #enableSoundBtn {
+      background: #33ff33;
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      padding: 0.3rem 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow:
+        0 0 10px #33ff33;
+      transition: background-color 0.3s ease;
+    }
+    #enableSoundBtn:hover {
+      background-color: #22cc22;
     }
 
     #message {
-      font-size: 1.3rem;
+      font-size: 3rem;
       font-weight: bold;
+      margin: 2rem 0 0 0;
+      text-align: center;
+      text-shadow:
+        0 0 10px #33ff33,
+        0 0 20px #33ff33,
+        0 0 30px #33ff33;
+      user-select: none;
+    }
+
+    #info {
       margin-top: 1rem;
+      font-size: 1.5rem;
       white-space: pre-line;
-      max-width: 480px;
-      background: #111;
-      padding: 1rem 2rem;
-      border-radius: 8px;
-      box-shadow:
-        inset 0 0 15px #33ff33;
-      min-height: 130px;
+      text-align: center;
+      max-width: 400px;
+      user-select: none;
+    }
+
+    .blink {
+      animation: blinkAnimation 1s steps(2, start) infinite;
+    }
+
+    @keyframes blinkAnimation {
+      0%, 50% { opacity: 1; }
+      50.1%, 100% { opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-  <div id="banner">
-    This site uses sounds. Please enable them — <button id="enableSoundBtn">Enable Sound</button>
+  <div id="statusBanner">
+    This site uses sounds. Please enable sound to hear incoming signals.
+    <button id="enableSoundBtn">Enable Sound</button>
   </div>
 
-  <h1>!INCOMING TRAVELER!</h1>
-  <div id="status">Awaiting signal...</div>
-  <div id="message"></div>
+  <h1 id="message">Awaiting Signal...</h1>
+  <div id="info"></div>
 
   <script type="module">
-    // Sound control & banner logic
-    const banner = document.getElementById('banner');
-    const enableSoundBtn = document.getElementById('enableSoundBtn');
-
-    // Prepare audio but don't autoplay (user gesture required)
-    const soundUrl = "https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3";
-    const incomingSound = new Audio(soundUrl);
-    incomingSound.volume = 1.0; // max volume for loudness
-    incomingSound.preload = 'auto';
-
-    let soundEnabled = false;
-
-    enableSoundBtn.addEventListener('click', () => {
-      incomingSound.play().catch(() => {});
-      soundEnabled = true;
-      banner.style.display = 'none';
-    });
-
-    // Firebase imports and config
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -133,65 +122,52 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const statusEl = document.getElementById('status');
     const messageEl = document.getElementById('message');
+    const infoEl = document.getElementById('info');
+    const statusBanner = document.getElementById('statusBanner');
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
 
-    let currentTimeout = null;
+    const audio = new Audio('https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3');
+    audio.volume = 0.7;
 
-    function clearMessage() {
-      messageEl.textContent = '';
-      statusEl.textContent = 'Awaiting signal...';
-      statusEl.classList.remove('blink');
-    }
+    let soundEnabled = false;
 
-    // Listen on one frequency (example alpha-1), you can expand later
-    const freq = 'alpha-1';
-    const signalsRef = ref(db, `frequencies/${freq}/signals`);
-
-    onChildAdded(signalsRef, async (snapshot) => {
-      const data = snapshot.val();
-
-      if (!data) return;
-
-      const code = data.decrypted || data.code || "UNKNOWN";
-
-      // Show blinking incoming traveler
-      statusEl.textContent = '!INCOMING TRAVELER!';
-      statusEl.classList.add('blink');
-
-      if (soundEnabled) {
-        incomingSound.currentTime = 0;
-        incomingSound.play().catch(() => {});
-      }
-
-      // Get code info
-      const codeRef = ref(db, `codes/${code}`);
-      const codeSnap = await get(codeRef);
-      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
-
-      let owner = codeInfo?.owner || "UNKNOWN";
-      let valid = codeInfo?.valid ?? null; // true, false or null
-
-      let statusText = "";
-      if (valid === true) statusText = "Received and Verified";
-      else if (valid === false) statusText = "Received INVALID";
-      else statusText = "Received Unknown";
-
-      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
-
-      // Remove blink after 10s & hide message
-      clearTimeout(currentTimeout);
-      currentTimeout = setTimeout(() => {
-        clearMessage();
-      }, 10000);
-
-      // Delete the signal after 15s
-      setTimeout(() => {
-        snapshot.ref.remove().catch(() => {});
-      }, 15000);
+    enableSoundBtn.addEventListener('click', () => {
+      audio.play().catch(() => {});
+      soundEnabled = true;
+      statusBanner.style.display = 'none';
     });
 
-    clearMessage();
+    // Listen to all three frequencies
+    const frequencies = ['alpha-1', 'bravo-2', 'charlie-3'];
+
+    frequencies.forEach(freq => {
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+      onChildAdded(signalsRef, snapshot => {
+        const data = snapshot.val();
+        if (!data || !data.code) return;
+
+        // Play sound if enabled
+        if (soundEnabled) {
+          audio.currentTime = 0;
+          audio.play().catch(() => {});
+        }
+
+        // Blink message
+        messageEl.textContent = '!INCOMING TRAVELER!';
+        messageEl.classList.add('blink');
+
+        // Show decrypting message and received info
+        infoEl.textContent = `Receiving...\nDecrypting...\n\nCode: ${data.code}\nOwner: UNKNOWN\nStatus: Received Unknown`;
+
+        // After 10 seconds, reset display
+        setTimeout(() => {
+          messageEl.textContent = 'Awaiting Signal...';
+          messageEl.classList.remove('blink');
+          infoEl.textContent = '';
+        }, 10000);
+      });
+    });
   </script>
 
 </body>
