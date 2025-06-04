@@ -18,7 +18,7 @@
       height: 100vh;
       user-select: none;
       text-align: center;
-      padding-top: 4rem;
+      padding-top: 5rem;
       overflow: hidden;
     }
 
@@ -74,10 +74,11 @@
       text-align: center;
       z-index: 999;
       box-shadow: 0 2px 8px #00ffff66;
+      cursor: pointer;
     }
 
-    #frequencySelect {
-      margin-bottom: 1rem;
+    #frequencySelect, #authBtn {
+      margin: 0.5rem;
       font-size: 1rem;
       background-color: #001a1a;
       color: #00ffff;
@@ -95,11 +96,14 @@
 
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <select id="frequencySelect">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-    <option value="charlie-3">Charlie-3</option>
-  </select>
+  <div>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+    </select>
+    <button id="authBtn">Sign In</button>
+  </div>
 
   <div id="status">
     <div id="waiting">Awaiting Signal...</div>
@@ -114,7 +118,20 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, get, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import {
+      getDatabase,
+      ref,
+      onChildAdded,
+      get,
+      remove
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import {
+      getAuth,
+      signInWithPopup,
+      signOut,
+      GoogleAuthProvider,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -128,6 +145,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
     const banner = document.getElementById('banner');
     const freqSelect = document.getElementById('frequencySelect');
@@ -135,6 +154,7 @@
     const incomingEl = document.getElementById('incoming');
     const messageEl = document.getElementById('message');
     const travelerSound = document.getElementById('travelerSound');
+    const authBtn = document.getElementById('authBtn');
 
     travelerSound.volume = 1.0;
     let displayTimeout = null;
@@ -147,6 +167,19 @@
       }).catch(() => {});
     });
 
+    authBtn.addEventListener('click', () => {
+      const user = auth.currentUser;
+      if (user) {
+        signOut(auth);
+      } else {
+        signInWithPopup(auth, provider).catch(console.error);
+      }
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      authBtn.textContent = user ? "Sign Out" : "Sign In";
+    });
+
     function clearMessage() {
       messageEl.textContent = "No signals received yet.";
       waitingEl.style.display = "block";
@@ -155,7 +188,6 @@
 
     function listenToFrequency(freq) {
       if (listenerUnsub) listenerUnsub();
-
       clearMessage();
 
       const signalsRef = ref(db, `frequencies/${freq}/signals`);
