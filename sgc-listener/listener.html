@@ -1,115 +1,62 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SGC Listener</title>
   <style>
     body {
-      background: #0b121c;
-      color: #00ffcc;
+      background: #0b0f1a;
+      color: #00ffff;
       font-family: 'Orbitron', sans-serif;
       text-align: center;
-      padding: 2rem;
-      min-height: 100vh;
+      padding: 3rem;
+      margin: 0;
+      user-select: none;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
       align-items: center;
-      user-select: none;
+      min-height: 100vh;
     }
+
     h1 {
-      margin-bottom: 0.5em;
-      font-weight: 900;
-      font-size: 2.8rem;
-      text-shadow: 0 0 10px #00ffccaa;
+      font-size: 2.5rem;
+      text-shadow: 0 0 15px #00ffffaa;
+      margin-bottom: 2rem;
     }
-    #loginUI, #listenerUI {
-      width: 100%;
-      max-width: 500px;
-      background: #001622;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 0 25px #00ffcc44 inset;
-    }
-    button {
-      cursor: pointer;
-      padding: 0.6em 1.2em;
-      background: #00ffcc;
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      color: #001622;
-      font-size: 1.1rem;
-      margin-top: 1rem;
-      transition: background-color 0.3s ease;
-      user-select: none;
-    }
-    button:hover {
-      background: #00ccaa;
-    }
-    select {
-      font-size: 1.1rem;
-      padding: 0.5em;
-      margin-top: 0.8em;
-      width: 100%;
-      border-radius: 6px;
-      border: none;
-      background: #003344;
+
+    #messageBox {
+      background: #001a26;
       color: #00ffcc;
-      box-shadow: 0 0 10px #00ffcc33 inset;
-      user-select: none;
-    }
-    #log {
-      margin-top: 1rem;
+      font-size: 1.4rem;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffff66 inset;
       white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 1.1rem;
-      min-height: 8em;
-      text-align: left;
-      background: #002233;
-      border-radius: 6px;
-      padding: 1rem;
-      box-shadow: inset 0 0 15px #00ffcc44;
+      min-height: 180px;
+      max-width: 90vw;
+      width: 600px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
+
+    #messageBox.visible {
+      opacity: 1;
+    }
+
     body.alert {
-      background-color: #700;
-      color: white;
-      transition: background-color 0.5s ease;
+      background-color: #440000;
+      transition: background-color 0.4s ease;
     }
   </style>
 </head>
 <body>
 
-  <h1>SGC Command Terminal</h1>
+  <h1>!INCOMING TRAVELER!</h1>
+  <div id="messageBox"></div>
 
-  <div id="loginUI">
-    <h2>Please sign in to receive signals</h2>
-    <button id="googleSignIn">Sign in with Google</button>
-  </div>
-
-  <div id="listenerUI" style="display:none;">
-    <label for="frequencySelect">Select Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
-
-    <pre id="log">Waiting for signals...</pre>
-    <button id="logoutBtn">Logout</button>
-  </div>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
     import {
       getDatabase,
       ref,
@@ -123,119 +70,68 @@
       authDomain: "project-gdo.firebaseapp.com",
       databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "project-gdo",
-      storageBucket: "project-gdo.firebasestorage.app",
+      storageBucket: "project-gdo.appspot.com",
       messagingSenderId: "758705115255",
       appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Elements
-    const loginUI = document.getElementById("loginUI");
-    const listenerUI = document.getElementById("listenerUI");
-    const googleSignInBtn = document.getElementById("googleSignIn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const freqSelect = document.getElementById("frequencySelect");
-    const log = document.getElementById("log");
+    const freq = "alpha-1"; // default frequency to monitor
+    const signalsRef = ref(db, `frequencies/${freq}/signals`);
+    const messageBox = document.getElementById("messageBox");
 
-    let currentListenerUnsub = null;
+    let hideTimeout = null;
 
-    // Sign in with Google
-    googleSignInBtn.addEventListener("click", () => {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(e => {
-        console.error("Sign-in error:", e);
-        alert("Sign-in failed, see console.");
-      });
-    });
+    onChildAdded(signalsRef, async (snapshot) => {
+      const data = snapshot.val();
+      const key = snapshot.key;
+      if (!data?.code) return;
 
-    // Logout
-    logoutBtn.addEventListener("click", () => {
-      signOut(auth).catch(console.error);
-    });
+      // Incoming display
+      messageBox.classList.remove("visible");
+      messageBox.textContent = "!INCOMING TRAVELER!\nReceiving...\nDecrypting...";
+      await delay(1500);
 
-    // Listen for auth state changes
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        console.log("User logged in:", user.email);
-        loginUI.style.display = "none";
-        listenerUI.style.display = "block";
-        startListening(freqSelect.value);
+      const code = data.code;
+      const codeRef = ref(db, `codes/${code}`);
+      const codeSnap = await get(codeRef);
+      const info = codeSnap.exists() ? codeSnap.val() : null;
+
+      let status;
+      if (info === null || info.valid === null || typeof info.valid !== "boolean") {
+        status = "Received Unknown";
+      } else if (info.valid === false) {
+        status = "Received INVALID";
       } else {
-        console.log("User logged out");
-        loginUI.style.display = "block";
-        listenerUI.style.display = "none";
-        stopListening();
-        log.textContent = "Waiting for signals...";
+        status = "Received and Verified";
       }
+
+      const owner = info?.owner ?? "Unknown Entity";
+      const access = info?.access === true ? "✔ ACCESS GRANTED" : "✖ ACCESS DENIED";
+
+      const displayText = `CODE: ${code}\n${status}\nOWNER: ${owner}\n${access}`;
+      messageBox.textContent = displayText;
+      messageBox.classList.add("visible");
+      document.body.classList.add("alert");
+
+      // Hide and reset after 10 seconds
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => {
+        messageBox.textContent = "";
+        messageBox.classList.remove("visible");
+        document.body.classList.remove("alert");
+      }, 10000);
+
+      // Auto-delete this code after 15 seconds
+      setTimeout(() => {
+        remove(snapshot.ref).catch(console.error);
+      }, 15000);
     });
 
-    freqSelect.addEventListener("change", () => {
-      startListening(freqSelect.value);
-    });
-
-    function stopListening() {
-      if (currentListenerUnsub) {
-        currentListenerUnsub();
-        currentListenerUnsub = null;
-      }
-    }
-
-    function startListening(freq) {
-      stopListening();
-
-      log.textContent = `Listening on frequency: ${freq}...\n`;
-
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-
-      currentListenerUnsub = onChildAdded(signalsRef, async snapshot => {
-        const key = snapshot.key;
-        const data = snapshot.val();
-        console.log("Signal received:", key, data);
-
-        const code = data.decrypted || data.code || "UNKNOWN";
-
-        const codeRef = ref(db, `codes/${code}`);
-        const codeSnap = await get(codeRef);
-        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
-
-        let statusText = "";
-        if (codeInfo) {
-          if (codeInfo.valid === false) {
-            statusText = "Received INVALID";
-          } else if (codeInfo.access) {
-            statusText = "Received and Verified";
-          } else {
-            statusText = "Received Unknown";
-          }
-        } else {
-          statusText = "Received Unknown";
-        }
-
-        const owner = codeInfo?.owner || "UNKNOWN";
-
-        const message = `!INCOMING TRAVELER!\nOwner: ${owner}\nCode: ${code}\nStatus: ${statusText}\n\n`;
-
-        log.textContent = message + log.textContent;
-
-        if (!codeInfo || codeInfo.valid === false) {
-          document.body.classList.add("alert");
-          setTimeout(() => document.body.classList.remove("alert"), 3000);
-        }
-
-        // Remove signal after 15s
-        setTimeout(async () => {
-          try {
-            await remove(ref(db, `frequencies/${freq}/signals/${key}`));
-            console.log(`Signal ${key} removed from database.`);
-          } catch (e) {
-            console.error("Error removing signal:", e);
-          }
-        }, 15000);
-      });
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
   </script>
 
