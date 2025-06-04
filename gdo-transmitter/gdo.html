@@ -24,7 +24,7 @@
       font-size: 2.8rem;
       text-shadow: 0 0 10px #00ffccaa;
     }
-    #loginUI, #transmitterUI {
+    #transmitterUI {
       width: 100%;
       max-width: 500px;
       background: #001622;
@@ -67,23 +67,13 @@
       min-height: 2em;
       text-shadow: 0 0 8px #00ffcccc;
     }
-    #logoutBtn {
-      margin-top: 1.5rem;
-      background: #c00;
-      color: white;
-    }
   </style>
 </head>
 <body>
 
   <h1>SGC Transmitter</h1>
 
-  <div id="loginUI">
-    <h2>Please sign in to transmit</h2>
-    <button id="googleSignIn">Sign in with Google</button>
-  </div>
-
-  <div id="transmitterUI" style="display:none;">
+  <div id="transmitterUI">
     <label for="frequencySelect">Select Frequency:</label>
     <select id="frequencySelect">
       <option value="alpha-1">Alpha-1</option>
@@ -91,32 +81,25 @@
       <option value="charlie-3">Charlie-3</option>
     </select>
 
-    <label for="codeInput">Enter Code:</label>
-    <input type="text" id="codeInput" placeholder="Enter code here" maxlength="12" autocomplete="off" />
+    <label for="codeInput">Enter Code (max 9 characters):</label>
+    <input type="text" id="codeInput" placeholder="Enter code here" maxlength="9" autocomplete="off" />
 
     <button id="transmitBtn">Transmit</button>
 
     <div id="statusMsg"></div>
-
-    <button id="logoutBtn">Logout</button>
   </div>
 
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import {
-      getAuth,
-      GoogleAuthProvider,
-      signInWithPopup,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import {
       getDatabase,
       ref,
       push,
+      get,
       set,
-      serverTimestamp
+      serverTimestamp,
+      remove
     } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -129,54 +112,24 @@
       appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
 
-    // Init Firebase
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // Elements
-    const loginUI = document.getElementById("loginUI");
-    const transmitterUI = document.getElementById("transmitterUI");
-    const googleSignInBtn = document.getElementById("googleSignIn");
-    const logoutBtn = document.getElementById("logoutBtn");
     const freqSelect = document.getElementById("frequencySelect");
     const codeInput = document.getElementById("codeInput");
     const transmitBtn = document.getElementById("transmitBtn");
     const statusMsg = document.getElementById("statusMsg");
 
-    // Google Sign-In
-    googleSignInBtn.addEventListener("click", () => {
-      const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(e => {
-        console.error("Sign-in error:", e);
-        alert("Sign-in failed, see console.");
-      });
-    });
-
-    logoutBtn.addEventListener("click", () => {
-      signOut(auth).catch(console.error);
-    });
-
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        console.log("User logged in:", user.email);
-        loginUI.style.display = "none";
-        transmitterUI.style.display = "block";
-      } else {
-        console.log("User logged out");
-        loginUI.style.display = "block";
-        transmitterUI.style.display = "none";
-        resetStatus();
-      }
-    });
-
-    // Transmit button click handler
     transmitBtn.addEventListener("click", async () => {
-      const code = codeInput.value.trim();
+      let code = codeInput.value.trim();
       const freq = freqSelect.value;
 
       if (!code) {
         alert("Please enter a code.");
+        return;
+      }
+      if (code.length > 9) {
+        alert("Code must be 9 characters or less.");
         return;
       }
 
@@ -188,30 +141,32 @@
         statusMsg.textContent = "Transmitting...";
         await delay(1500);
 
-        // Push the signal to the frequency path
         const signalsRef = ref(db, `frequencies/${freq}/signals`);
         const newSignalRef = push(signalsRef);
 
-        // Store signal with "code" and "decrypted" fields for demo
         await set(newSignalRef, {
           code,
           decrypted: code,
           timestamp: serverTimestamp()
         });
 
-        // Optionally set the code info in /codes/ if it doesn't exist (demo)
+        // Auto-delete this signal after 15 seconds
+        setTimeout(() => {
+          remove(newSignalRef).catch(console.error);
+        }, 15000);
+
+        // Create default code info if missing, no overwrite
         const codeRef = ref(db, `codes/${code}`);
-        // For demonstration, we can set valid=true and access=true for all transmitted codes,
-        // you can customize this logic or preload your DB with codes.
-        await set(codeRef, {
-          owner: auth.currentUser.email || "Unknown Owner",
-          valid: true,
-          access: true
-        });
+        const codeSnap = await get(codeRef);
+        if (!codeSnap.exists()) {
+          await set(codeRef, {
+            owner: "Unknown Owner",
+            valid: null,
+            access: false
+          });
+        }
 
         statusMsg.textContent = "Transmitted ✔";
-
-        // Clear input
         codeInput.value = "";
       } catch (e) {
         console.error("Transmit error:", e);
