@@ -5,135 +5,86 @@
   <title>SGC Listener</title>
   <style>
     body {
-      background: #0b0f1a;
-      color: #00ffff;
-      font-family: 'Orbitron', sans-serif;
+      background: #000;
+      color: #0ff;
+      font-family: 'Courier New', Courier, monospace;
       text-align: center;
       padding: 3rem;
-      margin: 0;
-      user-select: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
     }
 
     h1 {
+      color: #0ff;
       font-size: 2.5rem;
-      text-shadow: 0 0 15px #00ffffaa;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
     }
 
-    #messageBox {
-      background: #001a26;
-      color: #00ffcc;
-      font-size: 1.4rem;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #00ffff66 inset;
+    #loginUI, #listenerUI {
+      margin-top: 2rem;
+    }
+
+    select {
+      font-size: 1rem;
+      padding: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    #log {
       white-space: pre-wrap;
-      min-height: 180px;
-      max-width: 90vw;
-      width: 600px;
-      opacity: 0;
-      transition: opacity 0.5s ease;
+      margin-top: 2rem;
+      font-size: 1.2rem;
     }
 
-    #messageBox.visible {
-      opacity: 1;
+    #statusMessage {
+      font-size: 2rem;
+      margin-top: 2rem;
+      color: #0ff;
     }
 
-    body.alert {
-      background-color: #440000;
-      transition: background-color 0.4s ease;
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .blink {
+      animation: blink 1s steps(2, start) infinite;
+      color: yellow;
+    }
+
+    button {
+      background: #0ff;
+      color: black;
+      padding: 10px 20px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
+  <h1>SGC Command Terminal</h1>
 
-  <h1>!INCOMING TRAVELER!</h1>
-  <div id="messageBox"></div>
+  <div id="loginUI">
+    <h2>Sign in to SGC</h2>
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <div id="listenerUI" style="display: none;">
+    <label>Select Frequency:</label>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
+    </select>
+    <div id="statusMessage">Awaiting Signal...</div>
+    <div id="log"></div>
+    <button id="logout">Logout</button>
+  </div>
 
   <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      onChildAdded,
-      get,
-      remove
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const freq = "alpha-1"; // default frequency to monitor
-    const signalsRef = ref(db, `frequencies/${freq}/signals`);
-    const messageBox = document.getElementById("messageBox");
-
-    let hideTimeout = null;
-
-    onChildAdded(signalsRef, async (snapshot) => {
-      const data = snapshot.val();
-      const key = snapshot.key;
-      if (!data?.code) return;
-
-      // Incoming display
-      messageBox.classList.remove("visible");
-      messageBox.textContent = "!INCOMING TRAVELER!\nReceiving...\nDecrypting...";
-      await delay(1500);
-
-      const code = data.code;
-      const codeRef = ref(db, `codes/${code}`);
-      const codeSnap = await get(codeRef);
-      const info = codeSnap.exists() ? codeSnap.val() : null;
-
-      let status;
-      if (info === null || info.valid === null || typeof info.valid !== "boolean") {
-        status = "Received Unknown";
-      } else if (info.valid === false) {
-        status = "Received INVALID";
-      } else {
-        status = "Received and Verified";
-      }
-
-      const owner = info?.owner ?? "Unknown Entity";
-      const access = info?.access === true ? "✔ ACCESS GRANTED" : "✖ ACCESS DENIED";
-
-      const displayText = `CODE: ${code}\n${status}\nOWNER: ${owner}\n${access}`;
-      messageBox.textContent = displayText;
-      messageBox.classList.add("visible");
-      document.body.classList.add("alert");
-
-      // Hide and reset after 10 seconds
-      clearTimeout(hideTimeout);
-      hideTimeout = setTimeout(() => {
-        messageBox.textContent = "";
-        messageBox.classList.remove("visible");
-        document.body.classList.remove("alert");
-      }, 10000);
-
-      // Auto-delete this code after 15 seconds
-      setTimeout(() => {
-        remove(snapshot.ref).catch(console.error);
-      }, 15000);
-    });
-
-    function delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-  </script>
-
+  <script src="listener.js"></script>
 </body>
 </html>
