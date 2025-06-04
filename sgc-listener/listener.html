@@ -5,6 +5,7 @@
   <title>SGC Listener</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
     body {
       margin: 0;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
@@ -14,107 +15,120 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      height: 100vh;
-      overflow: hidden;
-      padding: 2rem;
-      user-select: none;
+      min-height: 100vh;
       text-align: center;
+      padding: 2rem;
     }
+
     h1 {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
+      font-size: 2.5rem;
+      margin-bottom: 0.5em;
       text-shadow: 0 0 8px #00ffff;
     }
-    #auth {
-      margin-bottom: 1rem;
-    }
-    #auth input {
-      font-family: 'Orbitron', monospace;
-      padding: 5px;
-      margin: 2px;
-    }
-    #auth button {
-      background-color: #003344;
-      color: #00ffff;
-      border: 1px solid #00ffff88;
-      font-family: 'Orbitron', monospace;
-      padding: 5px 12px;
-      cursor: pointer;
-    }
-    #controls {
-      margin-bottom: 1.5rem;
-    }
-    select {
-      background-color: #001d22;
-      color: #00ffff;
-      font-family: 'Orbitron', monospace;
-      border: 1px solid #00ffff88;
-      padding: 6px;
-    }
+
     #status {
-      font-size: 1.5rem;
-      margin-bottom: 1em;
+      font-size: 1.25rem;
+      margin-bottom: 1.5em;
     }
+
     #incoming {
-      font-size: 2.5rem;
+      font-size: 2rem;
       font-weight: bold;
       color: #00ffff;
+      text-shadow: 0 0 20px #00ffff;
       animation: blink 1s infinite;
       display: none;
+      margin-bottom: 1em;
     }
+
     @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.3; }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
     }
+
     #log {
       background: rgba(0, 20, 30, 0.8);
       border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 420px;
-      max-width: 90vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
+      border-radius: 10px;
+      padding: 1rem;
+      width: 90%;
+      max-width: 500px;
+      font-size: 1rem;
       white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
+      box-shadow: 0 0 10px #00ffff88;
+    }
+
+    #controls {
+      margin: 1rem 0;
+    }
+
+    button {
+      font-family: 'Orbitron', monospace;
+      background: #003344;
+      color: #8df9ff;
+      border: 2px solid #00ffff88;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background: #005566;
+    }
+
+    #loginBanner {
+      background: #001a1a;
+      padding: 1em;
+      border-bottom: 2px solid #00ffff;
+      margin-bottom: 1em;
+      width: 100%;
+      text-align: center;
+      display: none;
     }
   </style>
 </head>
 <body>
+  <div id="loginBanner">
+    <span>This site uses sounds and requires login to view data.</span>
+    <button onclick="signIn()">Sign In with Google</button>
+  </div>
 
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div id="auth">
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="login()">Sign In</button>
-    <button onclick="logout()">Sign Out</button>
-  </div>
-
-  <div id="controls">
+  <div id="controls" style="display: none;">
     Frequency:
-    <select id="frequencySelector">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
+    <button onclick="setFrequency('alpha-1')">Alpha-1</button>
+    <button onclick="setFrequency('bravo-2')">Bravo-2</button>
+    <button onclick="setFrequency('charlie-3')">Charlie-3</button>
+    <button onclick="signOut()">Sign Out</button>
   </div>
 
   <div id="status">
-    <div id="incoming">!INCOMING TRAVELER!</div>
     <div id="waiting">Awaiting Signal...</div>
+    <div id="incoming">!INCOMING TRAVELER!</div>
   </div>
 
-  <div id="log"><div id="message">No signals received yet.</div></div>
+  <div id="log">No signals received yet.</div>
 
   <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import {
+      getDatabase,
+      ref,
+      onChildAdded,
+      remove,
+      get
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged,
+      signOut as firebaseSignOut
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -130,81 +144,90 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    const waitingEl = document.getElementById('waiting');
-    const incomingEl = document.getElementById('incoming');
-    const messageEl = document.getElementById('message');
-    const travelerSound = document.getElementById('travelerSound');
+    const waitingEl = document.getElementById("waiting");
+    const incomingEl = document.getElementById("incoming");
+    const messageEl = document.getElementById("log");
+    const loginBanner = document.getElementById("loginBanner");
+    const travelerSound = document.getElementById("travelerSound");
     travelerSound.volume = 1.0;
 
-    const frequencySelector = document.getElementById("frequencySelector");
+    let frequency = "alpha-1";
+    let unsubscribe = null;
 
-    let currentListener = null;
-    let displayTimeout = null;
-    let currentUser = null;
-
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      incomingEl.style.display = "none";
-      waitingEl.style.display = "block";
+    function setFrequency(freq) {
+      frequency = freq;
+      listenToSignals();
     }
 
-    function attachListener(frequency) {
-      if (currentListener) currentListener(); // detach previous
+    function clearMessage() {
+      waitingEl.style.display = "block";
+      incomingEl.style.display = "none";
+      messageEl.textContent = "No signals received yet.";
+    }
+
+    function showIncomingMessage(code, statusText, owner) {
+      waitingEl.style.display = "none";
+      incomingEl.style.display = "block";
+      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
+    }
+
+    function listenToSignals() {
+      if (unsubscribe) unsubscribe();
 
       const signalsRef = ref(db, `frequencies/${frequency}/signals`);
-      currentListener = onChildAdded(signalsRef, async (snapshot) => {
-        if (!currentUser) return; // don't show anything if not signed in
-
+      unsubscribe = onChildAdded(signalsRef, async (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
-
-        waitingEl.style.display = "none";
-        incomingEl.style.display = "block";
 
         travelerSound.pause();
         travelerSound.currentTime = 0;
         travelerSound.play().catch(() => {});
 
         const code = data.decrypted || data.code || "UNKNOWN";
-        const codeRef = ref(db, `codes/${code}`);
-        const codeSnap = await get(codeRef);
+        const codeSnap = await get(ref(db, `codes/${code}`));
         const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-        let status = "Received Unknown";
-        if (codeInfo?.valid === false) status = "Received INVALID";
-        else if (codeInfo?.valid === true) status = "Received and Verified";
+        let statusText = "Received Unknown";
+        if (codeInfo?.valid === false) {
+          statusText = "Received INVALID";
+        } else if (codeInfo?.valid === true) {
+          statusText = "Received and Verified";
+        }
 
         const owner = codeInfo?.owner || "UNKNOWN";
+        showIncomingMessage(code, statusText, owner);
 
-        messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${status}`;
+        setTimeout(() => {
+          remove(snapshot.ref).catch(console.error);
+        }, 15000);
 
-        setTimeout(() => remove(snapshot.ref).catch(console.error), 15000);
-        if (displayTimeout) clearTimeout(displayTimeout);
-        displayTimeout = setTimeout(() => clearMessage(), 10000);
+        setTimeout(() => {
+          clearMessage();
+        }, 10000);
       });
     }
 
-    frequencySelector.addEventListener("change", () => {
-      attachListener(frequencySelector.value);
+    function signIn() {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(console.error);
+    }
+
+    function signOut() {
+      firebaseSignOut(auth);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      const isLoggedIn = !!user;
+      loginBanner.style.display = isLoggedIn ? "none" : "block";
+      document.getElementById("controls").style.display = isLoggedIn ? "block" : "none";
+
+      if (isLoggedIn) {
+        listenToSignals();
+      } else {
+        if (unsubscribe) unsubscribe();
+        clearMessage();
+      }
     });
-
-    window.login = () => {
-      const email = document.getElementById('email').value;
-      const pass = document.getElementById('password').value;
-      signInWithEmailAndPassword(auth, email, pass).catch(alert);
-    };
-
-    window.logout = () => {
-      signOut(auth).catch(alert);
-    };
-
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-      clearMessage();
-      attachListener(frequencySelector.value);
-    });
-
-    clearMessage(); // Initial state
   </script>
 </body>
 </html>
