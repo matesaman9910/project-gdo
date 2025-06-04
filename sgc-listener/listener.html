@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
@@ -14,75 +14,32 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       height: 100vh;
       user-select: none;
-      overflow: hidden;
       text-align: center;
-      padding: 2rem;
-      padding-top: 5rem; /* space for banner */
-    }
-
-    /* Banner styles */
-    #soundBanner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0, 255, 255, 0.1);
-      border-bottom: 2px solid #00ffff;
-      color: #00ffff;
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      font-family: 'Orbitron', monospace, sans-serif;
-      z-index: 1000;
-      user-select: none;
-      text-shadow: 0 0 5px #00ffff;
-    }
-
-    #enableSoundBtn {
-      background: transparent;
-      border: 2px solid #00ffff;
-      border-radius: 8px;
-      color: #00ffff;
-      font-weight: bold;
-      font-family: 'Orbitron', monospace, sans-serif;
-      cursor: pointer;
-      padding: 0.25rem 0.75rem;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    #enableSoundBtn:hover {
-      background-color: #00ffff;
-      color: #001419;
+      padding-top: 4rem;
+      overflow: hidden;
     }
 
     h1 {
-      font-size: 3rem;
-      margin-bottom: 0.2em;
+      font-size: 2.5rem;
       text-shadow: 0 0 8px #00ffff;
       letter-spacing: 0.1em;
+      margin-bottom: 0.5em;
     }
 
     #status {
       font-size: 1.5rem;
-      margin-bottom: 1.5em;
+      margin-bottom: 1em;
       text-shadow: 0 0 10px #00ffffcc;
     }
 
     #incoming {
       font-size: 2.5rem;
-      font-weight: 900;
+      font-weight: bold;
       color: #00ffff;
-      text-shadow:
-        0 0 10px #00ffff,
-        0 0 20px #00ffff,
-        0 0 30px #00ffff,
-        0 0 40px #00ffff;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
       animation: blink 1s infinite;
       margin-bottom: 1rem;
     }
@@ -101,28 +58,48 @@
       max-width: 90vw;
       min-height: 180px;
       color: #00ffff;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       white-space: pre-wrap;
-      box-shadow:
-        0 0 10px #00ffff88,
-        inset 0 0 15px #00ffff66;
-      user-select: text;
+      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
     }
 
-    #waiting {
-      font-style: italic;
-      opacity: 0.7;
+    #banner {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background-color: #002e2e;
+      color: #00ffff;
+      padding: 0.75rem;
+      font-size: 1rem;
+      text-align: center;
+      z-index: 999;
+      box-shadow: 0 2px 8px #00ffff66;
+    }
+
+    #frequencySelect {
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      background-color: #001a1a;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      padding: 0.5rem;
+      font-family: 'Orbitron', monospace;
     }
   </style>
 </head>
 <body>
 
-  <div id="soundBanner">
-    This site uses sounds to alert you. Please enable them: 
-    <button id="enableSoundBtn">Enable Sound</button>
+  <div id="banner">
+    This site uses sounds. Please click here to enable them.
   </div>
 
   <h1>SGC COMMAND TERMINAL</h1>
+
+  <select id="frequencySelect">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+    <option value="charlie-3">Charlie-3</option>
+  </select>
 
   <div id="status">
     <div id="waiting">Awaiting Signal...</div>
@@ -137,14 +114,14 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getDatabase, ref, onChildAdded, get, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
       databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "project-gdo",
-      storageBucket: "project-gdo.firebasestorage.app",
+      storageBucket: "project-gdo.appspot.com",
       messagingSenderId: "758705115255",
       appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
@@ -152,28 +129,23 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const banner = document.getElementById('banner');
+    const freqSelect = document.getElementById('frequencySelect');
     const waitingEl = document.getElementById('waiting');
     const incomingEl = document.getElementById('incoming');
     const messageEl = document.getElementById('message');
     const travelerSound = document.getElementById('travelerSound');
+
     travelerSound.volume = 1.0;
-
-    const soundBanner = document.getElementById('soundBanner');
-    const enableSoundBtn = document.getElementById('enableSoundBtn');
-
-    let soundEnabled = false;
-    enableSoundBtn.addEventListener('click', () => {
-      // Try to play a silent sound to unlock audio context
-      travelerSound.volume = 1.0;
-      travelerSound.play().catch(() => {});
-      soundEnabled = true;
-      soundBanner.style.display = 'none';
-    });
-
-    const frequency = "alpha-1";
-    const signalsRef = ref(db, `frequencies/${frequency}/signals`);
-
     let displayTimeout = null;
+    let listenerUnsub = null;
+
+    banner.addEventListener('click', () => {
+      travelerSound.play().then(() => {
+        travelerSound.pause();
+        banner.style.display = 'none';
+      }).catch(() => {});
+    });
 
     function clearMessage() {
       messageEl.textContent = "No signals received yet.";
@@ -181,55 +153,54 @@
       incomingEl.style.display = "none";
     }
 
-    clearMessage();
+    function listenToFrequency(freq) {
+      if (listenerUnsub) listenerUnsub();
 
-    onChildAdded(signalsRef, async (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
+      clearMessage();
 
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+      listenerUnsub = onChildAdded(signalsRef, async (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
 
-      if (soundEnabled) {
+        waitingEl.style.display = "none";
+        incomingEl.style.display = "block";
+
         travelerSound.pause();
         travelerSound.currentTime = 0;
         travelerSound.play().catch(() => {});
-      }
 
-      const code = data.decrypted || data.code || "UNKNOWN";
-      const codeRef = ref(db, `codes/${code}`);
-      const codeSnap = await get(codeRef);
-      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+        const code = data.decrypted || data.code || "UNKNOWN";
+        const codeRef = ref(db, `codes/${code}`);
+        const codeSnap = await get(codeRef);
+        const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-      let statusText = "";
-      if (codeInfo) {
-        if (codeInfo.valid === false) {
-          statusText = "Received INVALID";
-        } else if (codeInfo.valid === true) {
-          statusText = "Received and Verified";
-        } else {
-          statusText = "Received Unknown";
+        let statusText = "Received Unknown";
+        if (codeInfo) {
+          if (codeInfo.valid === false) statusText = "Received INVALID";
+          else if (codeInfo.valid === true) statusText = "Received and Verified";
         }
-      } else {
-        statusText = "Received Unknown";
-      }
 
-      const owner = codeInfo?.owner || "UNKNOWN";
+        const owner = codeInfo?.owner || "UNKNOWN";
 
-      messageEl.textContent =
-        `Owner: ${owner}\n` +
-        `Code: ${code}\n` +
-        `Status: ${statusText}`;
+        messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
 
-      setTimeout(() => {
-        remove(snapshot.ref).catch(console.error);
-      }, 15000);
+        // Remove signal after 15s
+        setTimeout(() => {
+          remove(snapshot.ref).catch(console.error);
+        }, 15000);
 
-      if (displayTimeout) clearTimeout(displayTimeout);
-      displayTimeout = setTimeout(() => {
-        clearMessage();
-      }, 10000);
+        // Clear message after 10s
+        if (displayTimeout) clearTimeout(displayTimeout);
+        displayTimeout = setTimeout(clearMessage, 10000);
+      });
+    }
+
+    freqSelect.addEventListener('change', () => {
+      listenToFrequency(freqSelect.value);
     });
+
+    listenToFrequency(freqSelect.value);
   </script>
 </body>
 </html>
