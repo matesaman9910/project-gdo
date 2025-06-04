@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
-    /* Stargate-themed styling */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
     body {
@@ -21,6 +20,45 @@
       overflow: hidden;
       text-align: center;
       padding: 2rem;
+      padding-top: 5rem; /* space for banner */
+    }
+
+    /* Banner styles */
+    #soundBanner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 255, 255, 0.1);
+      border-bottom: 2px solid #00ffff;
+      color: #00ffff;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      font-family: 'Orbitron', monospace, sans-serif;
+      z-index: 1000;
+      user-select: none;
+      text-shadow: 0 0 5px #00ffff;
+    }
+
+    #enableSoundBtn {
+      background: transparent;
+      border: 2px solid #00ffff;
+      border-radius: 8px;
+      color: #00ffff;
+      font-weight: bold;
+      font-family: 'Orbitron', monospace, sans-serif;
+      cursor: pointer;
+      padding: 0.25rem 0.75rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    #enableSoundBtn:hover {
+      background-color: #00ffff;
+      color: #001419;
     }
 
     h1 {
@@ -79,6 +117,11 @@
 </head>
 <body>
 
+  <div id="soundBanner">
+    This site uses sounds to alert you. Please enable them: 
+    <button id="enableSoundBtn">Enable Sound</button>
+  </div>
+
   <h1>SGC COMMAND TERMINAL</h1>
 
   <div id="status">
@@ -96,7 +139,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
@@ -114,10 +156,21 @@
     const incomingEl = document.getElementById('incoming');
     const messageEl = document.getElementById('message');
     const travelerSound = document.getElementById('travelerSound');
-    travelerSound.volume = 1.0; // Max volume
+    travelerSound.volume = 1.0;
 
-    const frequency = "alpha-1";  // Change as needed
+    const soundBanner = document.getElementById('soundBanner');
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
 
+    let soundEnabled = false;
+    enableSoundBtn.addEventListener('click', () => {
+      // Try to play a silent sound to unlock audio context
+      travelerSound.volume = 1.0;
+      travelerSound.play().catch(() => {});
+      soundEnabled = true;
+      soundBanner.style.display = 'none';
+    });
+
+    const frequency = "alpha-1";
     const signalsRef = ref(db, `frequencies/${frequency}/signals`);
 
     let displayTimeout = null;
@@ -134,23 +187,20 @@
       const data = snapshot.val();
       if (!data) return;
 
-      // Show incoming alert
       waitingEl.style.display = "none";
       incomingEl.style.display = "block";
 
-      // Play sound louder, restart if already playing
-      travelerSound.pause();
-      travelerSound.currentTime = 0;
-      travelerSound.play().catch(() => {});
+      if (soundEnabled) {
+        travelerSound.pause();
+        travelerSound.currentTime = 0;
+        travelerSound.play().catch(() => {});
+      }
 
       const code = data.decrypted || data.code || "UNKNOWN";
-
-      // Fetch code info from /codes/{code}
       const codeRef = ref(db, `codes/${code}`);
       const codeSnap = await get(codeRef);
       const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-      // Interpret status
       let statusText = "";
       if (codeInfo) {
         if (codeInfo.valid === false) {
@@ -171,12 +221,10 @@
         `Code: ${code}\n` +
         `Status: ${statusText}`;
 
-      // Remove the signal after 15 seconds
       setTimeout(() => {
         remove(snapshot.ref).catch(console.error);
       }, 15000);
 
-      // Hide the message after 10 seconds, revert to waiting state
       if (displayTimeout) clearTimeout(displayTimeout);
       displayTimeout = setTimeout(() => {
         clearMessage();
