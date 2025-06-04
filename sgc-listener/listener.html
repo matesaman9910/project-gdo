@@ -4,111 +4,99 @@
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
+    /* Stargate-themed styling */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
     body {
-      margin: 0; padding: 0;
-      height: 100vh;
-      background: radial-gradient(ellipse at center, #000000 0%, #111111 100%);
+      margin: 0;
+      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+      color: #8df9ff;
+      font-family: 'Orbitron', monospace, sans-serif;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      font-family: 'Orbitron', monospace;
-      color: #33ff33;
+      justify-content: center;
+      height: 100vh;
       user-select: none;
       overflow: hidden;
+      text-align: center;
+      padding: 2rem;
     }
 
     h1 {
       font-size: 3rem;
-      margin-bottom: 0.5rem;
-      text-shadow:
-        0 0 10px #33ff33,
-        0 0 20px #33ff33,
-        0 0 30px #33ff33;
-      user-select: none;
+      margin-bottom: 0.2em;
+      text-shadow: 0 0 8px #00ffff;
+      letter-spacing: 0.1em;
     }
 
-    #statusBanner {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      background: #111;
-      color: #33ff33;
-      font-family: 'Orbitron', monospace;
-      font-weight: bold;
-      font-size: 1rem;
-      padding: 0.5rem 1rem;
-      text-align: center;
-      box-shadow: 0 2px 5px #33ff33;
-      user-select: none;
-      z-index: 1000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    #enableSoundBtn {
-      background: #33ff33;
-      border: none;
-      border-radius: 6px;
-      color: #000;
-      padding: 0.3rem 0.8rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow:
-        0 0 10px #33ff33;
-      transition: background-color 0.3s ease;
-    }
-    #enableSoundBtn:hover {
-      background-color: #22cc22;
-    }
-
-    #message {
-      font-size: 3rem;
-      font-weight: bold;
-      margin: 2rem 0 0 0;
-      text-align: center;
-      text-shadow:
-        0 0 10px #33ff33,
-        0 0 20px #33ff33,
-        0 0 30px #33ff33;
-      user-select: none;
-    }
-
-    #info {
-      margin-top: 1rem;
+    #status {
       font-size: 1.5rem;
-      white-space: pre-line;
-      text-align: center;
-      max-width: 400px;
-      user-select: none;
+      margin-bottom: 1.5em;
+      text-shadow: 0 0 10px #00ffffcc;
     }
 
-    .blink {
-      animation: blinkAnimation 1s steps(2, start) infinite;
+    #incoming {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #00ffff;
+      text-shadow:
+        0 0 10px #00ffff,
+        0 0 20px #00ffff,
+        0 0 30px #00ffff,
+        0 0 40px #00ffff;
+      animation: blink 1s infinite;
+      margin-bottom: 1rem;
     }
 
-    @keyframes blinkAnimation {
-      0%, 50% { opacity: 1; }
-      50.1%, 100% { opacity: 0; }
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
+    }
+
+    #log {
+      background: rgba(0, 20, 30, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      width: 420px;
+      max-width: 90vw;
+      min-height: 180px;
+      color: #00ffff;
+      font-size: 1.25rem;
+      white-space: pre-wrap;
+      box-shadow:
+        0 0 10px #00ffff88,
+        inset 0 0 15px #00ffff66;
+      user-select: text;
+    }
+
+    #waiting {
+      font-style: italic;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
 
-  <div id="statusBanner">
-    This site uses sounds. Please enable sound to hear incoming signals.
-    <button id="enableSoundBtn">Enable Sound</button>
+  <h1>SGC COMMAND TERMINAL</h1>
+
+  <div id="status">
+    <div id="waiting">Awaiting Signal...</div>
+    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
   </div>
 
-  <h1 id="message">Awaiting Signal...</h1>
-  <div id="info"></div>
+  <div id="log">
+    <div id="message">No signals received yet.</div>
+  </div>
+
+  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
@@ -122,53 +110,78 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const waitingEl = document.getElementById('waiting');
+    const incomingEl = document.getElementById('incoming');
     const messageEl = document.getElementById('message');
-    const infoEl = document.getElementById('info');
-    const statusBanner = document.getElementById('statusBanner');
-    const enableSoundBtn = document.getElementById('enableSoundBtn');
+    const travelerSound = document.getElementById('travelerSound');
+    travelerSound.volume = 1.0; // Max volume
 
-    const audio = new Audio('https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3');
-    audio.volume = 0.7;
+    const frequency = "alpha-1";  // Change as needed
 
-    let soundEnabled = false;
+    const signalsRef = ref(db, `frequencies/${frequency}/signals`);
 
-    enableSoundBtn.addEventListener('click', () => {
-      audio.play().catch(() => {});
-      soundEnabled = true;
-      statusBanner.style.display = 'none';
-    });
+    let displayTimeout = null;
 
-    // Listen to all three frequencies
-    const frequencies = ['alpha-1', 'bravo-2', 'charlie-3'];
+    function clearMessage() {
+      messageEl.textContent = "No signals received yet.";
+      waitingEl.style.display = "block";
+      incomingEl.style.display = "none";
+    }
 
-    frequencies.forEach(freq => {
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      onChildAdded(signalsRef, snapshot => {
-        const data = snapshot.val();
-        if (!data || !data.code) return;
+    clearMessage();
 
-        // Play sound if enabled
-        if (soundEnabled) {
-          audio.currentTime = 0;
-          audio.play().catch(() => {});
+    onChildAdded(signalsRef, async (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      // Show incoming alert
+      waitingEl.style.display = "none";
+      incomingEl.style.display = "block";
+
+      // Play sound louder, restart if already playing
+      travelerSound.pause();
+      travelerSound.currentTime = 0;
+      travelerSound.play().catch(() => {});
+
+      const code = data.decrypted || data.code || "UNKNOWN";
+
+      // Fetch code info from /codes/{code}
+      const codeRef = ref(db, `codes/${code}`);
+      const codeSnap = await get(codeRef);
+      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+      // Interpret status
+      let statusText = "";
+      if (codeInfo) {
+        if (codeInfo.valid === false) {
+          statusText = "Received INVALID";
+        } else if (codeInfo.valid === true) {
+          statusText = "Received and Verified";
+        } else {
+          statusText = "Received Unknown";
         }
+      } else {
+        statusText = "Received Unknown";
+      }
 
-        // Blink message
-        messageEl.textContent = '!INCOMING TRAVELER!';
-        messageEl.classList.add('blink');
+      const owner = codeInfo?.owner || "UNKNOWN";
 
-        // Show decrypting message and received info
-        infoEl.textContent = `Receiving...\nDecrypting...\n\nCode: ${data.code}\nOwner: UNKNOWN\nStatus: Received Unknown`;
+      messageEl.textContent =
+        `Owner: ${owner}\n` +
+        `Code: ${code}\n` +
+        `Status: ${statusText}`;
 
-        // After 10 seconds, reset display
-        setTimeout(() => {
-          messageEl.textContent = 'Awaiting Signal...';
-          messageEl.classList.remove('blink');
-          infoEl.textContent = '';
-        }, 10000);
-      });
+      // Remove the signal after 15 seconds
+      setTimeout(() => {
+        remove(snapshot.ref).catch(console.error);
+      }, 15000);
+
+      // Hide the message after 10 seconds, revert to waiting state
+      if (displayTimeout) clearTimeout(displayTimeout);
+      displayTimeout = setTimeout(() => {
+        clearMessage();
+      }, 10000);
     });
   </script>
-
 </body>
 </html>
