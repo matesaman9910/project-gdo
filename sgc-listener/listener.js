@@ -1,70 +1,103 @@
-// listener.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+// listener.js - for use with listener.html
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  onChildAdded,
+  get,
+} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
   databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "project-gdo",
-  storageBucket: "project-gdo.firebasestorage.app",
+  storageBucket: "project-gdo.appspot.com",
   messagingSenderId: "758705115255",
   appId: "1:758705115255:web:878f5e64c164b75c507672"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const database = getDatabase(app);
+const db = getDatabase(app);
+const provider = new GoogleAuthProvider();
 
-// Elements
-const signalDisplay = document.getElementById("signalDisplay");
-const logoutBtn = document.getElementById("logoutBtn");
+const loginUI = document.getElementById('loginUI');
+const listenerUI = document.getElementById('listenerUI');
+const googleSignInBtn = document.getElementById('googleSignIn');
+const logoutBtn = document.getElementById('logoutBtn');
+const freqSelect = document.getElementById('frequencySelect');
+const log = document.getElementById('log');
 
-// Auth state observer
-onAuthStateChanged(auth, user => {
-  if (user) {
-    // User logged in, start listening to signals
-    listenForSignals(user.uid);
-    logoutBtn.style.display = "inline-block";
-  } else {
-    // User not logged in, redirect or show message
-    signalDisplay.textContent = "Please log in to receive signals.";
-    logoutBtn.style.display = "none";
-  }
+let currentListener = null;
+
+googleSignInBtn.addEventListener('click', () => {
+  signInWithPopup(auth, provider).catch(console.error);
 });
 
-// Listen to signal changes from Firebase Realtime Database
-function listenForSignals(userId) {
-  // Adjust the path as needed, e.g. 'signals/alpha-1' or 'signals/bravo-2'
-  const signalRef = ref(database, "signals");
+logoutBtn.addEventListener('click', () => {
+  signOut(auth).catch(console.error);
+});
 
-  onValue(signalRef, snapshot => {
+function listenToFrequency(freq) {
+  if (currentListener) {
+    currentListener();
+    currentListener = null;
+  }
+
+  log.textContent = `Monitoring ${freq}...\n`;
+
+  const signalsRef = ref(db, `frequencies/${freq}/signals`);
+  currentListener = onChildAdded(signalsRef, async (snapshot) => {
     const data = snapshot.val();
-    if (!data) {
-      signalDisplay.textContent = "No signals received.";
-      return;
-    }
+    const code = data.decrypted || data.code || "UNKNOWN";
 
-    // Show one signal at a time, you can customize how you pick which one
-    // Here, just show first non-null signal found
-    let displayed = false;
-    for (const freq of ["alpha-1", "bravo-2"]) {
-      if (data[freq]) {
-        signalDisplay.textContent = `Signal on ${freq}: ${data[freq]}`;
-        displayed = true;
-        break;
-      }
-    }
-    if (!displayed) {
-      signalDisplay.textContent = "No active signals.";
+    log.textContent = `\n!INCOMING TRAVELER!\nReceiving...\n`;
+    await new Promise(res => setTimeout(res, 1000));
+    log.textContent += `Decrypting...\n`;
+    await new Promise(res => setTimeout(res, 1000));
+
+    const codeRef = ref(db, `codes/${code}`);
+    const codeSnap = await get(codeRef);
+    const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+
+    const isValid = codeInfo?.access ?? false;
+    const owner = codeInfo?.owner || "UNKNOWN";
+
+    const statusText = isValid ? "✔ RECEIVED AND VERIFIED" : (codeInfo ? "✖ RECEIVED UNKNOWN" : "✖ RECEIVED INVALID");
+
+    log.textContent += `\nSTATUS: ${statusText}\nOwner: ${owner}\nCode: ${code}\nVALID: ${isValid ? "✔" : "✖ INVALID"}\n`;
+
+    if (!isValid) {
+      document.body.classList.add('alert');
+      setTimeout(() => document.body.classList.remove('alert'), 3000);
     }
   });
 }
 
-// Logout button handler
-logoutBtn.addEventListener("click", () => {
-  signOut(auth).catch(err => {
-    console.error("Logout error:", err);
-  });
+freqSelect.addEventListener('change', () => {
+  listenToFrequency(freqSelect.value);
+});
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loginUI.style.display = 'none';
+    listenerUI.style.display = 'block';
+    listenToFrequency(freqSelect.value);
+  } else {
+    loginUI.style.display = 'block';
+    listenerUI.style.display = 'none';
+    if (currentListener) {
+      currentListener();
+      currentListener = null;
+    }
+  }
 });
