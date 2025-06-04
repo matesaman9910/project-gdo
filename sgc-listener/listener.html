@@ -1,102 +1,125 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
-    /* Stargate-themed styling */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
     body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace, sans-serif;
+      font-family: "Orbitron", monospace;
+      background: radial-gradient(ellipse at center, #000000 0%, #111111 100%);
+      color: #33ff33;
+      text-align: center;
+      margin: 0; padding: 0;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: center;
-      height: 100vh;
+      align-items: center;
       user-select: none;
       overflow: hidden;
-      text-align: center;
-      padding: 2rem;
+    }
+    #banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #222;
+      color: #eee;
+      padding: 12px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      z-index: 9999;
+      box-shadow: 0 2px 6px #000;
+    }
+    #banner button {
+      background: #33ff33;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #000;
+      font-family: "Orbitron", monospace;
+      transition: background 0.3s ease;
+    }
+    #banner button:hover {
+      background: #22cc22;
     }
 
     h1 {
       font-size: 3rem;
-      margin-bottom: 0.2em;
-      text-shadow: 0 0 8px #00ffff;
-      letter-spacing: 0.1em;
-    }
-
-    #status {
-      font-size: 1.5rem;
-      margin-bottom: 1.5em;
-      text-shadow: 0 0 10px #00ffffcc;
-    }
-
-    #incoming {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: #00ffff;
+      margin-bottom: 0.5rem;
       text-shadow:
-        0 0 10px #00ffff,
-        0 0 20px #00ffff,
-        0 0 30px #00ffff,
-        0 0 40px #00ffff;
-      animation: blink 1s infinite;
-      margin-bottom: 1rem;
+        0 0 10px #33ff33,
+        0 0 20px #33ff33,
+        0 0 30px #33ff33;
+    }
+    #status {
+      font-size: 1.8rem;
+      margin-bottom: 0.3rem;
+      height: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      user-select: none;
+    }
+    #status.blink {
+      animation: blinkgreen 1.2s linear infinite;
+    }
+    @keyframes blinkgreen {
+      0%, 100% { color: #33ff33; text-shadow: 0 0 15px #33ff33; }
+      50% { color: #000; text-shadow: none; }
     }
 
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
-    }
-
-    #log {
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      width: 420px;
-      max-width: 90vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
+    #message {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-top: 1rem;
+      white-space: pre-line;
+      max-width: 480px;
+      background: #111;
+      padding: 1rem 2rem;
+      border-radius: 8px;
       box-shadow:
-        0 0 10px #00ffff88,
-        inset 0 0 15px #00ffff66;
-      user-select: text;
-    }
-
-    #waiting {
-      font-style: italic;
-      opacity: 0.7;
+        inset 0 0 15px #33ff33;
+      min-height: 130px;
     }
   </style>
 </head>
 <body>
 
-  <h1>SGC COMMAND TERMINAL</h1>
-
-  <div id="status">
-    <div id="waiting">Awaiting Signal...</div>
-    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+  <div id="banner">
+    This site uses sounds. Please enable them — <button id="enableSoundBtn">Enable Sound</button>
   </div>
 
-  <div id="log">
-    <div id="message">No signals received yet.</div>
-  </div>
-
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
+  <h1>!INCOMING TRAVELER!</h1>
+  <div id="status">Awaiting signal...</div>
+  <div id="message"></div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    // Sound control & banner logic
+    const banner = document.getElementById('banner');
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
 
-    // Your Firebase config here
+    // Prepare audio but don't autoplay (user gesture required)
+    const soundUrl = "https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3";
+    const incomingSound = new Audio(soundUrl);
+    incomingSound.volume = 1.0; // max volume for loudness
+    incomingSound.preload = 'auto';
+
+    let soundEnabled = false;
+
+    enableSoundBtn.addEventListener('click', () => {
+      incomingSound.play().catch(() => {});
+      soundEnabled = true;
+      banner.style.display = 'none';
+    });
+
+    // Firebase imports and config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
@@ -110,95 +133,66 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const waitingEl = document.getElementById('waiting');
-    const incomingEl = document.getElementById('incoming');
+    const statusEl = document.getElementById('status');
     const messageEl = document.getElementById('message');
-    const travelerSound = document.getElementById('travelerSound');
-    travelerSound.volume = 1.0; // Max volume
 
-    const frequency = "alpha-1";  // You can change to bravo-2 or charlie-3 if you want.
-
-    const signalsRef = ref(db, `frequencies/${frequency}/signals`);
-
-    let displayTimeout = null;
+    let currentTimeout = null;
 
     function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
-      incomingEl.style.display = "none";
+      messageEl.textContent = '';
+      statusEl.textContent = 'Awaiting signal...';
+      statusEl.classList.remove('blink');
     }
 
-    clearMessage();
+    // Listen on one frequency (example alpha-1), you can expand later
+    const freq = 'alpha-1';
+    const signalsRef = ref(db, `frequencies/${freq}/signals`);
 
     onChildAdded(signalsRef, async (snapshot) => {
       const data = snapshot.val();
+
       if (!data) return;
 
-      // Show incoming alert
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-
-      // Play sound louder, restart if already playing
-      travelerSound.pause();
-      travelerSound.currentTime = 0;
-      travelerSound.play().catch(() => {});
-
-      // Determine code and check validity from /codes path
       const code = data.decrypted || data.code || "UNKNOWN";
 
-      // Fetch code info from codes node
+      // Show blinking incoming traveler
+      statusEl.textContent = '!INCOMING TRAVELER!';
+      statusEl.classList.add('blink');
+
+      if (soundEnabled) {
+        incomingSound.currentTime = 0;
+        incomingSound.play().catch(() => {});
+      }
+
+      // Get code info
       const codeRef = ref(db, `codes/${code}`);
-      const codeSnap = await new Promise((resolve) => {
-        const dbRef = codeRef;
-        const onVal = (snap) => {
-          resolve(snap);
-        };
-        import("https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js").then(({ get }) => get(dbRef).then(resolve));
-      });
+      const codeSnap = await get(codeRef);
+      const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-      // To fix above, simpler way:
-      // Using onValue is not available in import dynamic, so let's use get() directly:
-      // We'll rewrite codeSnap retrieval without the above confusing promise.
+      let owner = codeInfo?.owner || "UNKNOWN";
+      let valid = codeInfo?.valid ?? null; // true, false or null
 
-      // Correct approach:
-      import("https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js").then(({ get }) => {
-        get(codeRef).then(codeSnap => {
-          const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
+      let statusText = "";
+      if (valid === true) statusText = "Received and Verified";
+      else if (valid === false) statusText = "Received INVALID";
+      else statusText = "Received Unknown";
 
-          // Interpret status
-          let statusText = "";
-          if (codeInfo) {
-            if (codeInfo.valid === false) {
-              statusText = "Received INVALID";
-            } else if (codeInfo.valid === true) {
-              statusText = "Received and Verified";
-            } else {
-              statusText = "Received Unknown";
-            }
-          } else {
-            statusText = "Received Unknown";
-          }
+      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
 
-          const owner = codeInfo?.owner || "UNKNOWN";
+      // Remove blink after 10s & hide message
+      clearTimeout(currentTimeout);
+      currentTimeout = setTimeout(() => {
+        clearMessage();
+      }, 10000);
 
-          messageEl.textContent =
-            `Owner: ${owner}\n` +
-            `Code: ${code}\n` +
-            `Status: ${statusText}`;
-
-          // Remove the signal after 15 seconds
-          setTimeout(() => {
-            remove(snapshot.ref).catch(console.error);
-          }, 15000);
-
-          // Hide the message after 10 seconds, revert to waiting state
-          if (displayTimeout) clearTimeout(displayTimeout);
-          displayTimeout = setTimeout(() => {
-            clearMessage();
-          }, 10000);
-        });
-      });
+      // Delete the signal after 15s
+      setTimeout(() => {
+        snapshot.ref.remove().catch(() => {});
+      }, 15000);
     });
+
+    clearMessage();
   </script>
+
 </body>
 </html>
