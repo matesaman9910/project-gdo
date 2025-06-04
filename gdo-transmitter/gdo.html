@@ -1,84 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>SGC GDO Transmitter</title>
   <style>
     body {
-      background: #000;
+      background-color: black;
       color: #0f0;
       font-family: 'Courier New', Courier, monospace;
       text-align: center;
-      padding-top: 50px;
-    }
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 1em;
+      padding: 2em;
     }
     input, select, button {
-      background: black;
-      color: #0f0;
-      border: 2px solid #0f0;
-      padding: 10px;
-      font-size: 18px;
-      margin: 10px;
+      font-size: 1.2em;
+      padding: 0.5em;
+      margin: 1em;
     }
     #status {
-      margin-top: 30px;
-      font-size: 1.3em;
-      white-space: pre-wrap;
+      margin-top: 1em;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>SGC GDO TRANSMITTER</h1>
-
-  <input id="codeInput" placeholder="Enter Access Code" />
-  <select id="freqInput">
+  <h1>GDO Transmission Console</h1>
+  <label>Enter Code:</label>
+  <input type="text" id="codeInput" />
+  <br />
+  <label>Select Frequency:</label>
+  <select id="freqSelect">
     <option value="alpha-1">Alpha-1</option>
     <option value="bravo-2">Bravo-2</option>
+    <option value="charlie-3">Charlie-3</option>
   </select>
+  <br />
   <button onclick="transmit()">Transmit</button>
-
   <div id="status"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
       databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const statusBox = document.getElementById('status');
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
     function transmit() {
       const code = document.getElementById('codeInput').value.trim();
-      const freq = document.getElementById('freqInput').value;
+      const freq = document.getElementById('freqSelect').value;
+      const status = document.getElementById('status');
 
       if (!code) {
-        statusBox.textContent = "ERROR: CODE REQUIRED";
+        status.textContent = "Please enter a code.";
         return;
       }
 
-      statusBox.textContent = "Encrypting...\n";
+      const signalRef = db.ref(`frequencies/${freq}/signals`).push();
+      signalRef.set({ code });
+
+      status.textContent = "Encrypting...";
+
       setTimeout(() => {
-        statusBox.textContent += "Transmitting...\n";
-
-        const signalsRef = ref(db, `frequencies/${freq}/signals`);
-        push(signalsRef, { code });
-
+        status.textContent = "Transmitting...";
         setTimeout(() => {
-          statusBox.textContent += "✔ Transmitted.";
+          status.textContent = "Transmitted!";
         }, 1000);
       }, 1000);
     }
