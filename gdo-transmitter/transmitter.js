@@ -1,96 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SGC GDO Transmitter</title>
-  <style>
-    body {
-      background-color: #000;
-      color: #0f0;
-      font-family: 'Courier New', Courier, monospace;
-      text-align: center;
-      padding: 2rem;
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-    label, input, select, button {
-      font-size: 1.2rem;
-      margin: 0.5rem;
-      padding: 0.5rem;
-    }
-    #output {
-      white-space: pre-wrap;
-      margin-top: 2rem;
-      background: #111;
-      border: 1px solid #0f0;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-  </style>
-</head>
-<body>
-  <h1>SGC GDO Transmitter</h1>
-  <label for="code">Code:</label>
-  <input type="text" id="code" placeholder="Enter GDO code">
+// gdo.js - GDO Transmitter Script
 
-  <label for="frequency">Frequency:</label>
-  <select id="frequency">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-  </select>
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
+import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js';
 
-  <button id="sendBtn">Send Signal</button>
+const firebaseConfig = {
+  apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+  authDomain: "project-gdo.firebaseapp.com",
+  databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "project-gdo",
+  storageBucket: "project-gdo.appspot.com",
+  messagingSenderId: "758705115255",
+  appId: "1:758705115255:web:878f5e64c164b75c507672"
+};
 
-  <div id="output"></div>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const provider = new GoogleAuthProvider();
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+const loginUI = document.getElementById('loginUI');
+const gdoUI = document.getElementById('gdoUI');
+const googleSignInBtn = document.getElementById('googleSignIn');
+const sendBtn = document.getElementById('sendBtn');
+const codeInput = document.getElementById('codeInput');
+const frequencySelect = document.getElementById('frequencySelect');
+const display = document.getElementById('display');
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+let currentUser = null;
 
-    const sendBtn = document.getElementById('sendBtn');
-    const output = document.getElementById('output');
-
-    sendBtn.addEventListener('click', () => {
-      const code = document.getElementById('code').value.trim();
-      const frequency = document.getElementById('frequency').value;
-
-      if (!code) {
-        output.textContent = 'Enter a valid code!';
-        return;
-      }
-
-      output.textContent = 'Encrypting...\n';
-
-      // Simulate encryption delay
-      setTimeout(() => {
-        output.textContent += 'Transmitting...\n';
-
-        setTimeout(() => {
-          const signalRef = db.ref(`frequencies/${frequency}/signals`).push();
-          signalRef.set({
-            code,
-            timestamp: Date.now()
-          }).then(() => {
-            output.textContent += 'Transmitted.\n';
-          });
-        }, 1000);
-      }, 1000);
+function displayMessage(lines, delay = 1000) {
+  display.textContent = '';
+  lines.reduce((promise, line) => {
+    return promise.then(() => {
+      display.textContent += line + '\n';
+      return new Promise(resolve => setTimeout(resolve, delay));
     });
-  </script>
-</body>
-</html>
+  }, Promise.resolve());
+}
+
+sendBtn.addEventListener('click', async () => {
+  const code = codeInput.value.trim();
+  const frequency = frequencySelect.value;
+
+  if (!code) {
+    alert('Please enter a code.');
+    return;
+  }
+
+  displayMessage([
+    '!INCOMING TRAVELER!',
+    'Encrypting...',
+    'Transmitting...',
+    'Transmitted.'
+  ]);
+
+  await push(ref(db, `frequencies/${frequency}/signals`), {
+    code,
+    timestamp: Date.now()
+  });
+});
+
+googleSignInBtn.addEventListener('click', () => {
+  signInWithPopup(auth, provider).catch(console.error);
+});
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    loginUI.style.display = 'none';
+    gdoUI.style.display = 'block';
+  } else {
+    currentUser = null;
+    loginUI.style.display = 'block';
+    gdoUI.style.display = 'none';
+  }
+});
