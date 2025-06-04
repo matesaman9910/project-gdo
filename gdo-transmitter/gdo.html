@@ -2,106 +2,140 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SGC Transmitter</title>
   <style>
+    /* Stargate-themed styling - same as listener */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
     body {
-      background: #0b121c;
-      color: #00ffcc;
-      font-family: 'Orbitron', sans-serif;
-      text-align: center;
-      padding: 2rem;
-      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+      color: #8df9ff;
+      font-family: 'Orbitron', monospace, sans-serif;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
       align-items: center;
+      justify-content: center;
+      height: 100vh;
       user-select: none;
+      overflow: hidden;
+      text-align: center;
+      padding: 2rem;
     }
+
     h1 {
-      margin-bottom: 0.5em;
-      font-weight: 900;
-      font-size: 2.8rem;
-      text-shadow: 0 0 10px #00ffccaa;
+      font-size: 3rem;
+      margin-bottom: 0.2em;
+      text-shadow: 0 0 8px #00ffff;
+      letter-spacing: 0.1em;
     }
-    #transmitterUI {
-      width: 100%;
-      max-width: 500px;
-      background: #001622;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: 0 0 25px #00ffcc44 inset;
-    }
-    button {
-      cursor: pointer;
-      padding: 0.6em 1.2em;
-      background: #00ffcc;
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      color: #001622;
-      font-size: 1.1rem;
+
+    label {
+      display: block;
       margin-top: 1rem;
-      transition: background-color 0.3s ease;
-      user-select: none;
+      font-size: 1.2rem;
+      text-shadow: 0 0 6px #00ffffaa;
     }
-    button:hover {
-      background: #00ccaa;
-    }
+
     select, input[type="text"] {
-      font-size: 1.1rem;
-      padding: 0.5em;
-      margin-top: 0.8em;
-      width: 100%;
-      border-radius: 6px;
-      border: none;
-      background: #003344;
-      color: #00ffcc;
-      box-shadow: 0 0 10px #00ffcc33 inset;
-      user-select: text;
-    }
-    #statusMsg {
-      margin-top: 1rem;
-      font-family: monospace;
+      font-family: 'Orbitron', monospace;
       font-size: 1.3rem;
-      min-height: 2em;
-      text-shadow: 0 0 8px #00ffcccc;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.4rem;
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      background: #001419;
+      color: #8df9ff;
+      outline: none;
+      width: 220px;
+      text-align: center;
+      box-shadow:
+        0 0 8px #00ffff88,
+        inset 0 0 12px #00ffff44;
+      user-select: text;
+      transition: border-color 0.3s ease;
+    }
+
+    select:focus, input[type="text"]:focus {
+      border-color: #00ffffee;
+      box-shadow:
+        0 0 20px #00ffffcc,
+        inset 0 0 20px #00ffffbb;
+    }
+
+    button {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.5rem;
+      padding: 0.6rem 3rem;
+      margin-top: 2rem;
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      background: #001419;
+      color: #8df9ff;
+      cursor: pointer;
+      user-select: none;
+      box-shadow:
+        0 0 15px #00ffffaa;
+      transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover:enabled {
+      background-color: #00ffff;
+      color: #001419;
+      box-shadow:
+        0 0 30px #00ffffee,
+        0 0 40px #00ffffee;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #log {
+      margin-top: 2rem;
+      background: rgba(0, 20, 30, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      width: 420px;
+      max-width: 90vw;
+      min-height: 120px;
+      color: #00ffff;
+      font-size: 1.25rem;
+      white-space: pre-wrap;
+      box-shadow:
+        0 0 10px #00ffff88,
+        inset 0 0 15px #00ffff66;
+      user-select: text;
+      text-align: left;
     }
   </style>
 </head>
 <body>
 
-  <h1>SGC Transmitter</h1>
+  <h1>SGC TRANSMITTER</h1>
 
-  <div id="transmitterUI">
-    <label for="frequencySelect">Select Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
+  <label for="frequency">Select Frequency:</label>
+  <select id="frequency">
+    <option value="alpha-1">Alpha-1</option>
+    <option value="bravo-2">Bravo-2</option>
+    <option value="charlie-3">Charlie-3</option>
+  </select>
 
-    <label for="codeInput">Enter Code (max 9 characters):</label>
-    <input type="text" id="codeInput" placeholder="Enter code here" maxlength="9" autocomplete="off" />
+  <label for="codeInput">Enter Code (numbers only, max 9 digits):</label>
+  <input id="codeInput" type="text" maxlength="9" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Enter code..." />
 
-    <button id="transmitBtn">Transmit</button>
+  <button id="transmitBtn" disabled>Transmit</button>
 
-    <div id="statusMsg"></div>
-  </div>
+  <div id="log">Waiting to transmit...</div>
 
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      push,
-      get,
-      set,
-      serverTimestamp,
-      remove
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
+    // Firebase config (your config here)
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
       authDomain: "project-gdo.firebaseapp.com",
@@ -115,72 +149,66 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const freqSelect = document.getElementById("frequencySelect");
-    const codeInput = document.getElementById("codeInput");
-    const transmitBtn = document.getElementById("transmitBtn");
-    const statusMsg = document.getElementById("statusMsg");
+    const codeInput = document.getElementById('codeInput');
+    const frequencySelect = document.getElementById('frequency');
+    const transmitBtn = document.getElementById('transmitBtn');
+    const log = document.getElementById('log');
 
-    transmitBtn.addEventListener("click", async () => {
-      let code = codeInput.value.trim();
-      const freq = freqSelect.value;
+    // Enable button only if code is valid (numbers only, length 1-9)
+    codeInput.addEventListener('input', () => {
+      // Remove any non-digit characters immediately
+      codeInput.value = codeInput.value.replace(/\D/g, '');
 
-      if (!code) {
-        alert("Please enter a code.");
-        return;
-      }
-      if (code.length > 9) {
-        alert("Code must be 9 characters or less.");
-        return;
-      }
-
-      resetStatus();
-      try {
-        statusMsg.textContent = "Encrypting...";
-        await delay(1000);
-
-        statusMsg.textContent = "Transmitting...";
-        await delay(1500);
-
-        const signalsRef = ref(db, `frequencies/${freq}/signals`);
-        const newSignalRef = push(signalsRef);
-
-        await set(newSignalRef, {
-          code,
-          decrypted: code,
-          timestamp: serverTimestamp()
-        });
-
-        // Auto-delete this signal after 15 seconds
-        setTimeout(() => {
-          remove(newSignalRef).catch(console.error);
-        }, 15000);
-
-        // Create default code info if missing, no overwrite
-        const codeRef = ref(db, `codes/${code}`);
-        const codeSnap = await get(codeRef);
-        if (!codeSnap.exists()) {
-          await set(codeRef, {
-            owner: "Unknown Owner",
-            valid: null,
-            access: false
-          });
-        }
-
-        statusMsg.textContent = "Transmitted ✔";
-        codeInput.value = "";
-      } catch (e) {
-        console.error("Transmit error:", e);
-        statusMsg.textContent = "Transmit failed!";
-      }
+      transmitBtn.disabled = !(codeInput.value.length > 0);
     });
 
-    function resetStatus() {
-      statusMsg.textContent = "";
+    // Transmit function
+    async function transmit() {
+      const code = codeInput.value.trim();
+      const freq = frequencySelect.value;
+
+      if (!code) {
+        log.textContent = "Please enter a valid code before transmitting.";
+        return;
+      }
+
+      transmitBtn.disabled = true;
+      frequencySelect.disabled = true;
+      codeInput.disabled = true;
+
+      log.textContent = "Encrypting...";
+
+      // Simulate encryption delay
+      await new Promise(r => setTimeout(r, 1000));
+      log.textContent = "Transmitting...";
+
+      // Push to Firebase DB path: frequencies/{freq}/signals/{unique}
+      try {
+        const timestamp = Date.now();
+        const signalRef = ref(db, `frequencies/${freq}/signals/${timestamp}`);
+
+        await set(signalRef, {
+          code: code,
+          timestamp: timestamp
+        });
+
+        log.textContent = `Code "${code}" transmitted on frequency "${freq}".`;
+      } catch (err) {
+        log.textContent = `Transmit error: ${err.message}`;
+      }
+
+      // Clear input and reset button after 15 seconds
+      setTimeout(() => {
+        codeInput.value = '';
+        log.textContent = "Waiting to transmit...";
+        transmitBtn.disabled = true;
+        frequencySelect.disabled = false;
+        codeInput.disabled = false;
+      }, 15000);
     }
 
-    function delay(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    transmitBtn.addEventListener('click', transmit);
+
   </script>
 </body>
 </html>
