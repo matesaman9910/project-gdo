@@ -202,8 +202,11 @@
         if (snap.exists()) {
           const val = snap.val();
           owner = val.owner || "UNKNOWN";
-          if (val.valid === true) statusText = "Received and Verified";
-          else if (val.valid === false) statusText = "Received INVALID";
+          if (val.access === true) {
+            statusText = "Received and Verified";
+          } else if (val.access === false) {
+            statusText = "Received INVALID";
+          }
         }
 
         showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
