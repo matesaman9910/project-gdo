@@ -5,34 +5,54 @@
   <title>SGC Listener</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
     body {
       margin: 0;
+      font-family: 'Orbitron', monospace;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
       color: #8df9ff;
-      font-family: 'Orbitron', monospace, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       height: 100vh;
-      user-select: none;
-      text-align: center;
-      padding-top: 5rem;
       overflow: hidden;
+      padding-top: 2rem;
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 3rem;
       text-shadow: 0 0 8px #00ffff;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.5em;
+    }
+
+    #auth-banner {
+      background: #002e3d;
+      padding: 1rem;
+      margin: 1rem;
+      border: 2px solid #00ffff88;
+      border-radius: 8px;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      font-family: 'Orbitron', monospace;
+      background: #001b22;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #003642;
     }
 
     #status {
-      font-size: 1.5rem;
-      margin-bottom: 1em;
-      text-shadow: 0 0 10px #00ffffcc;
+      margin-top: 1rem;
+      text-align: center;
     }
 
     #incoming {
@@ -41,7 +61,7 @@
       color: #00ffff;
       text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
       animation: blink 1s infinite;
-      margin-bottom: 1rem;
+      display: none;
     }
 
     @keyframes blink {
@@ -49,89 +69,52 @@
       25%, 75% { opacity: 0.2; }
     }
 
+    #waiting {
+      font-style: italic;
+      opacity: 0.7;
+    }
+
     #log {
       background: rgba(0, 20, 30, 0.8);
       border: 2px solid #00ffff;
       border-radius: 12px;
-      padding: 1.5rem 2rem;
-      width: 420px;
-      max-width: 90vw;
+      padding: 1rem;
+      width: 400px;
       min-height: 180px;
-      color: #00ffff;
-      font-size: 1.2rem;
+      text-align: left;
+      margin-top: 2rem;
       white-space: pre-wrap;
       box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    #banner {
-      position: fixed;
-      top: 0;
-      width: 100%;
-      background-color: #002e2e;
-      color: #00ffff;
-      padding: 0.75rem;
-      font-size: 1rem;
-      text-align: center;
-      z-index: 999;
-      box-shadow: 0 2px 8px #00ffff66;
-      cursor: pointer;
-    }
-
-    #frequencySelect, #authBtn {
-      margin: 0.5rem;
-      font-size: 1rem;
-      background-color: #001a1a;
-      color: #00ffff;
-      border: 2px solid #00ffff;
-      padding: 0.5rem;
-      font-family: 'Orbitron', monospace;
     }
   </style>
 </head>
 <body>
 
-  <div id="banner">
-    This site uses sounds. Please click here to enable them.
-  </div>
-
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
-    <button id="authBtn">Sign In</button>
+  <div id="auth-banner">
+    <button id="alphaBtn">Frequency Alpha-1</button>
+    <button id="bravoBtn">Frequency Bravo-2</button>
+    <button id="charlieBtn">Frequency Charlie-3</button>
+    <button id="signOutBtn" style="display:none;">Sign Out</button>
+    <button id="signInBtn">Sign in with Google</button>
   </div>
 
   <div id="status">
     <div id="waiting">Awaiting Signal...</div>
-    <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+    <div id="incoming">!INCOMING TRAVELER!</div>
   </div>
 
   <div id="log">
-    <div id="message">No signals received yet.</div>
+    <div id="message">Sign in to begin monitoring signals.</div>
   </div>
 
   <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      onChildAdded,
-      get,
-      remove
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-    import {
-      getAuth,
-      signInWithPopup,
-      signOut,
-      GoogleAuthProvider,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -148,91 +131,99 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    const banner = document.getElementById('banner');
-    const freqSelect = document.getElementById('frequencySelect');
-    const waitingEl = document.getElementById('waiting');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const alphaBtn = document.getElementById('alphaBtn');
+    const bravoBtn = document.getElementById('bravoBtn');
+    const charlieBtn = document.getElementById('charlieBtn');
+
     const incomingEl = document.getElementById('incoming');
+    const waitingEl = document.getElementById('waiting');
     const messageEl = document.getElementById('message');
-    const travelerSound = document.getElementById('travelerSound');
-    const authBtn = document.getElementById('authBtn');
+    const sound = document.getElementById('travelerSound');
+    sound.volume = 1.0;
 
-    travelerSound.volume = 1.0;
+    let currentRef = null;
     let displayTimeout = null;
-    let listenerUnsub = null;
 
-    banner.addEventListener('click', () => {
-      travelerSound.play().then(() => {
-        travelerSound.pause();
-        banner.style.display = 'none';
-      }).catch(() => {});
-    });
-
-    authBtn.addEventListener('click', () => {
-      const user = auth.currentUser;
-      if (user) {
-        signOut(auth);
-      } else {
-        signInWithPopup(auth, provider).catch(console.error);
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      authBtn.textContent = user ? "Sign Out" : "Sign In";
-    });
-
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
+    function clearDisplay() {
       incomingEl.style.display = "none";
+      waitingEl.style.display = "block";
+      messageEl.textContent = "Awaiting Signal...";
     }
 
-    function listenToFrequency(freq) {
-      if (listenerUnsub) listenerUnsub();
-      clearMessage();
+    function showMessage(text) {
+      incomingEl.style.display = "block";
+      waitingEl.style.display = "none";
+      messageEl.textContent = text;
+      if (displayTimeout) clearTimeout(displayTimeout);
+      displayTimeout = setTimeout(clearDisplay, 10000);
+    }
 
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      listenerUnsub = onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
+    function listenToFrequency(frequency) {
+      if (!auth.currentUser) return;
+
+      if (currentRef) currentRef.off();
+      currentRef = ref(db, `frequencies/${frequency}/signals`);
+
+      onChildAdded(currentRef, async (snap) => {
+        const data = snap.val();
         if (!data) return;
 
-        waitingEl.style.display = "none";
-        incomingEl.style.display = "block";
-
-        travelerSound.pause();
-        travelerSound.currentTime = 0;
-        travelerSound.play().catch(() => {});
+        sound.pause();
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
 
         const code = data.decrypted || data.code || "UNKNOWN";
         const codeRef = ref(db, `codes/${code}`);
         const codeSnap = await get(codeRef);
         const codeInfo = codeSnap.exists() ? codeSnap.val() : null;
 
-        let statusText = "Received Unknown";
+        let status = "Received Unknown";
         if (codeInfo) {
-          if (codeInfo.valid === false) statusText = "Received INVALID";
-          else if (codeInfo.valid === true) statusText = "Received and Verified";
+          if (codeInfo.valid === false) status = "Received INVALID";
+          else if (codeInfo.valid === true) status = "Received and Verified";
         }
 
         const owner = codeInfo?.owner || "UNKNOWN";
+        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${status}`);
 
-        messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
-
-        // Remove signal after 15s
-        setTimeout(() => {
-          remove(snapshot.ref).catch(console.error);
-        }, 15000);
-
-        // Clear message after 10s
-        if (displayTimeout) clearTimeout(displayTimeout);
-        displayTimeout = setTimeout(clearMessage, 10000);
+        setTimeout(() => remove(snap.ref).catch(console.error), 15000);
       });
+
+      clearDisplay();
     }
 
-    freqSelect.addEventListener('change', () => {
-      listenToFrequency(freqSelect.value);
+    function setFrequency(freqName) {
+      if (auth.currentUser) listenToFrequency(freqName);
+    }
+
+    signInBtn.addEventListener('click', () => {
+      signInWithPopup(auth, provider).catch(console.error);
     });
 
-    listenToFrequency(freqSelect.value);
+    signOutBtn.addEventListener('click', () => {
+      signOut(auth).catch(console.error);
+    });
+
+    alphaBtn.addEventListener('click', () => setFrequency("alpha-1"));
+    bravoBtn.addEventListener('click', () => setFrequency("bravo-2"));
+    charlieBtn.addEventListener('click', () => setFrequency("charlie-3"));
+
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        messageEl.textContent = "Awaiting Signal...";
+        signInBtn.style.display = "none";
+        signOutBtn.style.display = "inline-block";
+        setFrequency("alpha-1");
+      } else {
+        messageEl.textContent = "Sign in to begin monitoring signals.";
+        signInBtn.style.display = "inline-block";
+        signOutBtn.style.display = "none";
+        if (currentRef) currentRef.off();
+        clearDisplay();
+      }
+    });
   </script>
 </body>
 </html>
