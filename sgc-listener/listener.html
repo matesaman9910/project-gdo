@@ -4,87 +4,93 @@
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap');
 
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
       font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      user-select: none;
-      overflow-x: hidden;
-      text-align: center;
-      padding: 2rem;
+      overflow: hidden;
       transition: box-shadow 0.3s ease;
     }
 
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8df9ff;
+      text-align: center;
+      flex-direction: column;
+    }
+
     h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.3em;
-      text-shadow: 0 0 8px #00ffff;
+      font-size: 3.2rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 12px #00ffff;
     }
 
     #status {
-      font-size: 1.5rem;
-      margin: 1em 0;
+      font-size: 1.8rem;
+      margin: 1rem 0;
     }
 
     #incoming {
-      font-size: 2.3rem;
+      font-size: 2.8rem;
       font-weight: 900;
       color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+      text-shadow: 0 0 12px #00ffff, 0 0 25px #00ffff;
       animation: blink 1s infinite;
-      margin: 1em 0;
+      margin: 1.2rem 0;
     }
 
     @keyframes blink {
       0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
+      25%, 75% { opacity: 0.1; }
     }
 
     #log {
       background: rgba(0, 20, 30, 0.8);
       border: 2px solid #00ffff;
       border-radius: 12px;
-      padding: 1.5rem;
-      width: 420px;
-      max-width: 90vw;
-      min-height: 180px;
+      padding: 2rem;
+      width: 600px;
+      max-width: 95vw;
+      min-height: 200px;
       color: #00ffff;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    #authSection, #mainInterface {
-      margin-top: 2rem;
+      box-shadow: 0 0 15px #00ffff88, inset 0 0 20px #00ffff66;
+      margin-bottom: 1rem;
     }
 
     select {
       background: #001c25;
       color: #8df9ff;
-      border: 1px solid #00ffff;
-      padding: 0.5rem 1rem;
+      border: 2px solid #00ffff;
+      padding: 0.75rem 1.2rem;
       font-family: 'Orbitron', monospace;
-      font-size: 1rem;
-      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
     }
 
     button {
       background: #002933;
       color: #00ffff;
-      border: 1px solid #00ffff;
-      padding: 0.5rem 1rem;
+      border: 2px solid #00ffff;
+      padding: 0.75rem 1.5rem;
       font-family: 'Orbitron', monospace;
-      font-size: 1rem;
+      font-size: 1.2rem;
       margin-top: 1rem;
       cursor: pointer;
+    }
+
+    #authSection, #mainInterface {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     #waiting {
@@ -92,15 +98,14 @@
       opacity: 0.6;
     }
 
-    /* Sound banner */
     #soundBanner {
       width: 100%;
-      height: 5px;
+      height: 6px;
       background: #00ffff;
       box-shadow: 0 0 20px #00ffffaa;
-      margin-top: 1rem;
       opacity: 0;
       transition: opacity 0.2s ease;
+      margin-top: 1rem;
     }
 
     .show-banner {
@@ -109,22 +114,21 @@
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 5px #00ffff; }
-      50% { box-shadow: 0 0 25px #00ffff; }
-      100% { box-shadow: 0 0 5px #00ffff; }
+      0% { box-shadow: 0 0 8px #00ffff; }
+      50% { box-shadow: 0 0 28px #00ffff; }
+      100% { box-shadow: 0 0 8px #00ffff; }
     }
 
-    /* Signal-based glow effects */
     .glow-green {
-      box-shadow: inset 0 0 50px #00ff00cc, 0 0 40px #00ff00aa;
+      box-shadow: inset 0 0 60px #00ff00cc, 0 0 50px #00ff00aa;
     }
 
     .glow-orange {
-      box-shadow: inset 0 0 50px #ffaa00cc, 0 0 40px #ffaa00aa;
+      box-shadow: inset 0 0 60px #ffaa00cc, 0 0 50px #ffaa00aa;
     }
 
     .glow-red {
-      box-shadow: inset 0 0 50px #ff0000cc, 0 0 40px #ff0000aa;
+      box-shadow: inset 0 0 60px #ff0000cc, 0 0 50px #ff0000aa;
     }
   </style>
 </head>
@@ -136,7 +140,7 @@
   </div>
 
   <div id="mainInterface" style="display:none;">
-    <label for="frequencySelect">Frequency:</label>
+    <label for="frequencySelect" style="font-size: 1.4rem; margin-bottom: 0.5rem;">Frequency:</label>
     <select id="frequencySelect">
       <option value="alpha-1">Alpha-1</option>
       <option value="bravo-2">Bravo-2</option>
@@ -211,7 +215,7 @@
 
     function triggerSoundBanner() {
       soundBanner.classList.remove("show-banner");
-      void soundBanner.offsetWidth; // restart animation
+      void soundBanner.offsetWidth;
       soundBanner.classList.add("show-banner");
     }
 
@@ -239,7 +243,6 @@
         const data = snapshot.val();
         if (!data) return;
 
-        // Play sound
         travelerSound.pause();
         travelerSound.currentTime = 0;
         travelerSound.volume = 1.0;
@@ -282,10 +285,10 @@
     onAuthStateChanged(auth, (user) => {
       if (user) {
         authSection.style.display = "none";
-        mainInterface.style.display = "block";
+        mainInterface.style.display = "flex";
         listenToFrequency(frequencySelect.value);
       } else {
-        authSection.style.display = "block";
+        authSection.style.display = "flex";
         mainInterface.style.display = "none";
         if (currentListener) off(currentListener);
         document.body.classList.remove("glow-green", "glow-orange", "glow-red");
