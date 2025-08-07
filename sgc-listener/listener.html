@@ -99,7 +99,6 @@
     .glow-orange { box-shadow: inset 0 0 100px #ffaa00cc; }
     .glow-red { box-shadow: inset 0 0 100px #ff0000cc; }
 
-    /* CODE 9 OVERLAY */
     #baseAlertOverlay {
       position: fixed;
       top: 0;
@@ -132,7 +131,6 @@
       text-shadow: 0 0 10px red;
     }
 
-    /* Bottom status bar */
     #statusFooter {
       position: fixed;
       bottom: 10px;
@@ -196,8 +194,6 @@
     <span id="firebaseStatus">Connecting...</span>
   </div>
 
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
@@ -225,21 +221,44 @@
     const waitingEl = document.getElementById("waiting");
     const incomingEl = document.getElementById("incoming");
     const messageEl = document.getElementById("message");
-    const travelerSound = document.getElementById("travelerSound");
+    const travelerSound = new Audio("https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3");
     const frequencySelect = document.getElementById("frequencySelect");
     const soundBanner = document.getElementById("soundBanner");
-
     const code9Overlay = document.getElementById("baseAlertOverlay");
     const code9Sound = document.getElementById("code9Sound");
 
-    // CODE 9 LIVE LISTENER
-    const code9Ref = ref(db, "alerts/CODE 9");
+    const firebaseStatus = document.getElementById("firebaseStatus");
+    const timeDisplay = document.getElementById("timeDisplay");
+
+    // CLOCK
+    function updateClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      timeDisplay.textContent = `Time: ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // CONNECTION STATUS
+    const connectedRef = ref(db, ".info/connected");
+    onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        firebaseStatus.textContent = "Firebase: Online";
+        firebaseStatus.className = "online";
+      } else {
+        firebaseStatus.textContent = "Firebase: Offline";
+        firebaseStatus.className = "offline";
+      }
+    });
+
+    // CODE9 ALERT
+    const code9Ref = ref(db, "alerts/CODE9");
     onValue(code9Ref, (snapshot) => {
       const val = snapshot.val();
-      console.log("[DEBUG] CODE 9 = ", val);
+      console.log("[DEBUG] CODE9 =", val);
       if (val === true) {
         code9Overlay.style.display = "flex";
-        code9Sound.play().catch(e => console.warn("CODE 9 audio failed:", e));
+        code9Sound.play().catch(console.warn);
       } else {
         code9Overlay.style.display = "none";
         code9Sound.pause();
@@ -247,6 +266,7 @@
       }
     });
 
+    // SIGNALS
     let currentListener = null;
     let displayTimeout = null;
 
@@ -271,38 +291,25 @@
 
     function triggerGlow(status) {
       document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-
-      if (status === "verified") {
-        document.body.classList.add("glow-green");
-        soundBanner.style.background = "#00ff00";
-        soundBanner.style.boxShadow = "0 0 20px #00ff00aa";
-      } else if (status === "unknown") {
-        document.body.classList.add("glow-orange");
-        soundBanner.style.background = "#ffaa00";
-        soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
-      } else if (status === "invalid") {
-        document.body.classList.add("glow-red");
-        soundBanner.style.background = "#ff0000";
-        soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
+      const banner = { verified: "#00ff00", unknown: "#ffaa00", invalid: "#ff0000" }[status];
+      if (banner) {
+        document.body.classList.add(`glow-${status}`);
+        soundBanner.style.background = banner;
+        soundBanner.style.boxShadow = `0 0 20px ${banner}aa`;
+        soundBanner.style.opacity = 1;
       }
-
-      soundBanner.style.opacity = 1;
     }
 
     function listenToFrequency(freq) {
       if (currentListener && currentListener.off) currentListener.off();
-
       const signalsRef = ref(db, `frequencies/${freq}/signals`);
       currentListener = signalsRef;
 
       onChildAdded(signalsRef, async (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
-
-        travelerSound.pause();
         travelerSound.currentTime = 0;
-        travelerSound.volume = 1.0;
-        travelerSound.play().catch(() => {});
+        travelerSound.play().catch(console.warn);
 
         const code = data.decrypted || data.code || "UNKNOWN";
         const codeRef = ref(db, `codes/${code}`);
@@ -327,9 +334,7 @@
         showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
         triggerGlow(statusClass);
 
-        setTimeout(() => {
-          remove(snapshot.ref).catch(console.error);
-        }, 15000);
+        setTimeout(() => remove(snapshot.ref).catch(console.error), 15000);
       });
 
       clearMessage();
@@ -347,29 +352,6 @@
       } else {
         authSection.style.display = "block";
         mainInterface.style.display = "none";
-        if (currentListener && currentListener.off) currentListener.off();
-      }
-    });
-
-    // Clock
-    function updateClock() {
-      const now = new Date();
-      const pad = (n) => n.toString().padStart(2, '0');
-      document.getElementById("timeDisplay").textContent = `Time: ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    // Firebase connection status
-    const firebaseStatus = document.getElementById("firebaseStatus");
-    const connectedRef = ref(db, ".info/connected");
-    onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        firebaseStatus.textContent = "Firebase: Online";
-        firebaseStatus.className = "online";
-      } else {
-        firebaseStatus.textContent = "Firebase: Offline";
-        firebaseStatus.className = "offline";
       }
     });
   </script>
