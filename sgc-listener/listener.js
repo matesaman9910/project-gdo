@@ -1,4 +1,9 @@
-firebase.initializeApp({
+// listener.js (Firebase v9)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import { getDatabase, ref, onChildAdded, onValue, get } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+
+const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
   databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
@@ -6,10 +11,11 @@ firebase.initializeApp({
   storageBucket: "project-gdo.appspot.com",
   messagingSenderId: "758705115255",
   appId: "1:758705115255:web:878f5e64c164b75c507672"
-});
+};
 
-const auth = firebase.auth();
-const db = firebase.database();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
 const loginUI = document.getElementById('loginUI');
 const listenerUI = document.getElementById('listenerUI');
@@ -19,55 +25,44 @@ const log = document.getElementById('log');
 const statusMessage = document.getElementById('statusMessage');
 const overlay = document.getElementById('baseAlertOverlay');
 const alertSound = document.getElementById('alertSound');
-const firebaseStatus = document.getElementById('firebaseStatus');
-const timeDisplay = document.getElementById('timeDisplay');
-const soundBanner = document.getElementById('soundBanner');
-
 const travellerSound = new Audio("https://file.garden/aACuwggY3QmuIi9B/Incoming traveller.mp3");
 
-let listener = null;
-
-function updateTime() {
-  const now = new Date();
-  timeDisplay.textContent = `Time: ${now.toLocaleTimeString()}`;
-}
-setInterval(updateTime, 1000);
+let listenerUnsub = null;
 
 function listenToFrequency(freq) {
-  if (listener) firebase.database().ref(`frequencies/${freq}/signals`).off('child_added', listener);
+  if (listenerUnsub) listenerUnsub(); // unsubscribe previous
   log.textContent = "";
   statusMessage.textContent = "Awaiting Signal...";
-  firebaseStatus.textContent = `Listening to: ${freq}`;
+  const refFreq = ref(db, `frequencies/${freq}/signals`);
 
-  const refFreq = db.ref(`frequencies/${freq}/signals`);
-  listener = refFreq.on('child_added', snap => {
-    const data = snap.val();
+  listenerUnsub = onChildAdded(refFreq, async (snapshot) => {
+    const data = snapshot.val();
     const code = data.decrypted || data.code || "UNKNOWN";
-    travellerSound.play().catch(() => {});
-    soundBanner.style.display = "block";
-    setTimeout(() => soundBanner.style.display = "none", 1000);
+    try {
+      await travellerSound.play();
+    } catch (e) {}
 
-    db.ref(`codes/${code}`).once('value').then(codeSnap => {
-      let owner = "UNKNOWN", status = "unknown", txt = "Received Unknown";
-      if (codeSnap.exists()) {
-        const val = codeSnap.val();
-        owner = val.owner || "UNKNOWN";
-        if (val.access === true) {
-          status = "verified";
-          txt = "Received and Verified";
-        } else {
-          status = "invalid";
-          txt = "Received INVALID";
-        }
+    const codeSnap = await get(ref(db, `codes/${code}`));
+    let owner = "UNKNOWN", status = "unknown", txt = "Received Unknown";
+
+    if (codeSnap.exists()) {
+      const val = codeSnap.val();
+      owner = val.owner || "UNKNOWN";
+      if (val.access === true) {
+        status = "verified"; txt = "Received and Verified";
+      } else {
+        status = "invalid"; txt = "Received INVALID";
       }
-      log.textContent = `Code: ${code}\nOwner: ${owner}\nStatus: ${txt}`;
-    });
+    }
+
+    log.textContent = `Code: ${code}\nOwner: ${owner}\nStatus: ${txt}`;
   });
 }
 
 function listenForBaseAlert() {
-  db.ref("alerts/CODE 9").on('value', snap => {
-    if (snap.val() === true) {
+  const alertRef = ref(db, "alerts/CODE 9");
+  onValue(alertRef, snapshot => {
+    if (snapshot.val() === true) {
       overlay.style.display = "flex";
       alertSound.currentTime = 0;
       alertSound.play().catch(() => {});
@@ -78,7 +73,7 @@ function listenForBaseAlert() {
   });
 }
 
-auth.onAuthStateChanged(user => {
+onAuthStateChanged(auth, user => {
   if (user) {
     loginUI.style.display = "none";
     listenerUI.style.display = null;
@@ -89,9 +84,8 @@ auth.onAuthStateChanged(user => {
     listenerUI.style.display = "none";
     overlay.style.display = "none";
     alertSound.pause();
-    firebaseStatus.textContent = "Firebase: Not connected";
   }
 });
 
-googleSignIn.onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+googleSignIn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
 freqSelect.onchange = () => listenToFrequency(freqSelect.value);
