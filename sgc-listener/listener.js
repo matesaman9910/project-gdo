@@ -27,6 +27,8 @@ const messageEl = document.getElementById("message");
 const travelerSound = document.getElementById("travelerSound");
 const frequencySelect = document.getElementById("frequencySelect");
 const soundBanner = document.getElementById("soundBanner");
+const firebaseStatus = document.getElementById("firebaseStatus");
+const clock = document.getElementById("clock");
 
 let currentListener = null;
 let displayTimeout = null;
@@ -52,21 +54,16 @@ function showMessage(text) {
 
 function triggerGlow(status) {
   document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-
   if (status === "verified") {
     document.body.classList.add("glow-green");
     soundBanner.style.background = "#00ff00";
-    soundBanner.style.boxShadow = "0 0 20px #00ff00aa";
   } else if (status === "unknown") {
     document.body.classList.add("glow-orange");
     soundBanner.style.background = "#ffaa00";
-    soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
   } else if (status === "invalid") {
     document.body.classList.add("glow-red");
     soundBanner.style.background = "#ff0000";
-    soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
   }
-
   soundBanner.style.opacity = 1;
 }
 
@@ -82,7 +79,6 @@ function listenToFrequency(freq) {
 
     travelerSound.pause();
     travelerSound.currentTime = 0;
-    travelerSound.volume = 1.0;
     travelerSound.play().catch(() => {});
 
     const code = data.decrypted || data.code || "UNKNOWN";
@@ -107,10 +103,7 @@ function listenToFrequency(freq) {
 
     showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
     triggerGlow(statusClass);
-
-    setTimeout(() => {
-      remove(snapshot.ref).catch(console.error);
-    }, 15000);
+    setTimeout(() => remove(snapshot.ref).catch(console.error), 15000);
   });
 
   clearMessage();
@@ -124,10 +117,19 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     authSection.style.display = "none";
     mainInterface.style.display = "block";
+    firebaseStatus.textContent = "Firebase: Connected ✅";
     listenToFrequency(frequencySelect.value);
   } else {
     authSection.style.display = "block";
     mainInterface.style.display = "none";
+    firebaseStatus.textContent = "Firebase: Disconnected ❌";
     if (currentListener && currentListener.off) currentListener.off();
   }
 });
+
+// Clock
+setInterval(() => {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString();
+  clock.textContent = "Time: " + timeString;
+}, 1000);
