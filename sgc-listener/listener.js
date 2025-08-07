@@ -32,10 +32,10 @@ const code9Ref = ref(db, "alerts/CODE9");
 onValue(code9Ref, (snapshot) => {
   const val = snapshot.val();
   if (val === true) {
-    overlay.style.display = "flex";
+    overlay.style.display = "flex"; document.getElementById("statusBar").style.display = "none";
     alertSound.play().catch(() => {});
   } else {
-    overlay.style.display = "none";
+    overlay.style.display = "none"; document.getElementById("statusBar").style.display = "block";
     alertSound.pause();
     alertSound.currentTime = 0;
   }

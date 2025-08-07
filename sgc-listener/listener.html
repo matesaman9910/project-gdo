@@ -284,19 +284,22 @@
 </div>
 
 <!-- BASE ALERT OVERLAY -->
-<div id="baseAlertOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:red; z-index:9999; flex-direction:column; justify-content:center; align-items:center;">
-  <div style="font-size:10rem; font-weight:bold; color:black; text-shadow: 0 0 20px red; animation: glow 2s ease-in-out infinite alternate;">BASE<br/>ALERT</div>
-  <div style="background-color:black; color:red; padding:30px 60px; font-size:5rem; font-weight:bold; margin-top:40px;">CODE 9</div>
+<div id="baseAlertOverlay">
+  <div class="baseAlertText">
+    <div>BASE</div>
+    <div>ALERT</div>
+  </div>
+  <div class="codeBox">CODE 9</div>
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop></audio>
 </div>
 
 <!-- STATUS BAR -->
-<div id="statusBar" style="position:fixed; bottom:0; width:100%; text-align:center; font-size:1.5rem; color:cyan; z-index:10000;">
+<div id="statusBar">
   <span id="statusText">Connecting...</span> |
   <span id="timeText"></span>
 </div>
 
-<script type="module" src="listener.js?v=13"></script>
+<script type="module" src="listener.js?v=14"></script>
 <script>
   function enableAudio() {
     document.getElementById('uiBubble').play().catch(() => {});
