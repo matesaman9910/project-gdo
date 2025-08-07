@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
 body {
   margin: 0;
   background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
@@ -14,7 +12,6 @@ body {
   overflow-x: hidden;
   text-align: center;
   padding: 2rem;
-  transition: box-shadow 0.4s ease;
 }
 
 h1 {
@@ -56,10 +53,6 @@ h1 {
   box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
 }
 
-#authSection, #mainInterface {
-  margin-top: 2rem;
-}
-
 select, button {
   background: #001c25;
   color: #8df9ff;
@@ -81,21 +74,22 @@ select, button {
   top: 0;
   left: 0;
   width: 100%;
-  height: 12px;
+  height: 4px;
   background: #00ffff;
-  box-shadow: 0 0 20px #00ffffaa;
   opacity: 0;
   transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
   z-index: 999;
 }
 
-/* GLOW COLORS */
-.glow-green {
-  box-shadow: inset 0 0 100px #00ff00cc;
+#bottomStatus {
+  position: fixed;
+  bottom: 10px;
+  font-size: 1rem;
+  color: limegreen;
+  display: flex;
+  gap: 2rem;
 }
-.glow-orange {
-  box-shadow: inset 0 0 100px #ffaa00cc;
-}
-.glow-red {
-  box-shadow: inset 0 0 100px #ff0000cc;
-}
+
+.glow-green { box-shadow: inset 0 0 100px #00ff00cc; }
+.glow-orange { box-shadow: inset 0 0 100px #ffaa00cc; }
+.glow-red { box-shadow: inset 0 0 100px #ff0000cc; }
