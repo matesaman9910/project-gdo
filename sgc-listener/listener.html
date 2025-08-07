@@ -2,278 +2,194 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SGC Listener</title>
+  <title>SGC Command Terminal</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
     body {
       margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      overflow-x: hidden;
+      padding: 0;
+      background-color: #000;
+      font-family: 'Orbitron', sans-serif;
+      color: cyan;
       text-align: center;
-      padding: 2rem;
-      transition: box-shadow 0.4s ease;
+      overflow: hidden;
     }
 
     h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.5em;
-      text-shadow: 0 0 8px #00ffff;
+      font-size: 2.5em;
+      margin-top: 20px;
+      text-shadow: 0 0 15px cyan;
     }
 
-    #status {
-      font-size: 1.5rem;
-      margin: 1em 0;
+    #signalBox {
+      border: 2px solid cyan;
+      padding: 20px;
+      margin: 30px auto;
+      width: 60%;
+      border-radius: 10px;
+      font-size: 1.2em;
     }
 
-    #incoming {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: blink 1s infinite;
-      margin: 1em 0;
+    select {
+      font-size: 1em;
+      background: transparent;
+      color: cyan;
+      border: 1px solid cyan;
+      padding: 5px 10px;
+      font-family: 'Orbitron', sans-serif;
     }
 
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
-    }
-
-    #log {
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 440px;
-      max-width: 95vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    select, button {
-      background: #001c25;
-      color: #8df9ff;
-      border: 1px solid #00ffff;
-      padding: 0.6rem 1.2rem;
-      font-family: 'Orbitron', monospace;
-      font-size: 1.1rem;
-      margin: 0.5rem;
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1em;
+      background: transparent;
+      border: 2px solid cyan;
+      color: cyan;
       cursor: pointer;
     }
 
-    #authSection, #mainInterface {
-      margin-top: 2rem;
-    }
-
-    #code9Overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.9);
-      color: red;
-      z-index: 9999;
-      font-family: 'Orbitron', sans-serif;
-      text-align: center;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-    }
-
-    #code9Overlay .alert-text {
-      font-size: 6rem;
-      font-weight: bold;
-      animation: pulse 1s infinite;
-    }
-
-    #code9Overlay .code-box {
-      font-size: 4rem;
-      border: 4px solid red;
-      padding: 1rem 2rem;
-      margin-top: 2rem;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; text-shadow: 0 0 20px red; }
-      50% { opacity: 0.4; text-shadow: none; }
-    }
-
-    #footerBar {
+    #statusBar {
       position: fixed;
       bottom: 10px;
-      font-size: 1rem;
-      color: #00ff00;
-      display: flex;
-      justify-content: center;
       width: 100%;
-      pointer-events: none;
+      font-size: 1.3em;
+      color: cyan;
+      text-shadow: 0 0 10px cyan;
+    }
+
+    /* CODE 9 Overlay */
+    #baseAlertOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: red;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .baseAlertText {
+      font-size: 5em;
+      font-weight: bold;
+      color: black;
+      animation: blink 1s infinite;
+      text-shadow: 0 0 15px #000;
+    }
+
+    .codeBox {
+      background-color: black;
+      color: red;
+      font-size: 3em;
+      font-weight: bold;
+      padding: 20px 40px;
+      margin-top: 20px;
+      border: 5px solid red;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    audio {
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div id="authSection">
-    <button id="signInBtn">Sign in with Google</button>
-  </div>
-
-  <div id="mainInterface" style="display:none;">
-    <label for="frequencySelect">Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
+  <div>
+    <label for="frequency">Frequency:</label>
+    <select id="frequency">
+      <option value="Alpha-1">Alpha-1</option>
+      <option value="Beta-7">Beta-7</option>
+      <option value="Gamma-5">Gamma-5</option>
     </select>
-
-    <div id="status">
-      <div id="waiting">Awaiting Signal...</div>
-      <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
-    </div>
-
-    <div id="log">
-      <div id="message">No signals received yet.</div>
-    </div>
-
-    <button id="signOutBtn">Sign Out</button>
   </div>
 
-  <!-- CODE 9 OVERLAY -->
-  <div id="code9Overlay">
-    <div class="alert-text">BASE ALERT</div>
-    <div class="alert-text">ALERT</div>
-    <div class="code-box">CODE 9</div>
-    <audio id="code9Sound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
+  <h2 id="signalStatus">Awaiting Signal...</h2>
+
+  <div id="signalBox">No signals received yet.</div>
+
+  <button onclick="signOut()">Sign Out</button>
+
+  <div id="statusBar">
+    Time: <span id="time">--:--:--</span> — Firebase: <span id="firebaseStatus">--</span>
   </div>
 
-  <!-- FOOTER -->
-  <div id="footerBar">Time: --:--:-- Firebase: --</div>
+  <!-- CODE 9 Overlay -->
+  <div id="baseAlertOverlay">
+    <div class="baseAlertText">BASE ALERT</div>
+    <div class="codeBox">CODE 9</div>
+  </div>
+
+  <!-- Alarm -->
+  <audio id="alertSound" loop>
+    <source src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" type="audio/mpeg">
+  </audio>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getDatabase, ref, onChildAdded, remove, get, onValue } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+      apiKey: "AIzaSyAn5sr0UfKBYhpQb3qwdUTELJP8K0gDq0w",
       authDomain: "project-gdo.firebaseapp.com",
       databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "project-gdo",
       storageBucket: "project-gdo.appspot.com",
       messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
+      appId: "1:758705115255:web:8f7654e64c14b75c507672"
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
     const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
 
-    const signInBtn = document.getElementById("signInBtn");
-    const signOutBtn = document.getElementById("signOutBtn");
-    const authSection = document.getElementById("authSection");
-    const mainInterface = document.getElementById("mainInterface");
-    const waitingEl = document.getElementById("waiting");
-    const incomingEl = document.getElementById("incoming");
-    const messageEl = document.getElementById("message");
-    const frequencySelect = document.getElementById("frequencySelect");
-    const footerBar = document.getElementById("footerBar");
-
-    const code9Overlay = document.getElementById("code9Overlay");
-    const code9Sound = document.getElementById("code9Sound");
-
-    let currentListener = null;
-
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
-      incomingEl.style.display = "none";
+    // Update clock
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('time').textContent = now.toLocaleTimeString();
     }
+    setInterval(updateTime, 1000);
+    updateTime();
 
-    function showMessage(text) {
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-      messageEl.textContent = text;
-    }
+    // Firebase connection check
+    document.getElementById('firebaseStatus').textContent = "✅ Connected";
 
-    function listenToFrequency(freq) {
-      if (currentListener && currentListener.off) currentListener.off();
+    // CODE 9 listener
+    const alertRef = ref(db, "alerts/CODE9");
+    onValue(alertRef, (snapshot) => {
+      const isCode9 = snapshot.val();
+      console.log("CODE9 Alert:", isCode9);
 
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      currentListener = signalsRef;
+      const overlay = document.getElementById("baseAlertOverlay");
+      const alarm = document.getElementById("alertSound");
 
-      onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        const code = data.decrypted || data.code || "UNKNOWN";
-        const codeRef = ref(db, `codes/${code}`);
-        const snap = await get(codeRef);
-
-        let statusText = "Received Unknown";
-        let owner = "UNKNOWN";
-
-        if (snap.exists()) {
-          const val = snap.val();
-          owner = val.owner || "UNKNOWN";
-          if (val.access === true) statusText = "Received and Verified";
-          else if (val.access === false) statusText = "Received INVALID";
-        }
-
-        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
-        setTimeout(() => remove(snapshot.ref).catch(console.error), 10000);
-      });
-
-      clearMessage();
-    }
-
-    function monitorCode9() {
-      const code9Ref = ref(db, "alerts/CODE9");
-      onValue(code9Ref, (snapshot) => {
-        const active = snapshot.val() === true;
-        if (active) {
-          code9Overlay.style.display = "flex";
-          code9Sound.currentTime = 0;
-          code9Sound.play().catch(() => {});
-        } else {
-          code9Overlay.style.display = "none";
-          code9Sound.pause();
-          code9Sound.currentTime = 0;
-        }
-      });
-    }
-
-    signInBtn.onclick = () => signInWithPopup(auth, provider).catch(console.error);
-    signOutBtn.onclick = () => signOut(auth).catch(console.error);
-    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authSection.style.display = "none";
-        mainInterface.style.display = "block";
-        listenToFrequency(frequencySelect.value);
-        monitorCode9();
+      if (isCode9) {
+        overlay.style.display = "flex";
+        alarm.play().catch(e => console.warn("🔇 Alarm blocked:", e));
       } else {
-        authSection.style.display = "block";
-        mainInterface.style.display = "none";
-        if (currentListener && currentListener.off) currentListener.off();
+        overlay.style.display = "none";
+        alarm.pause();
+        alarm.currentTime = 0;
       }
     });
 
-    setInterval(() => {
-      const now = new Date();
-      const t = now.toLocaleTimeString();
-      footerBar.textContent = `Time: ${t} Firebase: Connected`;
-    }, 1000);
+    function signOut() {
+      alert("Signed out (demo only)");
+    }
   </script>
 </body>
 </html>
