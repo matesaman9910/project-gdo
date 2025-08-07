@@ -1,78 +1,75 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
 body {
   margin: 0;
-  font-family: 'Orbitron', sans-serif;
   background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-  color: #00ffff;
+  font-family: 'Orbitron', sans-serif;
+  color: cyan;
   text-align: center;
-  overflow: hidden;
 }
 
-#soundBanner {
-  background: black;
-  color: yellow;
-  padding: 5px;
-  font-size: 14px;
+.centered {
+  margin-top: 40px;
+}
+
+#signalBox {
+  border: 2px solid cyan;
+  padding: 20px;
+  width: 400px;
+  margin: 20px auto;
 }
 
 #baseAlertOverlay {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: red;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: red;
   z-index: 9999;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  text-align: center;
+  color: black;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .baseAlertText {
-  font-size: 4em;
-  color: white;
-  animation: glow 1.2s infinite alternate;
+  font-size: 60px;
+  margin-top: 20%;
+  font-weight: bold;
+  animation: glow 1.2s ease-in-out infinite alternate;
 }
 
 .codeBox {
   margin-top: 20px;
+  font-size: 40px;
+  font-weight: bold;
   background: black;
   color: red;
-  padding: 20px;
-  font-size: 2em;
+  display: inline-block;
+  padding: 20px 60px;
 }
 
 @keyframes glow {
-  from { opacity: 1; }
-  to { opacity: 0.3; }
+  from { opacity: 0.3; }
+  to { opacity: 1; }
 }
 
-#mainContent {
-  margin-top: 80px;
-}
-
-#statusText {
-  margin-top: 20px;
-  font-size: 20px;
-}
-
-#signalBox {
-  margin: 20px auto;
-  padding: 20px;
-  border: 2px solid #00ffff;
-  width: 50%;
-  font-size: 18px;
-}
-
-#bottomBar {
+.sound-warning {
   position: fixed;
-  bottom: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  background-color: #001419;
-  color: cyan;
-  font-size: 18px;
-  padding: 5px;
-  text-align: center;
+  background: #111;
+  color: yellow;
+  font-size: 14px;
+  padding: 5px 10px;
+  z-index: 10000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#connectionStatus {
+  margin-top: 10px;
+  font-size: 14px;
 }

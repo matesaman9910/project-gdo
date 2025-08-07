@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <link rel="stylesheet" href="style.css" />
+  <script defer src="listener.js"></script>
 </head>
 <body>
-  <div id="soundBanner">
+  <div id="soundWarning" class="sound-warning">
     ⚠️ This website uses sound. Due to browser security, interaction is required to play audio.
-    <button onclick="enableAudio()">Click here to enable sound</button>
+    <button onclick="enableSound()">Click here to enable sound</button>
   </div>
 
   <div id="baseAlertOverlay">
@@ -16,20 +17,21 @@
     <div class="codeBox">CODE 9</div>
   </div>
 
-  <div id="mainContent">
-    <h1>SGC COMMAND TERMINAL</h1>
+  <h1>SGC COMMAND TERMINAL</h1>
+  <div class="centered">
     <select id="frequencySelect">
       <option>Alpha-1</option>
     </select>
-    <div id="statusText">Awaiting Signal...</div>
-    <div id="signalBox">No signals received yet.</div>
-    <button onclick="signOut()">Sign Out</button>
+
+    <div id="awaitingText">Awaiting Signal...</div>
+    <div id="signalBox">
+      <p id="signalContent">No signals received yet.</p>
+    </div>
+
+    <button id="signOutBtn">Sign Out</button>
+    <div id="connectionStatus">Connecting...</div>
   </div>
 
-  <div id="bottomBar">Connecting...</div>
-
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
-  <audio id="uiClick" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
-  <script src="listener.js"></script>
 </body>
 </html>

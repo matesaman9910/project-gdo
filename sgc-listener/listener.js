@@ -1,45 +1,28 @@
-let audioEnabled = false;
-let isCode9 = false;
 
-function enableAudio() {
-  document.getElementById('soundBanner').style.display = 'none';
-  audioEnabled = true;
+let soundEnabled = false;
+function enableSound() {
+  document.getElementById("alertSound").play().catch(() => {});
+  document.getElementById("soundWarning").style.display = "none";
+  soundEnabled = true;
 }
 
-function playSound(id) {
-  if (audioEnabled) {
-    const audio = document.getElementById(id);
-    audio.pause();
-    audio.currentTime = 0;
-    audio.play();
+function simulateSignal() {
+  const isCode9 = Math.random() > 0.5;
+  const signalContent = document.getElementById("signalContent");
+  const overlay = document.getElementById("baseAlertOverlay");
+  const connectionStatus = document.getElementById("connectionStatus");
+
+  if (isCode9) {
+    signalContent.innerText = "CODE 9 SIGNAL RECEIVED.";
+    overlay.style.display = "block";
+    connectionStatus.style.display = "none";
+    if (soundEnabled) document.getElementById("alertSound").play();
+  } else {
+    signalContent.innerText = "Standard signal received. No action.";
+    overlay.style.display = "none";
+    connectionStatus.style.display = "block";
   }
 }
 
-function signOut() {
-  playSound('uiClick');
-}
-
-function triggerCode9(state) {
-  const overlay = document.getElementById('baseAlertOverlay');
-  const bottomBar = document.getElementById('bottomBar');
-  overlay.style.display = state ? 'flex' : 'none';
-  bottomBar.style.display = state ? 'none' : 'block';
-}
-
-// Fake Firebase signal listener
-setTimeout(() => {
-  // Trigger Code 9 alert (demo)
-  triggerCode9(true);
-  playSound('alertSound');
-}, 4000);
-
-setTimeout(() => {
-  // End Code 9 alert (demo)
-  triggerCode9(false);
-}, 10000);
-
-setInterval(() => {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString();
-  document.getElementById('bottomBar').textContent = "Firebase Connected | " + timeStr;
-}, 1000);
+// Simulate Firebase signal every 8 seconds
+setInterval(simulateSignal, 8000);
