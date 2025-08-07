@@ -7,7 +7,6 @@
 </head>
 <body>
   <div id="soundBanner"></div>
-
   <h1>SGC COMMAND TERMINAL</h1>
 
   <div id="authSection">
@@ -34,8 +33,12 @@
     <button id="signOutBtn">Sign Out</button>
   </div>
 
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
+  <div id="bottomStatus">
+    <span id="clock">Time: --:--:--</span>
+    <span id="firebaseStatus">Firebase: --</span>
+  </div>
 
+  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
   <script type="module" src="listener.js"></script>
 </body>
 </html>
