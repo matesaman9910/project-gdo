@@ -1,15 +1,75 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
 body {
-  background-color: black;
-  color: lime;
-  font-family: monospace;
-  padding: 20px;
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+  font-family: 'Orbitron', sans-serif;
+  color: cyan;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.alert {
-  background-color: red !important;
-  transition: background 0.3s;
+/* Alert overlay */
+#baseAlertOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: red;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 
-#log {
-  margin-top: 20px;
+/* Glowing BASE ALERT text */
+.baseAlertText {
+  text-align: center;
+  color: red;
+  font-size: 8rem;
+  font-weight: bold;
+  text-shadow:
+    0 0 20px #ff0000,
+    0 0 30px #ff0000,
+    0 0 40px #ff0000;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Red box with black CODE 9 text */
+.codeBox {
+  background-color: red;
+  color: black;
+  padding: 30px 60px;
+  font-size: 4rem;
+  font-weight: bold;
+  margin-top: 40px;
+}
+
+/* Glow animation */
+@keyframes glow {
+  from {
+    text-shadow:
+      0 0 10px #ff0000,
+      0 0 20px #ff0000;
+  }
+  to {
+    text-shadow:
+      0 0 30px #ff0000,
+      0 0 60px #ff0000;
+  }
+}
+
+/* Bottom status bar (always on screen) */
+#statusBar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 1.5rem;
+  color: cyan;
+  z-index: 10000;
 }
