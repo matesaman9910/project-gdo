@@ -27,6 +27,9 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
+// Show connection status only
+statusBar.textContent = "Connecting...";
+
 try {
   const code9Ref = ref(db, "alerts/CODE9");
   onValue(code9Ref, (snapshot) => {
@@ -34,13 +37,14 @@ try {
     if (val === true) {
       overlay.style.display = "flex";
       alertSound.play().catch(() => {});
-      statusBar.textContent = "Firebase Connected";
     } else {
       overlay.style.display = "none";
       alertSound.pause();
       alertSound.currentTime = 0;
-      statusBar.textContent = "Firebase Connected";
     }
+    statusBar.textContent = "Firebase Connected";
+  }, (error) => {
+    statusBar.textContent = "Firebase ERROR";
   });
 } catch (e) {
   statusBar.textContent = "Firebase ERROR";
