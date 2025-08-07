@@ -112,7 +112,6 @@
       justify-content: center;
       align-items: center;
       z-index: 999999;
-      font-family: 'Orbitron', monospace;
     }
 
     .baseAlertText {
@@ -132,6 +131,28 @@
       border: 4px solid red;
       text-shadow: 0 0 10px red;
     }
+
+    /* Bottom status bar */
+    #statusFooter {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 40px;
+      background: rgba(0, 255, 255, 0.1);
+      padding: 10px 20px;
+      border: 1px solid #00ffff;
+      border-radius: 10px;
+      color: #00ffff;
+      font-size: 1.1rem;
+      font-family: 'Orbitron', monospace;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    #firebaseStatus.online { color: #00ff00; }
+    #firebaseStatus.offline { color: #ff0000; }
   </style>
 </head>
 <body>
@@ -170,6 +191,11 @@
     <button id="signOutBtn">Sign Out</button>
   </div>
 
+  <div id="statusFooter">
+    <span id="timeDisplay">Time: --:--:--</span>
+    <span id="firebaseStatus">Connecting...</span>
+  </div>
+
   <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
@@ -202,8 +228,24 @@
     const travelerSound = document.getElementById("travelerSound");
     const frequencySelect = document.getElementById("frequencySelect");
     const soundBanner = document.getElementById("soundBanner");
+
     const code9Overlay = document.getElementById("baseAlertOverlay");
     const code9Sound = document.getElementById("code9Sound");
+
+    // CODE 9 LIVE LISTENER
+    const code9Ref = ref(db, "alerts/CODE 9");
+    onValue(code9Ref, (snapshot) => {
+      const val = snapshot.val();
+      console.log("[DEBUG] CODE 9 = ", val);
+      if (val === true) {
+        code9Overlay.style.display = "flex";
+        code9Sound.play().catch(e => console.warn("CODE 9 audio failed:", e));
+      } else {
+        code9Overlay.style.display = "none";
+        code9Sound.pause();
+        code9Sound.currentTime = 0;
+      }
+    });
 
     let currentListener = null;
     let displayTimeout = null;
@@ -309,17 +351,25 @@
       }
     });
 
-    // CODE 9 LISTENER
-    const code9Ref = ref(db, 'alerts/CODE 9');
-    onValue(code9Ref, (snapshot) => {
-      const value = snapshot.val();
-      if (value === true) {
-        code9Overlay.style.display = "flex";
-        code9Sound.play().catch(() => {});
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      document.getElementById("timeDisplay").textContent = `Time: ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Firebase connection status
+    const firebaseStatus = document.getElementById("firebaseStatus");
+    const connectedRef = ref(db, ".info/connected");
+    onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        firebaseStatus.textContent = "Firebase: Online";
+        firebaseStatus.className = "online";
       } else {
-        code9Overlay.style.display = "none";
-        code9Sound.pause();
-        code9Sound.currentTime = 0;
+        firebaseStatus.textContent = "Firebase: Offline";
+        firebaseStatus.className = "offline";
       }
     });
   </script>
