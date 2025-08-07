@@ -8,6 +8,10 @@ body {
   font-family: 'Orbitron', sans-serif;
   height: 100vh;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
 
 #baseAlertOverlay {
@@ -25,7 +29,7 @@ body {
 }
 
 .baseAlertText {
-  font-size: 6rem;
+  font-size: 10rem;
   font-weight: bold;
   color: black;
   animation: blink 1s step-start infinite;
@@ -34,10 +38,10 @@ body {
 .codeBox {
   background-color: black;
   color: red;
-  padding: 20px 40px;
-  font-size: 4rem;
+  padding: 30px 60px;
+  font-size: 6rem;
   font-weight: bold;
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 @keyframes blink {
@@ -49,9 +53,14 @@ body {
   bottom: 0;
   width: 100%;
   text-align: center;
-  font-size: 1.2rem;
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 8px;
+  font-size: 1.5rem;
+  padding: 10px;
   color: cyan;
   z-index: 10000;
+}
+
+#centerText {
+  font-size: 2.2rem;
+  color: cyan;
+  text-shadow: 0 0 10px cyan;
 }

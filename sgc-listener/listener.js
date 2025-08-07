@@ -19,6 +19,7 @@ const statusText = document.getElementById("statusText");
 const timeText = document.getElementById("timeText");
 const alertOverlay = document.getElementById("baseAlertOverlay");
 const alertSound = document.getElementById("alertSound");
+const centerText = document.getElementById("centerText");
 
 function updateTime() {
   const now = new Date();
@@ -27,18 +28,23 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
+// Optional manual trigger for testing
+window.forceCode9 = false;
+
 const statusRef = ref(db, "alerts/CODE9");
 onValue(statusRef, (snapshot) => {
-  const isCode9 = snapshot.val();
-  if (isCode9 === true) {
+  const isCode9 = snapshot.val() || window.forceCode9;
+  if (isCode9) {
     alertOverlay.style.display = "flex";
     alertSound.play().catch(() => {});
     statusText.textContent = "Firebase Connected | ALERT: CODE 9";
+    centerText.style.display = "none";
   } else {
     alertOverlay.style.display = "none";
     alertSound.pause();
     alertSound.currentTime = 0;
     statusText.textContent = "Firebase Connected | Status: Normal";
+    centerText.style.display = "block";
   }
 }, {
   onlyOnce: false
