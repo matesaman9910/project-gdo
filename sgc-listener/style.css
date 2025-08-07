@@ -1,29 +1,19 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
 body {
   margin: 0;
-  background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
   font-family: 'Orbitron', sans-serif;
-  color: cyan;
+  background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+  color: #00ffff;
+  text-align: center;
   overflow: hidden;
 }
 
 #soundBanner {
-  background-color: #111;
+  background: black;
   color: yellow;
-  font-size: 14px;
   padding: 5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#soundBanner button {
-  background-color: black;
-  color: cyan;
-  border: 1px solid cyan;
-  padding: 3px 6px;
+  font-size: 14px;
 }
 
 #baseAlertOverlay {
@@ -35,58 +25,54 @@ body {
   height: 100vh;
   background-color: red;
   z-index: 9999;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
 }
 
-#baseAlertOverlay .baseAlertText {
-  font-size: 64px;
+.baseAlertText {
+  font-size: 4em;
   color: white;
-  animation: glowAlert 1s ease-in-out infinite alternate;
+  animation: glow 1.2s infinite alternate;
 }
 
-#baseAlertOverlay .codeBox {
+.codeBox {
+  margin-top: 20px;
   background: black;
   color: red;
-  padding: 10px 20px;
-  font-size: 32px;
-  font-weight: bold;
+  padding: 20px;
+  font-size: 2em;
+}
+
+@keyframes glow {
+  from { opacity: 1; }
+  to { opacity: 0.3; }
+}
+
+#mainContent {
+  margin-top: 80px;
+}
+
+#statusText {
   margin-top: 20px;
-}
-
-@keyframes glowAlert {
-  from { opacity: 1; text-shadow: 0 0 10px white; }
-  to { opacity: 0.3; text-shadow: 0 0 2px red; }
-}
-
-#mainUI {
-  text-align: center;
-  margin-top: 100px;
+  font-size: 20px;
 }
 
 #signalBox {
-  border: 2px solid cyan;
   margin: 20px auto;
   padding: 20px;
-  width: 400px;
+  border: 2px solid #00ffff;
+  width: 50%;
+  font-size: 18px;
 }
 
-#bottomStatus {
+#bottomBar {
   position: fixed;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 16px;
+  bottom: 0;
+  width: 100%;
+  background-color: #001419;
   color: cyan;
-}
-
-#incomingEffect {
-  height: 100px;
-  width: 100vw;
-  position: fixed;
-  top: 0;
-  pointer-events: none;
-  background: transparent;
+  font-size: 18px;
+  padding: 5px;
+  text-align: center;
 }

@@ -1,45 +1,45 @@
+let audioEnabled = false;
+let isCode9 = false;
 
-let firebaseConnected = true;
-let code9Active = false;
-const alertOverlay = document.getElementById('baseAlertOverlay');
-const firebaseStatus = document.getElementById('firebaseStatus');
-const clock = document.getElementById('clock');
-const soundBanner = document.getElementById('soundBanner');
-const enableSoundBtn = document.getElementById('enableSound');
-const alertSound = document.getElementById('alertSound');
-const clickSound = document.getElementById('clickSound');
-
-enableSoundBtn.addEventListener('click', () => {
-  alertSound.play().catch(()=>{});
-  clickSound.play().catch(()=>{});
-  soundBanner.style.display = 'none';
-});
-
-document.getElementById('signOut').addEventListener('click', () => {
-  clickSound.play();
-});
-
-function updateTime() {
-  const now = new Date();
-  clock.textContent = now.toTimeString().split(' ')[0];
+function enableAudio() {
+  document.getElementById('soundBanner').style.display = 'none';
+  audioEnabled = true;
 }
-setInterval(updateTime, 1000);
 
-function toggleCode9(active) {
-  code9Active = active;
-  if (active) {
-    alertOverlay.style.display = 'flex';
-    document.getElementById('bottomStatus').style.display = 'none';
-    alertSound.loop = true;
-    alertSound.play();
-  } else {
-    alertOverlay.style.display = 'none';
-    document.getElementById('bottomStatus').style.display = 'block';
-    alertSound.pause();
-    alertSound.currentTime = 0;
+function playSound(id) {
+  if (audioEnabled) {
+    const audio = document.getElementById(id);
+    audio.pause();
+    audio.currentTime = 0;
+    audio.play();
   }
 }
 
-// Simulated CODE 9 activation after 10s (for testing)
-setTimeout(() => toggleCode9(true), 10000);
-setTimeout(() => toggleCode9(false), 20000);
+function signOut() {
+  playSound('uiClick');
+}
+
+function triggerCode9(state) {
+  const overlay = document.getElementById('baseAlertOverlay');
+  const bottomBar = document.getElementById('bottomBar');
+  overlay.style.display = state ? 'flex' : 'none';
+  bottomBar.style.display = state ? 'none' : 'block';
+}
+
+// Fake Firebase signal listener
+setTimeout(() => {
+  // Trigger Code 9 alert (demo)
+  triggerCode9(true);
+  playSound('alertSound');
+}, 4000);
+
+setTimeout(() => {
+  // End Code 9 alert (demo)
+  triggerCode9(false);
+}, 10000);
+
+setInterval(() => {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString();
+  document.getElementById('bottomBar').textContent = "Firebase Connected | " + timeStr;
+}, 1000);

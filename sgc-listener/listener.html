@@ -2,43 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SGC Listener</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="soundBanner">
-    <span>⚠️ This website uses sound. Due to browser security, interaction is required to play audio.</span>
-    <button id="enableSound">Click here to enable sound</button>
+    ⚠️ This website uses sound. Due to browser security, interaction is required to play audio.
+    <button onclick="enableAudio()">Click here to enable sound</button>
   </div>
-
-  <div id="incomingEffect"></div>
 
   <div id="baseAlertOverlay">
     <div class="baseAlertText blinking">BASE ALERT</div>
     <div class="codeBox">CODE 9</div>
   </div>
 
-  <div id="mainUI">
+  <div id="mainContent">
     <h1>SGC COMMAND TERMINAL</h1>
     <select id="frequencySelect">
       <option>Alpha-1</option>
-      <option>Bravo-2</option>
     </select>
-    <div id="signalBox">
-      <p id="awaiting">Awaiting Signal...</p>
-      <p id="signalData">No signals received yet.</p>
-    </div>
-    <button id="signOut">Sign Out</button>
-    <div id="bottomStatus">
-      <span id="firebaseStatus">Firebase Connected</span> |
-      <span id="clock">--:--:--</span>
-    </div>
+    <div id="statusText">Awaiting Signal...</div>
+    <div id="signalBox">No signals received yet.</div>
+    <button onclick="signOut()">Sign Out</button>
   </div>
 
-  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
-  <audio id="clickSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3" preload="auto"></audio>
+  <div id="bottomBar">Connecting...</div>
 
+  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
+  <audio id="uiClick" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
   <script src="listener.js"></script>
 </body>
 </html>
