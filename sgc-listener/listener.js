@@ -1,91 +1,87 @@
-// listener.js (Firebase v9)
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import { getDatabase, ref, onChildAdded, onValue, get } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+// Firebase v9 - No modules/imports, directly used via global window.firebase object
 
 const firebaseConfig = {
   apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
   authDomain: "project-gdo.firebaseapp.com",
   databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "project-gdo",
-  storageBucket: "project-gdo.appspot.com",
+  storageBucket: "project-gdo.firebasestorage.app",
   messagingSenderId: "758705115255",
   appId: "1:758705115255:web:878f5e64c164b75c507672"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
-const loginUI = document.getElementById('loginUI');
-const listenerUI = document.getElementById('listenerUI');
-const googleSignIn = document.getElementById('googleSignIn');
-const freqSelect = document.getElementById('frequencySelect');
-const log = document.getElementById('log');
-const statusMessage = document.getElementById('statusMessage');
-const overlay = document.getElementById('baseAlertOverlay');
-const alertSound = document.getElementById('alertSound');
-const travellerSound = new Audio("https://file.garden/aACuwggY3QmuIi9B/Incoming traveller.mp3");
+// UI references
+const loginUI = document.getElementById("loginUI");
+const listenerUI = document.getElementById("listenerUI");
+const signInButton = document.getElementById("googleSignIn");
+const statusMessage = document.getElementById("statusMessage");
+const logElement = document.getElementById("log");
+const frequencySelect = document.getElementById("frequencySelect");
+const alertOverlay = document.getElementById("baseAlertOverlay");
+const soundBanner = document.getElementById("soundBanner");
+const alertSound = document.getElementById("alertSound");
+const timeDisplay = document.getElementById("timeDisplay");
+const firebaseStatus = document.getElementById("firebaseStatus");
 
-let listenerUnsub = null;
+// Sign in with Google
+signInButton.onclick = () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(console.error);
+};
 
-function listenToFrequency(freq) {
-  if (listenerUnsub) listenerUnsub(); // unsubscribe previous
-  log.textContent = "";
-  statusMessage.textContent = "Awaiting Signal...";
-  const refFreq = ref(db, `frequencies/${freq}/signals`);
-
-  listenerUnsub = onChildAdded(refFreq, async (snapshot) => {
-    const data = snapshot.val();
-    const code = data.decrypted || data.code || "UNKNOWN";
-    try {
-      await travellerSound.play();
-    } catch (e) {}
-
-    const codeSnap = await get(ref(db, `codes/${code}`));
-    let owner = "UNKNOWN", status = "unknown", txt = "Received Unknown";
-
-    if (codeSnap.exists()) {
-      const val = codeSnap.val();
-      owner = val.owner || "UNKNOWN";
-      if (val.access === true) {
-        status = "verified"; txt = "Received and Verified";
-      } else {
-        status = "invalid"; txt = "Received INVALID";
-      }
-    }
-
-    log.textContent = `Code: ${code}\nOwner: ${owner}\nStatus: ${txt}`;
-  });
-}
-
-function listenForBaseAlert() {
-  const alertRef = ref(db, "alerts/CODE 9");
-  onValue(alertRef, snapshot => {
-    if (snapshot.val() === true) {
-      overlay.style.display = "flex";
-      alertSound.currentTime = 0;
-      alertSound.play().catch(() => {});
-    } else {
-      overlay.style.display = "none";
-      alertSound.pause();
-    }
-  });
-}
-
-onAuthStateChanged(auth, user => {
+// On auth state changed
+auth.onAuthStateChanged((user) => {
   if (user) {
     loginUI.style.display = "none";
-    listenerUI.style.display = null;
-    listenToFrequency(freqSelect.value);
-    listenForBaseAlert();
+    listenerUI.style.display = "flex";
+    firebaseStatus.textContent = "Firebase: Connected";
+
+    startListening();
   } else {
-    loginUI.style.display = null;
+    loginUI.style.display = "flex";
     listenerUI.style.display = "none";
-    overlay.style.display = "none";
-    alertSound.pause();
+    firebaseStatus.textContent = "Firebase: Disconnected";
   }
 });
 
-googleSignIn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-freqSelect.onchange = () => listenToFrequency(freqSelect.value);
+// Listen to selected frequency
+function startListening() {
+  const frequency = frequencySelect.value;
+  const ref = db.ref(`frequencies/${frequency}`);
+
+  ref.on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      logElement.textContent = data.message || "Signal received.";
+      statusMessage.textContent = "Incoming Signal...";
+      triggerVisualAlert();
+    }
+  });
+
+  frequencySelect.onchange = () => {
+    ref.off(); // stop old listener
+    startListening(); // start new one
+  };
+}
+
+// Visual FX
+function triggerVisualAlert() {
+  alertOverlay.style.display = "flex";
+  soundBanner.style.display = "block";
+  alertSound.play().catch(() => {});
+
+  setTimeout(() => {
+    alertOverlay.style.display = "none";
+    soundBanner.style.display = "none";
+  }, 3000);
+}
+
+// Clock
+setInterval(() => {
+  const now = new Date().toLocaleTimeString();
+  timeDisplay.textContent = `Time: ${now}`;
+}, 1000);
