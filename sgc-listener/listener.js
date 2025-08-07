@@ -1,49 +1,39 @@
-// Firebase setup
-const firebaseConfig = {
-  // Replace with your actual config
-};
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// Time display
-function updateTime() {
-  const clock = document.getElementById("clock");
-  const now = new Date();
-  clock.textContent = now.toLocaleTimeString();
-}
-setInterval(updateTime, 1000);
-updateTime();
-
-// Sound handling
 let soundEnabled = false;
-const clickSound = document.getElementById("clickSound");
-document.getElementById("enableSound").onclick = () => {
-  clickSound.play();
+
+function enableSound() {
+  const sound = document.getElementById("bubbleSound");
+  sound.play().catch(() => {});
   soundEnabled = true;
   document.getElementById("soundBanner").style.display = "none";
-};
-
-document.querySelectorAll("button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    if (soundEnabled) clickSound.play();
-  });
-});
-
-// Simulate CODE 9
-let code9Active = false;
-
-function toggleCode9(active) {
-  const overlay = document.getElementById("baseAlertOverlay");
-  const statusBar = document.getElementById("statusBar");
-
-  code9Active = active;
-  overlay.classList.toggle("hidden", !active);
-  statusBar.style.display = active ? "none" : "block";
 }
 
-// Simulated listener
-setTimeout(() => {
-  toggleCode9(true);
-  setTimeout(() => toggleCode9(false), 8000);
-}, 3000);
+function showTime() {
+  const now = new Date();
+  document.getElementById("timeDisplay").textContent = now.toLocaleTimeString();
+}
+setInterval(showTime, 1000);
+showTime();
+
+// SIMULATED FIREBASE DATA
+let isCode9 = false;
+const overlay = document.getElementById("baseAlertOverlay");
+const firebaseStatus = document.getElementById("firebaseStatus");
+const alertSound = document.getElementById("alertSound");
+
+function toggleCode9(active) {
+  isCode9 = active;
+  overlay.style.display = isCode9 ? "flex" : "none";
+  firebaseStatus.textContent = isCode9 ? "" : "Firebase Connected";
+
+  if (isCode9 && soundEnabled) {
+    alertSound.play().catch(() => {});
+  } else {
+    alertSound.pause();
+    alertSound.currentTime = 0;
+  }
+}
+
+// TEST toggle
+setTimeout(() => toggleCode9(true), 3000);
+setTimeout(() => toggleCode9(false), 10000);
