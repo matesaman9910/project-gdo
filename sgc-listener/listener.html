@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SGC Listener</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="baseAlertOverlay">
+    <div class="baseAlertText">BASE ALERT</div>
+    <div class="codeBox">CODE 9</div>
+    <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop></audio>
+  </div>
+
+  <div id="statusBar">
+    <span id="statusText">Connecting to Firebase...</span> |
+    <span id="timeText"></span>
+  </div>
+
+  <script type="module" src="listener.js"></script>
+</body>
+</html>
