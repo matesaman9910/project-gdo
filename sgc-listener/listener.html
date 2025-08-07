@@ -3,22 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="listener.js" defer></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+      color: #8df9ff;
+      font-family: 'Orbitron', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 0.3em;
+      text-shadow: 0 0 8px #00ffff;
+    }
+
+    #status {
+      font-size: 1.5rem;
+      margin: 1em 0;
+    }
+
+    #incoming {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+      animation: blink 1s infinite;
+      margin: 1em 0;
+    }
+
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
+    }
+
+    #log {
+      background: rgba(0, 20, 30, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 440px;
+      max-width: 95vw;
+      min-height: 180px;
+      color: #00ffff;
+      font-size: 1.25rem;
+      white-space: pre-wrap;
+      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
+    }
+
+    #authSection, #mainInterface {
+      margin-top: 2rem;
+    }
+
+    select, button {
+      background: #001c25;
+      color: #8df9ff;
+      border: 1px solid #00ffff;
+      padding: 0.6rem 1.2rem;
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      margin: 0.5rem;
+      cursor: pointer;
+    }
+
+    #waiting {
+      font-style: italic;
+      opacity: 0.6;
+    }
+
+    .glow-green {
+      box-shadow: inset 0 0 100px #00ff00cc;
+    }
+
+    .glow-orange {
+      box-shadow: inset 0 0 100px #ffaa00cc;
+    }
+
+    .glow-red {
+      box-shadow: inset 0 0 100px #ff0000cc;
+    }
+
+    #footerBar {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 1.25rem;
+      color: #00ffff;
+      background: none;
+      padding: 0.5rem;
+      text-shadow: 0 0 8px #00ffff;
+    }
+
+    /* CODE 9 Overlay */
+    #code9Overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: red;
+      z-index: 9999;
+      color: black;
+      text-align: center;
+    }
+
+    .code9-blink {
+      font-size: 5rem;
+      font-weight: bold;
+      color: red;
+      animation: blink 1s infinite;
+      margin-top: 20vh;
+      text-shadow: 0 0 10px black, 0 0 20px black;
+    }
+
+    .code9-box {
+      margin-top: 2rem;
+      background: red;
+      color: black;
+      display: inline-block;
+      padding: 1rem 2rem;
+      font-size: 3rem;
+      font-weight: bold;
+      border: 4px solid black;
+    }
+  </style>
 </head>
 <body>
-  <div id="soundBanner"></div>
-
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div id="loginUI">
-    <button id="googleSignIn">Sign in with Google</button>
+  <div id="authSection">
+    <button onclick="simulateCode9()">TRIGGER CODE 9</button>
   </div>
 
-  <div id="listenerUI" style="display:none;">
+  <div id="mainInterface">
     <label for="frequencySelect">Frequency:</label>
     <select id="frequencySelect">
       <option value="alpha-1">Alpha-1</option>
@@ -26,24 +153,57 @@
       <option value="charlie-3">Charlie-3</option>
     </select>
 
-    <div id="statusMessage" class="status">Awaiting Signal...</div>
+    <div id="status">
+      <div id="waiting">Awaiting Signal...</div>
+      <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+    </div>
 
-    <div id="log">No signals received yet.</div>
+    <div id="log">
+      <div id="message">No signals received yet.</div>
+    </div>
 
-    <button id="logout">Sign Out</button>
+    <button>Sign Out</button>
   </div>
 
-  <div id="baseAlertOverlay">
-    <div class="baseAlertText blinking">BASE ALERT</div>
-    <div class="codeBox">CODE 9</div>
-  </div>
-
-  <div id="footerStatus">
-    <span id="firebaseStatus">Connecting...</span>
-    <span id="currentTime"></span>
+  <!-- CODE 9 Alert Overlay -->
+  <div id="code9Overlay">
+    <div class="code9-blink">BASE ALERT</div>
+    <div class="code9-box">CODE 9</div>
   </div>
 
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto" loop></audio>
-  <audio id="incomingSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
+
+  <!-- Footer Bar -->
+  <div id="footerBar">
+    ✅ Firebase Connected — <span id="clock"></span>
+  </div>
+
+  <script>
+    function simulateCode9() {
+      const overlay = document.getElementById("code9Overlay");
+      const audio = document.getElementById("alertSound");
+
+      overlay.style.display = "block";
+      audio.volume = 1.0;
+      audio.play().catch(() => {});
+
+      setTimeout(() => {
+        overlay.style.display = "none";
+        audio.pause();
+        audio.currentTime = 0;
+      }, 10000);
+    }
+
+    function updateClock() {
+      const clock = document.getElementById("clock");
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const s = now.getSeconds().toString().padStart(2, '0');
+      clock.textContent = `${h}:${m}:${s}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
 </body>
 </html>
