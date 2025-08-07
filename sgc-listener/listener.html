@@ -4,144 +4,18 @@
   <meta charset="UTF-8" />
   <title>SGC Command Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Orbitron', monospace;
-      background-color: #000a0a;
-      color: #00ffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 40px 20px;
-      box-sizing: border-box;
-    }
-
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 1em;
-      text-shadow: 0 0 10px #0ff;
-    }
-
-    select, button {
-      background: transparent;
-      border: 1px solid #0ff;
-      color: #0ff;
-      padding: 8px 16px;
-      font-family: 'Orbitron', monospace;
-      font-size: 1em;
-      margin: 5px;
-    }
-
-    #statusMessage {
-      font-size: 1.2em;
-      margin: 20px 0 10px;
-      font-style: italic;
-    }
-
-    #log {
-      width: 80%;
-      max-width: 600px;
-      min-height: 150px;
-      border: 2px solid #0ff;
-      padding: 16px;
-      background-color: rgba(0, 0, 0, 0.2);
-      color: #0ff;
-      text-shadow: 0 0 4px #0ff;
-      font-size: 1em;
-    }
-
-    #bottomBar {
-      position: fixed;
-      bottom: 15px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 30px;
-      background-color: rgba(0, 255, 0, 0.1);
-      color: lime;
-      font-size: 0.9em;
-      padding: 10px 20px;
-      border: 1px solid lime;
-      border-radius: 10px;
-    }
-
-    #soundBanner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      box-shadow: 0 0 50px 10px #00ffff inset;
-      display: none;
-      z-index: 1000;
-      animation: glowFade 2s ease-out forwards;
-    }
-
-    @keyframes glowFade {
-      0% { box-shadow: 0 0 60px 25px #00ffff inset; }
-      100% { box-shadow: 0 0 0px 0px #00ffff inset; display: none; }
-    }
-
-    #baseAlertOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: black;
-      z-index: 9999;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .baseAlertText {
-      font-family: 'Orbitron', monospace;
-      font-size: 5rem;
-      color: red;
-      font-weight: bold;
-      margin-bottom: 1.2rem;
-    }
-
-    .codeBox {
-      font-family: 'Orbitron', monospace;
-      font-size: 4rem;
-      font-weight: bold;
-      background-color: red;
-      color: black;
-      padding: 0.4em 1.5em;
-      border-radius: 6px;
-      box-shadow: 0 0 20px red;
-    }
-
-    .blinking {
-      animation: blink-red 1s infinite;
-    }
-
-    @keyframes blink-red {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <!-- LOGIN UI -->
   <div id="loginUI">
-    <h1>SGC Command Terminal</h1>
+    <h1>SGC COMMAND TERMINAL</h1>
     <button id="googleSignIn">Sign in with Google</button>
   </div>
 
   <!-- LISTENER UI -->
-  <div id="listenerUI" style="display:none;">
+  <div id="listenerUI" style="display: none;">
     <h1>SGC Command Terminal</h1>
-
     <label for="frequencySelect">Frequency:</label>
     <select id="frequencySelect">
       <option value="Alpha-1">Alpha-1</option>
@@ -152,7 +26,7 @@
     <p id="statusMessage">Awaiting Signal...</p>
     <pre id="log">No signals received yet.</pre>
 
-    <button onclick="import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js').then(mod => mod.getAuth().signOut())">Sign Out</button>
+    <button onclick="firebase.auth().signOut()">Sign Out</button>
   </div>
 
   <!-- BASE ALERT OVERLAY -->
@@ -170,11 +44,15 @@
     <div id="firebaseStatus">Firebase: --</div>
   </div>
 
-  <!-- AUDIO FILES -->
+  <!-- AUDIO -->
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
 
-  <!-- MAIN SCRIPT -->
-  <script type="module" src="listener.js"></script>
+  <!-- FIREBASE SDK (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-database-compat.js"></script>
 
+  <!-- SCRIPT -->
+  <script src="listener.js"></script>
 </body>
 </html>
