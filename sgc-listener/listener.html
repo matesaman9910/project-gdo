@@ -87,7 +87,6 @@
       100% { box-shadow: 0 0 0px 0px #00ffff inset; display: none; }
     }
 
-    /* Alert Overlay (CODE 9) */
     #baseAlertOverlay {
       position: fixed;
       top: 0;
@@ -135,13 +134,13 @@
 
   <!-- LOGIN UI -->
   <div id="loginUI">
-    <h1>SGC COMMAND TERMINAL</h1>
+    <h1>SGC Command Terminal</h1>
     <button id="googleSignIn">Sign in with Google</button>
   </div>
 
   <!-- LISTENER UI -->
   <div id="listenerUI" style="display:none;">
-    <h1>SGC COMMAND TERMINAL</h1>
+    <h1>SGC Command Terminal</h1>
 
     <label for="frequencySelect">Frequency:</label>
     <select id="frequencySelect">
@@ -153,7 +152,7 @@
     <p id="statusMessage">Awaiting Signal...</p>
     <pre id="log">No signals received yet.</pre>
 
-    <button onclick="firebase.auth().signOut()">Sign Out</button>
+    <button onclick="import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js').then(mod => mod.getAuth().signOut())">Sign Out</button>
   </div>
 
   <!-- BASE ALERT OVERLAY -->
@@ -174,13 +173,8 @@
   <!-- AUDIO FILES -->
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
 
-  <!-- FIREBASE SDKs (v8) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-  <!-- MAIN LISTENER SCRIPT -->
-  <script src="listener.js"></script>
+  <!-- MAIN SCRIPT -->
+  <script type="module" src="listener.js"></script>
 
 </body>
 </html>
