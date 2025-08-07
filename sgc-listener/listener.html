@@ -1,32 +1,43 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SGC Listener</title>
-  <link rel="stylesheet" href="listener.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="soundBanner">
-    ⚠️ This website uses sound. Due to browser security, interaction is required to play audio.
-    <button onclick="enableSound()">Click to enable</button>
-    <audio id="bubbleSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
+    <span>⚠️ This website uses sound. Due to browser security, interaction is required to play audio.</span>
+    <button id="enableSound">Click here to enable sound</button>
   </div>
 
-  <div id="baseAlertOverlay" class="hidden">
-    <div class="baseAlertContainer">
-      <div class="baseText">BASE</div>
-      <div class="alertText">ALERT</div>
-    </div>
+  <div id="incomingEffect"></div>
+
+  <div id="baseAlertOverlay">
+    <div class="baseAlertText blinking">BASE ALERT</div>
     <div class="codeBox">CODE 9</div>
-    <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop></audio>
   </div>
 
   <div id="mainUI">
     <h1>SGC COMMAND TERMINAL</h1>
-    <p>Status: <span id="firebaseStatus">Connecting...</span></p>
-    <p>Time: <span id="timeDisplay"></span></p>
+    <select id="frequencySelect">
+      <option>Alpha-1</option>
+      <option>Bravo-2</option>
+    </select>
+    <div id="signalBox">
+      <p id="awaiting">Awaiting Signal...</p>
+      <p id="signalData">No signals received yet.</p>
+    </div>
+    <button id="signOut">Sign Out</button>
+    <div id="bottomStatus">
+      <span id="firebaseStatus">Firebase Connected</span> |
+      <span id="clock">--:--:--</span>
+    </div>
   </div>
+
+  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
+  <audio id="clickSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3" preload="auto"></audio>
 
   <script src="listener.js"></script>
 </body>
