@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
 body {
   margin: 0;
   background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
@@ -74,22 +76,32 @@ select, button {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: #00ffff;
+  height: 12px;
   opacity: 0;
-  transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
   z-index: 999;
+  transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* GLOW COLORS */
+.glow-green {
+  box-shadow: inset 0 0 100px #00ff00cc;
+}
+
+.glow-orange {
+  box-shadow: inset 0 0 100px #ffaa00cc;
+}
+
+.glow-red {
+  box-shadow: inset 0 0 100px #ff0000cc;
 }
 
 #bottomStatus {
   position: fixed;
   bottom: 10px;
   font-size: 1rem;
-  color: limegreen;
-  display: flex;
-  gap: 2rem;
+  color: #00ff00;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.3rem 1rem;
+  border-radius: 5px;
+  text-shadow: 0 0 4px #00ff00;
 }
-
-.glow-green { box-shadow: inset 0 0 100px #00ff00cc; }
-.glow-orange { box-shadow: inset 0 0 100px #ffaa00cc; }
-.glow-red { box-shadow: inset 0 0 100px #ff0000cc; }
