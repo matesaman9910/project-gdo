@@ -1,28 +1,42 @@
 
 let soundEnabled = false;
+const alertSound = document.getElementById("alertSound");
+const soundBanner = document.getElementById("soundBanner");
+const baseAlert = document.getElementById("baseAlertOverlay");
+const infoBar = document.getElementById("infoBar");
+const firebaseStatus = document.getElementById("firebaseStatus");
+const currentTime = document.getElementById("currentTime");
+const signalContent = document.getElementById("signalContent");
+
 function enableSound() {
-  document.getElementById("alertSound").play().catch(() => {});
-  document.getElementById("soundWarning").style.display = "none";
   soundEnabled = true;
+  soundBanner.style.display = "none";
 }
 
-function simulateSignal() {
-  const isCode9 = Math.random() > 0.5;
-  const signalContent = document.getElementById("signalContent");
-  const overlay = document.getElementById("baseAlertOverlay");
-  const connectionStatus = document.getElementById("connectionStatus");
-
-  if (isCode9) {
-    signalContent.innerText = "CODE 9 SIGNAL RECEIVED.";
-    overlay.style.display = "block";
-    connectionStatus.style.display = "none";
-    if (soundEnabled) document.getElementById("alertSound").play();
+// Demo simulation
+function triggerCode9(active) {
+  if (active) {
+    baseAlert.style.display = "block";
+    infoBar.style.display = "none";
+    signalContent.textContent = "CODE 9 DETECTED";
+    if (soundEnabled) alertSound.play().catch(() => {});
   } else {
-    signalContent.innerText = "Standard signal received. No action.";
-    overlay.style.display = "none";
-    connectionStatus.style.display = "block";
+    baseAlert.style.display = "none";
+    infoBar.style.display = "flex";
+    signalContent.textContent = "Awaiting signal...";
   }
 }
 
-// Simulate Firebase signal every 8 seconds
-setInterval(simulateSignal, 8000);
+// Simulate Firebase signal every 10s (alternating true/false)
+let toggle = false;
+setInterval(() => {
+  toggle = !toggle;
+  triggerCode9(toggle);
+}, 10000);
+
+// Show current time
+setInterval(() => {
+  const now = new Date();
+  currentTime.textContent = now.toLocaleTimeString();
+  firebaseStatus.textContent = "CONNECTED";
+}, 1000);
