@@ -27,17 +27,21 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
-const code9Ref = ref(db, "alerts/CODE9");
-onValue(code9Ref, (snapshot) => {
-  const val = snapshot.val();
-  if (val === true) {
-    overlay.style.display = "flex";
-    alertSound.play().catch(() => {});
-    statusBar.textContent = "Firebase Connected | ALERT: CODE 9";
-  } else {
-    overlay.style.display = "none";
-    alertSound.pause();
-    alertSound.currentTime = 0;
-    statusBar.textContent = "Firebase Connected | Status: Normal";
-  }
-});
+try {
+  const code9Ref = ref(db, "alerts/CODE9");
+  onValue(code9Ref, (snapshot) => {
+    const val = snapshot.val();
+    if (val === true) {
+      overlay.style.display = "flex";
+      alertSound.play().catch(() => {});
+      statusBar.textContent = "Firebase Connected";
+    } else {
+      overlay.style.display = "none";
+      alertSound.pause();
+      alertSound.currentTime = 0;
+      statusBar.textContent = "Firebase Connected";
+    }
+  });
+} catch (e) {
+  statusBar.textContent = "Firebase ERROR";
+}
