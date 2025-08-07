@@ -56,3 +56,34 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* Glow Effect */
+#soundBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  background: none;
+  box-shadow: 0 0 200px 60px rgba(0, 255, 255, 0.6);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 500;
+}
+
+/* Time + Firebase Info Bar */
+#bottomBar {
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 40px;
+  background-color: #002d00;
+  color: lime;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: 'Orbitron', monospace;
+  z-index: 100;
+}
