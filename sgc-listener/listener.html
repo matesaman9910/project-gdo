@@ -5,6 +5,7 @@
   <title>SGC Listener</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
     body {
       margin: 0;
       background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
@@ -21,58 +22,128 @@
       padding: 2rem;
       transition: box-shadow 0.4s ease;
     }
-    h1 { font-size: 2.8rem; margin-bottom: 0.3em; text-shadow: 0 0 8px #00ffff; }
-    #status, #incoming { font-size: 1.5rem; margin: 1em 0; }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 0.3em;
+      text-shadow: 0 0 8px #00ffff;
+    }
+
+    #status {
+      font-size: 1.5rem;
+      margin: 1em 0;
+    }
+
     #incoming {
-      font-size: 2.5rem; font-weight: 900; color: #00ffff;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #00ffff;
       text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: blink 1s infinite; margin: 1em 0;
+      animation: blink 1s infinite;
+      margin: 1em 0;
     }
-    @keyframes blink { 0%,50%,100% {opacity:1;} 25%,75% {opacity:0.2;} }
+
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
+    }
+
     #log {
-      background: rgba(0,20,30,0.8); border: 2px solid #00ffff;
-      border-radius:12px; padding:1.5rem; width:440px; max-width:95vw;
-      min-height:180px; color:#00ffff; font-size:1.25rem; white-space:pre-wrap;
-      box-shadow:0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
+      background: rgba(0, 20, 30, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 440px;
+      max-width: 95vw;
+      min-height: 180px;
+      color: #00ffff;
+      font-size: 1.25rem;
+      white-space: pre-wrap;
+      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
     }
-    #authSection, #mainInterface { margin-top: 2rem; }
+
+    #authSection, #mainInterface {
+      margin-top: 2rem;
+    }
+
     select, button {
-      background:#001c25; color:#8df9ff; border:1px solid #00ffff;
-      padding:0.6rem 1.2rem; font-family:'Orbitron', monospace;
-      font-size:1.1rem; margin:0.5rem; cursor:pointer;
+      background: #001c25;
+      color: #8df9ff;
+      border: 1px solid #00ffff;
+      padding: 0.6rem 1.2rem;
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      margin: 0.5rem;
+      cursor: pointer;
     }
-    #waiting { font-style: italic; opacity: 0.6; }
+
+    #waiting {
+      font-style: italic;
+      opacity: 0.6;
+    }
+
     #soundBanner {
-      position: fixed; top: 0; left: 0; width: 100%; height: 12px;
-      background: #00ffff; box-shadow:0 0 20px #00ffffaa;
-      opacity:0; transition: opacity 0.3s ease, background 0.3s ease;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 12px;
+      background: #00ffff;
+      box-shadow: 0 0 20px #00ffffaa;
+      opacity: 0;
+      transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
       z-index: 999;
     }
+
     .glow-green { box-shadow: inset 0 0 100px #00ff00cc; }
     .glow-orange { box-shadow: inset 0 0 100px #ffaa00cc; }
     .glow-red { box-shadow: inset 0 0 100px #ff0000cc; }
 
-    /* BASE ALERT STYLES */
+    /* CODE 9 OVERLAY */
     #baseAlertOverlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: black; z-index: 9999; display: none;
-      flex-direction: column; justify-content: center; align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: black;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999999;
+      font-family: 'Orbitron', monospace;
     }
+
     .baseAlertText {
-      font-family: 'Orbitron', monospace; font-size: 5rem;
-      color: red; font-weight: bold; margin-bottom: 1.2rem;
-      animation: blink-red 1s infinite;
+      font-size: 6rem;
+      font-weight: bold;
+      color: red;
+      animation: blink 1s step-end infinite;
+      text-shadow: 0 0 20px red;
     }
+
     .codeBox {
-      font-family: 'Orbitron', monospace; font-size: 4rem;
-      font-weight: bold; background-color: red; color: black;
-      padding:0.4em 1.5em; border-radius:6px; box-shadow:0 0 20px red;
+      margin-top: 30px;
+      font-size: 3.5rem;
+      color: red;
+      background-color: black;
+      padding: 15px 35px;
+      border: 4px solid red;
+      text-shadow: 0 0 10px red;
     }
-    @keyframes blink-red { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
   </style>
 </head>
 <body>
   <div id="soundBanner"></div>
+
+  <!-- CODE 9 ALERT OVERLAY -->
+  <div id="baseAlertOverlay">
+    <div class="baseAlertText">BASE ALERT</div>
+    <div class="codeBox">CODE 9</div>
+  </div>
+  <audio id="code9Sound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop preload="auto"></audio>
+
   <h1>SGC COMMAND TERMINAL</h1>
 
   <div id="authSection">
@@ -82,9 +153,9 @@
   <div id="mainInterface" style="display:none;">
     <label for="frequencySelect">Frequency:</label>
     <select id="frequencySelect">
-      <option value="alpha-1">Alpha‑1</option>
-      <option value="bravo-2">Bravo‑2</option>
-      <option value="charlie-3">Charlie‑3</option>
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
     </select>
 
     <div id="status">
@@ -99,29 +170,12 @@
     <button id="signOutBtn">Sign Out</button>
   </div>
 
-  <!-- Overlay and sound -->
-  <div id="baseAlertOverlay">
-    <div class="baseAlertText">BASE ALERT</div>
-    <div class="codeBox">CODE 9</div>
-  </div>
-
-  <!-- Sounds -->
-  <audio id="travelerSound"
-         src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"
-         preload="auto"></audio>
-  <audio id="alertSound"
-         src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"
-         preload="auto" loop></audio>
+  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import {
-      getAuth, GoogleAuthProvider,
-      signInWithPopup, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import {
-      getDatabase, ref, onChildAdded, get, onValue
-    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getDatabase, ref, onChildAdded, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -134,7 +188,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    const auth = getAuth();
     const db = getDatabase(app);
     const provider = new GoogleAuthProvider();
 
@@ -148,10 +202,11 @@
     const travelerSound = document.getElementById("travelerSound");
     const frequencySelect = document.getElementById("frequencySelect");
     const soundBanner = document.getElementById("soundBanner");
-    const alertOverlay = document.getElementById("baseAlertOverlay");
-    const alertSound = document.getElementById("alertSound");
+    const code9Overlay = document.getElementById("baseAlertOverlay");
+    const code9Sound = document.getElementById("code9Sound");
 
-    let listenerRef = null;
+    let currentListener = null;
+    let displayTimeout = null;
 
     function clearMessage() {
       messageEl.textContent = "No signals received yet.";
@@ -159,14 +214,22 @@
       incomingEl.style.display = "none";
     }
 
-    function showMessage(owner, code, statusText) {
+    function showMessage(text) {
       waitingEl.style.display = "none";
       incomingEl.style.display = "block";
-      messageEl.textContent = `Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`;
+      messageEl.textContent = text;
+
+      if (displayTimeout) clearTimeout(displayTimeout);
+      displayTimeout = setTimeout(() => {
+        clearMessage();
+        document.body.classList.remove("glow-green", "glow-orange", "glow-red");
+        soundBanner.style.opacity = 0;
+      }, 10000);
     }
 
     function triggerGlow(status) {
-      document.body.classList.remove("glow-green","glow-orange","glow-red");
+      document.body.classList.remove("glow-green", "glow-orange", "glow-red");
+
       if (status === "verified") {
         document.body.classList.add("glow-green");
         soundBanner.style.background = "#00ff00";
@@ -175,73 +238,90 @@
         document.body.classList.add("glow-orange");
         soundBanner.style.background = "#ffaa00";
         soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
-      } else {
+      } else if (status === "invalid") {
         document.body.classList.add("glow-red");
         soundBanner.style.background = "#ff0000";
         soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
       }
+
       soundBanner.style.opacity = 1;
     }
 
     function listenToFrequency(freq) {
-      if (listenerRef) listenerRef.off();
-      clearMessage();
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      listenerRef = signalsRef;
-      onChildAdded(signalsRef, async snap => {
-        const data = snap.val();
-        if (!data) return;
-        travelerSound.currentTime = 0;
-        travelerSound.play().catch(() => {});
-        const code = data.decrypted || data.code || "UNKNOWN";
-        const codeSnap = await get(ref(db, `codes/${code}`));
-        let owner = "UNKNOWN", statusText = "Received Unknown", status = "unknown";
-        if (codeSnap.exists()) {
-          const val = codeSnap.val();
-          owner = val.owner || "UNKNOWN";
-          status = val.access === true ? "verified" : "invalid";
-          statusText = val.access === true ? "Received and Verified" : "Received INVALID";
-        }
-        showMessage(owner, code, statusText);
-        triggerGlow(status);
-      });
-    }
+      if (currentListener && currentListener.off) currentListener.off();
 
-    function listenForBaseAlert() {
-      const alertRef = ref(db, "alerts/CODE 9");
-      onValue(alertRef, snap => {
-        const active = snap.val() === true;
-        if (active) {
-          alertOverlay.style.display = "flex";
-          alertSound.currentTime = 0;
-          alertSound.play().catch(() => {});
-        } else {
-          alertOverlay.style.display = "none";
-          alertSound.pause();
-          alertSound.currentTime = 0;
+      const signalsRef = ref(db, `frequencies/${freq}/signals`);
+      currentListener = signalsRef;
+
+      onChildAdded(signalsRef, async (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        travelerSound.pause();
+        travelerSound.currentTime = 0;
+        travelerSound.volume = 1.0;
+        travelerSound.play().catch(() => {});
+
+        const code = data.decrypted || data.code || "UNKNOWN";
+        const codeRef = ref(db, `codes/${code}`);
+        const snap = await get(codeRef);
+
+        let statusText = "Received Unknown";
+        let owner = "UNKNOWN";
+        let statusClass = "unknown";
+
+        if (snap.exists()) {
+          const val = snap.val();
+          owner = val.owner || "UNKNOWN";
+          if (val.access === true) {
+            statusText = "Received and Verified";
+            statusClass = "verified";
+          } else if (val.access === false) {
+            statusText = "Received INVALID";
+            statusClass = "invalid";
+          }
         }
+
+        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
+        triggerGlow(statusClass);
+
+        setTimeout(() => {
+          remove(snapshot.ref).catch(console.error);
+        }, 15000);
       });
+
+      clearMessage();
     }
 
     signInBtn.onclick = () => signInWithPopup(auth, provider).catch(console.error);
     signOutBtn.onclick = () => signOut(auth).catch(console.error);
+    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
 
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         authSection.style.display = "none";
         mainInterface.style.display = "block";
         listenToFrequency(frequencySelect.value);
-        listenForBaseAlert();
       } else {
         authSection.style.display = "block";
         mainInterface.style.display = "none";
-        alertOverlay.style.display = "none";
-        alertSound.pause();
-        if (listenerRef) listenerRef.off();
+        if (currentListener && currentListener.off) currentListener.off();
       }
     });
 
-    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
+    // CODE 9 LISTENER
+    const code9Ref = ref(db, 'alerts/CODE 9');
+    onValue(code9Ref, (snapshot) => {
+      const value = snapshot.val();
+      if (value === true) {
+        code9Overlay.style.display = "flex";
+        code9Sound.play().catch(() => {});
+      } else {
+        code9Overlay.style.display = "none";
+        code9Sound.pause();
+        code9Sound.currentTime = 0;
+      }
+    });
   </script>
 </body>
 </html>
