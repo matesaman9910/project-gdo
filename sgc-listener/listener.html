@@ -2,194 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SGC Command Terminal</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #000;
-      font-family: 'Orbitron', sans-serif;
-      color: cyan;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    h1 {
-      font-size: 2.5em;
-      margin-top: 20px;
-      text-shadow: 0 0 15px cyan;
-    }
-
-    #signalBox {
-      border: 2px solid cyan;
-      padding: 20px;
-      margin: 30px auto;
-      width: 60%;
-      border-radius: 10px;
-      font-size: 1.2em;
-    }
-
-    select {
-      font-size: 1em;
-      background: transparent;
-      color: cyan;
-      border: 1px solid cyan;
-      padding: 5px 10px;
-      font-family: 'Orbitron', sans-serif;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1em;
-      background: transparent;
-      border: 2px solid cyan;
-      color: cyan;
-      cursor: pointer;
-    }
-
-    #statusBar {
-      position: fixed;
-      bottom: 10px;
-      width: 100%;
-      font-size: 1.3em;
-      color: cyan;
-      text-shadow: 0 0 10px cyan;
-    }
-
-    /* CODE 9 Overlay */
-    #baseAlertOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: red;
-      z-index: 9999;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .baseAlertText {
-      font-size: 5em;
-      font-weight: bold;
-      color: black;
-      animation: blink 1s infinite;
-      text-shadow: 0 0 15px #000;
-    }
-
-    .codeBox {
-      background-color: black;
-      color: red;
-      font-size: 3em;
-      font-weight: bold;
-      padding: 20px 40px;
-      margin-top: 20px;
-      border: 5px solid red;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    audio {
-      display: none;
-    }
-  </style>
+  <title>SGC Listener</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="listener.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
+  <div id="soundBanner"></div>
+
   <h1>SGC COMMAND TERMINAL</h1>
 
-  <div>
-    <label for="frequency">Frequency:</label>
-    <select id="frequency">
-      <option value="Alpha-1">Alpha-1</option>
-      <option value="Beta-7">Beta-7</option>
-      <option value="Gamma-5">Gamma-5</option>
+  <div id="loginUI">
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <div id="listenerUI" style="display:none;">
+    <label for="frequencySelect">Frequency:</label>
+    <select id="frequencySelect">
+      <option value="alpha-1">Alpha-1</option>
+      <option value="bravo-2">Bravo-2</option>
+      <option value="charlie-3">Charlie-3</option>
     </select>
+
+    <div id="statusMessage" class="status">Awaiting Signal...</div>
+
+    <div id="log">No signals received yet.</div>
+
+    <button id="logout">Sign Out</button>
   </div>
 
-  <h2 id="signalStatus">Awaiting Signal...</h2>
-
-  <div id="signalBox">No signals received yet.</div>
-
-  <button onclick="signOut()">Sign Out</button>
-
-  <div id="statusBar">
-    Time: <span id="time">--:--:--</span> — Firebase: <span id="firebaseStatus">--</span>
-  </div>
-
-  <!-- CODE 9 Overlay -->
   <div id="baseAlertOverlay">
-    <div class="baseAlertText">BASE ALERT</div>
+    <div class="baseAlertText blinking">BASE ALERT</div>
     <div class="codeBox">CODE 9</div>
   </div>
 
-  <!-- Alarm -->
-  <audio id="alertSound" loop>
-    <source src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" type="audio/mpeg">
-  </audio>
+  <div id="footerStatus">
+    <span id="firebaseStatus">Connecting...</span>
+    <span id="currentTime"></span>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      onValue
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5sr0UfKBYhpQb3qwdUTELJP8K0gDq0w",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:8f7654e64c14b75c507672"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Update clock
-    function updateTime() {
-      const now = new Date();
-      document.getElementById('time').textContent = now.toLocaleTimeString();
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
-
-    // Firebase connection check
-    document.getElementById('firebaseStatus').textContent = "✅ Connected";
-
-    // CODE 9 listener
-    const alertRef = ref(db, "alerts/CODE9");
-    onValue(alertRef, (snapshot) => {
-      const isCode9 = snapshot.val();
-      console.log("CODE9 Alert:", isCode9);
-
-      const overlay = document.getElementById("baseAlertOverlay");
-      const alarm = document.getElementById("alertSound");
-
-      if (isCode9) {
-        overlay.style.display = "flex";
-        alarm.play().catch(e => console.warn("🔇 Alarm blocked:", e));
-      } else {
-        overlay.style.display = "none";
-        alarm.pause();
-        alarm.currentTime = 0;
-      }
-    });
-
-    function signOut() {
-      alert("Signed out (demo only)");
-    }
-  </script>
+  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto" loop></audio>
+  <audio id="incomingSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
 </body>
 </html>

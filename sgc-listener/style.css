@@ -1,0 +1,77 @@
+body {
+  background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+  color: #8df9ff;
+  font-family: 'Orbitron', monospace;
+  text-align: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.status {
+  font-size: 1.5rem;
+}
+
+#log {
+  background: rgba(0, 20, 30, 0.8);
+  border: 2px solid #00ffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 440px;
+  max-width: 95vw;
+  min-height: 180px;
+  font-size: 1.25rem;
+  white-space: pre-wrap;
+  margin-top: 1rem;
+}
+
+#baseAlertOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: red;
+  color: black;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.baseAlertText {
+  font-size: 4rem;
+  font-weight: bold;
+  animation: glowBlink 1s infinite;
+}
+
+.codeBox {
+  background: black;
+  color: red;
+  padding: 1rem 2rem;
+  margin-top: 2rem;
+  font-size: 2rem;
+  font-weight: bold;
+  border: 4px solid red;
+}
+
+.blinking {
+  animation: glowBlink 1s infinite;
+}
+
+@keyframes glowBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+#footerStatus {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  font-size: 1.1rem;
+  color: cyan;
+  background: transparent;
+  text-shadow: 0 0 10px cyan;
+}
