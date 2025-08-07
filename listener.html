@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SGC Command Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="firebase-config.js" defer></script>
+  <script src="listener.js" defer></script>
+</head>
+<body>
+  <div id="loginUI">
+    <h1>SGC COMMAND TERMINAL</h1>
+    <button id="googleSignIn">Sign in with Google</button>
+  </div>
+
+  <div id="listenerUI" style="display:none;">
+    <h1>SGC COMMAND TERMINAL</h1>
+    <label for="frequencySelect">Frequency:</label>
+    <select id="frequencySelect">
+      <option value="Alpha-1">Alpha-1</option>
+      <option value="Alpha-2">Alpha-2</option>
+      <option value="Bravo-1">Bravo-1</option>
+    </select>
+    <p id="statusMessage">Awaiting Signal...</p>
+    <pre id="log">No signals received yet.</pre>
+    <button onclick="firebase.auth().signOut()">Sign Out</button>
+  </div>
+
+  <div id="baseAlertOverlay">
+    <div class="baseAlertText blinking">BASE ALERT</div>
+    <div class="codeBox">CODE 9</div>
+  </div>
+
+  <div id="soundBanner"></div>
+
+  <div id="bottomBar">
+    <div id="timeDisplay">Time: --:--:--</div>
+    <div id="firebaseStatus">Firebase: --</div>
+  </div>
+
+  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" preload="auto"></audio>
+</body>
+</html>
