@@ -1,0 +1,93 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
+  color: cyan;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5em;
+  margin-top: 20px;
+}
+
+#soundWarning {
+  background: #111;
+  color: yellow;
+  padding: 10px;
+  font-size: 0.9em;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 9999;
+}
+
+#soundWarning button {
+  background: black;
+  color: cyan;
+  border: 1px solid cyan;
+  padding: 4px 10px;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.signal-box {
+  border: 2px solid cyan;
+  padding: 20px;
+  margin: 20px auto;
+  width: 50%;
+  background-color: #000a;
+  border-radius: 10px;
+}
+
+#baseAlertOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: red;
+  color: black;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.baseAlertText {
+  font-size: 4em;
+  font-weight: bold;
+  animation: glow 2s infinite alternate;
+}
+
+.codeBox {
+  background: black;
+  color: red;
+  padding: 20px 40px;
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+#statusBar {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: transparent;
+  color: cyan;
+  font-size: 1em;
+  text-align: center;
+  padding: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes glow {
+  from { opacity: 1; text-shadow: 0 0 10px white; }
+  to { opacity: 0.2; text-shadow: 0 0 30px red; }
+}

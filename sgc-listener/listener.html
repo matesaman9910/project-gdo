@@ -1,312 +1,60 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      user-select: none;
-      overflow-x: hidden;
-      text-align: center;
-      padding: 2rem;
-      transition: box-shadow 0.4s ease;
-    }
-
-    h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.3em;
-      text-shadow: 0 0 8px #00ffff;
-    }
-
-    #status {
-      font-size: 1.5rem;
-      margin: 1em 0;
-    }
-
-    #incoming {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: blink 1s infinite;
-      margin: 1em 0;
-    }
-
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
-    }
-
-    #log {
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 440px;
-      max-width: 95vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    #authSection, #mainInterface {
-      margin-top: 2rem;
-    }
-
-    select, button {
-      background: #001c25;
-      color: #8df9ff;
-      border: 1px solid #00ffff;
-      padding: 0.6rem 1.2rem;
-      font-family: 'Orbitron', monospace;
-      font-size: 1.1rem;
-      margin: 0.5rem;
-      cursor: pointer;
-    }
-
-    #waiting {
-      font-style: italic;
-      opacity: 0.6;
-    }
-
-    #soundBanner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 12px;
-      background: #00ffff;
-      box-shadow: 0 0 20px #00ffffaa;
-      opacity: 0;
-      transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-      z-index: 999;
-    }
-
-    /* GLOW COLORS */
-    .glow-green {
-      box-shadow: inset 0 0 100px #00ff00cc;
-    }
-
-    .glow-orange {
-      box-shadow: inset 0 0 100px #ffaa00cc;
-    }
-
-    .glow-red {
-      box-shadow: inset 0 0 100px #ff0000cc;
-    }
-  </style>
+  <link rel="stylesheet" href="listener.css" />
 </head>
 <body>
-  <div id="soundBanner"></div>
-
-  <h1>SGC COMMAND TERMINAL</h1>
-
-  <div id="authSection">
-    <button id="signInBtn">Sign in with Google</button>
+  <div id="soundWarning">
+    <span>⚠️ This website uses sound. Due to browser security, interaction is required to play audio.</span>
+    <button onclick="enableSound()">Click here to enable sound</button>
   </div>
 
-  <div id="mainInterface" style="display:none;">
-    <label for="frequencySelect">Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
+  <div id="incomingTraveler" class="hidden">
+    <h1>SGC COMMAND TERMINAL</h1>
+    <label for="channel">Frequency:</label>
+    <select id="channel">
+      <option value="Alpha-1">Alpha-1</option>
+      <option value="Beta-2">Beta-2</option>
+      <option value="Gamma-3">Gamma-3</option>
     </select>
-
-    <div id="status">
-      <div id="waiting">Awaiting Signal...</div>
-      <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+    <div class="traveler-effect">!!INCOMING TRAVELER!!</div>
+    <div class="signal-box">
+      <p>Owner: <span id="owner">UNKNOWN</span></p>
+      <p>Code: <span id="code">000000000</span></p>
+      <p>Status: <span id="status">Received Unknown</span></p>
     </div>
-
-    <div id="log">
-      <div id="message">No signals received yet.</div>
-    </div>
-
-    <button id="signOutBtn">Sign Out</button>
+    <button onclick="signOut()">Sign Out</button>
   </div>
 
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
-
-    const signInBtn = document.getElementById("signInBtn");
-    const signOutBtn = document.getElementById("signOutBtn");
-    const authSection = document.getElementById("authSection");
-    const mainInterface = document.getElementById("mainInterface");
-    const waitingEl = document.getElementById("waiting");
-    const incomingEl = document.getElementById("incoming");
-    const messageEl = document.getElementById("message");
-    const travelerSound = document.getElementById("travelerSound");
-    const frequencySelect = document.getElementById("frequencySelect");
-    const soundBanner = document.getElementById("soundBanner");
-
-    let currentListener = null;
-    let displayTimeout = null;
-
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
-      incomingEl.style.display = "none";
-    }
-
-    function showMessage(text) {
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-      messageEl.textContent = text;
-
-      if (displayTimeout) clearTimeout(displayTimeout);
-      displayTimeout = setTimeout(() => {
-        clearMessage();
-        document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-        soundBanner.style.opacity = 0;
-      }, 10000);
-    }
-
-    function triggerGlow(status) {
-      document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-
-      if (status === "verified") {
-        document.body.classList.add("glow-green");
-        soundBanner.style.background = "#00ff00";
-        soundBanner.style.boxShadow = "0 0 20px #00ff00aa";
-      } else if (status === "unknown") {
-        document.body.classList.add("glow-orange");
-        soundBanner.style.background = "#ffaa00";
-        soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
-      } else if (status === "invalid") {
-        document.body.classList.add("glow-red");
-        soundBanner.style.background = "#ff0000";
-        soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
-      }
-
-      soundBanner.style.opacity = 1;
-    }
-
-    function listenToFrequency(freq) {
-      if (currentListener && currentListener.off) currentListener.off();
-
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      currentListener = signalsRef;
-
-      onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        travelerSound.pause();
-        travelerSound.currentTime = 0;
-        travelerSound.volume = 1.0;
-        travelerSound.play().catch(() => {});
-
-        const code = data.decrypted || data.code || "UNKNOWN";
-        const codeRef = ref(db, `codes/${code}`);
-        const snap = await get(codeRef);
-
-        let statusText = "Received Unknown";
-        let owner = "UNKNOWN";
-        let statusClass = "unknown";
-
-        if (snap.exists()) {
-          const val = snap.val();
-          owner = val.owner || "UNKNOWN";
-          if (val.access === true) {
-            statusText = "Received and Verified";
-            statusClass = "verified";
-          } else if (val.access === false) {
-            statusText = "Received INVALID";
-            statusClass = "invalid";
-          }
-        }
-
-        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
-        triggerGlow(statusClass);
-
-        setTimeout(() => {
-          remove(snapshot.ref).catch(console.error);
-        }, 15000);
-      });
-
-      clearMessage();
-    }
-
-    signInBtn.onclick = () => signInWithPopup(auth, provider).catch(console.error);
-    signOutBtn.onclick = () => signOut(auth).catch(console.error);
-    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authSection.style.display = "none";
-        mainInterface.style.display = "block";
-        listenToFrequency(frequencySelect.value);
-      } else {
-        authSection.style.display = "block";
-        mainInterface.style.display = "none";
-        if (currentListener && currentListener.off) currentListener.off();
-      }
-    });
-  </script>
-
-<!-- SOUND NOTICE -->
-<div id="soundBanner">
-  ⚠️ This website uses sound. Due to browser security, interaction is required to play audio.
-  <button onclick="enableAudio()">Click here to enable sound</button>
-  <audio id="uiBubble" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
-</div>
-
-<!-- BASE ALERT OVERLAY -->
-<div id="baseAlertOverlay">
-  <div class="baseAlertText">
-    <div>BASE</div>
-    <div>ALERT</div>
+  <div id="mainUI">
+    <h1>SGC COMMAND TERMINAL</h1>
+    <label for="channel">Frequency:</label>
+    <select id="channel">
+      <option value="Alpha-1">Alpha-1</option>
+      <option value="Beta-2">Beta-2</option>
+      <option value="Gamma-3">Gamma-3</option>
+    </select>
+    <p class="signal-status">Awaiting Signal...</p>
+    <div class="signal-box">
+      <p>No signals received yet.</p>
+    </div>
+    <button onclick="signOut()">Sign Out</button>
+    <div id="baseCode9Trigger">BASE CODE 9 ALERT</div>
   </div>
-  <div class="codeBox">CODE 9</div>
+
+  <div id="baseAlertOverlay" class="hidden">
+    <div class="baseAlertText">BASE ALERT</div>
+    <div class="codeBox">CODE 9</div>
+  </div>
+
+  <div id="statusBar">Firebase Connected | <span id="clock">00:00:00</span></div>
+
   <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop></audio>
-</div>
+  <audio id="bubbleSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
 
-<!-- STATUS BAR -->
-<div id="statusBar">
-  <span id="statusText">Connecting...</span> |
-  <span id="timeText"></span>
-</div>
-
-<script type="module" src="listener.js?v=14"></script>
-<script>
-  function enableAudio() {
-    document.getElementById('uiBubble').play().catch(() => {});
-    document.getElementById('alertSound').play().catch(() => {});
-    document.getElementById('soundBanner').style.display = 'none';
-  }
-</script>
+  <script src="listener.js"></script>
 </body>
-
 </html>
