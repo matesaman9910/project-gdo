@@ -1,38 +1,49 @@
-
-let soundEnabled = false;
-
-function enableSound() {
-  soundEnabled = true;
-  document.getElementById("soundWarning").style.display = "none";
-  document.getElementById("bubbleSound").play();
-}
-
-function signOut() {
-  alert("Signed out.");
-}
-
-function triggerCode9() {
-  const overlay = document.getElementById("baseAlertOverlay");
-  overlay.classList.remove("hidden");
-
-  document.getElementById("alertSound").play();
-  document.getElementById("statusBar").classList.add("hidden");
-}
-
-function endCode9() {
-  document.getElementById("baseAlertOverlay").classList.add("hidden");
-  document.getElementById("alertSound").pause();
-  document.getElementById("statusBar").classList.remove("hidden");
-}
-
-setInterval(() => {
-  const now = new Date();
-  const timeString = now.toTimeString().split(" ")[0];
-  document.getElementById("clock").innerText = timeString;
-}, 1000);
-
-document.getElementById("baseCode9Trigger").onclick = () => {
-  if (!soundEnabled) enableSound();
-  triggerCode9();
-  setTimeout(endCode9, 10000);
+// Firebase setup
+const firebaseConfig = {
+  // Replace with your actual config
 };
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Time display
+function updateTime() {
+  const clock = document.getElementById("clock");
+  const now = new Date();
+  clock.textContent = now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Sound handling
+let soundEnabled = false;
+const clickSound = document.getElementById("clickSound");
+document.getElementById("enableSound").onclick = () => {
+  clickSound.play();
+  soundEnabled = true;
+  document.getElementById("soundBanner").style.display = "none";
+};
+
+document.querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (soundEnabled) clickSound.play();
+  });
+});
+
+// Simulate CODE 9
+let code9Active = false;
+
+function toggleCode9(active) {
+  const overlay = document.getElementById("baseAlertOverlay");
+  const statusBar = document.getElementById("statusBar");
+
+  code9Active = active;
+  overlay.classList.toggle("hidden", !active);
+  statusBar.style.display = active ? "none" : "block";
+}
+
+// Simulated listener
+setTimeout(() => {
+  toggleCode9(true);
+  setTimeout(() => toggleCode9(false), 8000);
+}, 3000);

@@ -1,59 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>SGC Listener</title>
   <link rel="stylesheet" href="listener.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 </head>
 <body>
-  <div id="soundWarning">
-    <span>⚠️ This website uses sound. Due to browser security, interaction is required to play audio.</span>
-    <button onclick="enableSound()">Click here to enable sound</button>
-  </div>
-
-  <div id="incomingTraveler" class="hidden">
-    <h1>SGC COMMAND TERMINAL</h1>
-    <label for="channel">Frequency:</label>
-    <select id="channel">
-      <option value="Alpha-1">Alpha-1</option>
-      <option value="Beta-2">Beta-2</option>
-      <option value="Gamma-3">Gamma-3</option>
-    </select>
-    <div class="traveler-effect">!!INCOMING TRAVELER!!</div>
-    <div class="signal-box">
-      <p>Owner: <span id="owner">UNKNOWN</span></p>
-      <p>Code: <span id="code">000000000</span></p>
-      <p>Status: <span id="status">Received Unknown</span></p>
-    </div>
-    <button onclick="signOut()">Sign Out</button>
-  </div>
-
-  <div id="mainUI">
-    <h1>SGC COMMAND TERMINAL</h1>
-    <label for="channel">Frequency:</label>
-    <select id="channel">
-      <option value="Alpha-1">Alpha-1</option>
-      <option value="Beta-2">Beta-2</option>
-      <option value="Gamma-3">Gamma-3</option>
-    </select>
-    <p class="signal-status">Awaiting Signal...</p>
-    <div class="signal-box">
-      <p>No signals received yet.</p>
-    </div>
-    <button onclick="signOut()">Sign Out</button>
-    <div id="baseCode9Trigger">BASE CODE 9 ALERT</div>
+  <div id="soundBanner" class="sound-banner">
+    ⚠️ This website uses sound. Due to browser security, interaction is required to play audio.
+    <button id="enableSound">Click here to enable sound</button>
   </div>
 
   <div id="baseAlertOverlay" class="hidden">
-    <div class="baseAlertText">BASE ALERT</div>
+    <div class="baseAlertText blinking">BASE ALERT</div>
     <div class="codeBox">CODE 9</div>
   </div>
 
-  <div id="statusBar">Firebase Connected | <span id="clock">00:00:00</span></div>
-
-  <audio id="alertSound" src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3" loop></audio>
-  <audio id="bubbleSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3"></audio>
+  <div id="content">
+    <h1>SGC COMMAND TERMINAL</h1>
+    <label for="frequencySelect">Frequency:</label>
+    <select id="frequencySelect">
+      <option>Alpha-1</option>
+    </select>
+    <h2 id="signalTitle">Awaiting Signal...</h2>
+    <div class="signalBox" id="signalBox">
+      <p>No signals received yet.</p>
+    </div>
+    <button id="signOut">Sign Out</button>
+    <audio id="clickSound" src="https://file.garden/aACuwggY3QmuIi9B/ui-bubble-243465.mp3" preload="auto"></audio>
+    <div id="statusBar">Firebase Connected | <span id="clock"></span></div>
+  </div>
 
   <script src="listener.js"></script>
 </body>
