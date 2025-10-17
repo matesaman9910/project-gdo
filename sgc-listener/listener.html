@@ -1,279 +1,363 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <title>SGC Listener</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      user-select: none;
-      overflow-x: hidden;
-      text-align: center;
-      padding: 2rem;
-      transition: box-shadow 0.4s ease;
-    }
-
-    h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.3em;
-      text-shadow: 0 0 8px #00ffff;
-    }
-
-    #status {
-      font-size: 1.5rem;
-      margin: 1em 0;
-    }
-
-    #incoming {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: blink 1s infinite;
-      margin: 1em 0;
-    }
-
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
-    }
-
-    #log {
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 440px;
-      max-width: 95vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    #authSection, #mainInterface {
-      margin-top: 2rem;
-    }
-
-    select, button {
-      background: #001c25;
-      color: #8df9ff;
-      border: 1px solid #00ffff;
-      padding: 0.6rem 1.2rem;
-      font-family: 'Orbitron', monospace;
-      font-size: 1.1rem;
-      margin: 0.5rem;
-      cursor: pointer;
-    }
-
-    #waiting {
-      font-style: italic;
-      opacity: 0.6;
-    }
-
-    #soundBanner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 12px;
-      background: #00ffff;
-      box-shadow: 0 0 20px #00ffffaa;
-      opacity: 0;
-      transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-      z-index: 999;
-    }
-
-    /* GLOW COLORS */
-    .glow-green {
-      box-shadow: inset 0 0 100px #00ff00cc;
-    }
-
-    .glow-orange {
-      box-shadow: inset 0 0 100px #ffaa00cc;
-    }
-
-    .glow-red {
-      box-shadow: inset 0 0 100px #ff0000cc;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SGC Listener</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0f14;--fg:#d9faff;--accent:#00e6e6;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b}
+  html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 20% 10%, #092029 0%, #0a0f14 60%);color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px}
+  h1{letter-spacing:2px;margin:0 0 16px;color:var(--accent);text-shadow:0 0 16px rgba(0,230,230,.35)}
+  .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}
+  select,button,input{background:#0f1b23;color:var(--fg);border:1px solid #135760;border-radius:10px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
+  .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid #12313a}
+  .status.blink{animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.35}}
+  .section{margin-top:18px;border:1px solid #12313a;border-radius:14px;padding:14px;background:#0b141a}
+  .section h2{margin:0 0 10px;font-size:18px;color:#9fefff}
+  .grid2{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+  .log{margin-top:16px;border:1px solid #12313a;border-radius:14px;overflow:hidden;background:#0b141a}
+  .log .row{display:grid;grid-template-columns:160px 1fr 140px 140px;gap:8px;padding:10px 14px;border-top:1px solid #102028}
+  .log .row:first-child{border-top:none}
+  .tag{border-radius:999px;padding:4px 10px;border:1px solid transparent;font-size:12px;justify-self:start}
+  .ok{border-color:var(--ok);color:var(--ok)}
+  .bad{border-color:var(--bad);color:var(--bad)}
+  .warn{border-color:var(--warn);color:var(--warn)}
+  /* CODE 9 overlay */
+  #baseAlertOverlay{position:fixed;inset:0;background:#7a0000;display:none;z-index:9999;align-items:center;justify-content:center;flex-direction:column}
+  #baseAlertOverlay.show{display:flex}
+  .baseAlert{font-size:64px;font-weight:700;letter-spacing:6px;color:#fff;animation:blink 1s infinite}
+  .codeBox{margin-top:18px;background:#000;border:6px solid #ff1a1a;color:#ff1a1a;padding:8px 20px;font-size:36px;font-weight:700;letter-spacing:4px}
+  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;padding:8px 12px;border-radius:10px;font-size:14px;display:none}
+  .soundBanner.show{display:block}
+</style>
 </head>
 <body>
-  <div id="soundBanner"></div>
+<div class="wrap">
+  <h1>SGC Listener</h1>
 
-  <h1>SGC COMMAND TERMINAL</h1>
-
-  <div id="authSection">
-    <button id="signInBtn">Sign in with Google</button>
-  </div>
-
-  <div id="mainInterface" style="display:none;">
-    <label for="frequencySelect">Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
+  <div class="bar">
+    <a href="index.html" style="text-decoration:none"><button>← Back</button></a>
+    <button id="btnLogin">Sign in with Google</button>
+    <button id="btnLogout" style="display:none">Sign out</button>
+    <select id="selFreq" disabled>
+      <option value="alpha-1">alpha-1</option>
+      <option value="bravo-2">bravo-2</option>
+      <option value="charlie-3">charlie-3</option>
     </select>
-
-    <div id="status">
-      <div id="waiting">Awaiting Signal...</div>
-      <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
-    </div>
-
-    <div id="log">
-      <div id="message">No signals received yet.</div>
-    </div>
-
-    <button id="signOutBtn">Sign Out</button>
+    <button id="btnMonitor" disabled>Monitor</button>
+    <div id="state" class="status">Sign in required</div>
   </div>
 
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
+  <!-- ALERT CONTROL (issue alarm codes) -->
+  <div class="section" id="alertSection" style="display:none">
+    <h2>Alerts</h2>
+    <div class="grid2">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button id="btnCode9On">Activate CODE 9</button>
+        <button id="btnCode9Off">Deactivate CODE 9</button>
+        <span id="code9State" class="status" style="border-color:#12313a">Unknown</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <!-- Připravené pro další alerty: LOCKDOWN, FIRE, apod. -->
+        <button id="btnAllClear">All Clear (reset alerts)</button>
+      </div>
+    </div>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  <!-- Codes Admin (only for admin claim) -->
+  <div class="section" id="codesPanel" style="display:none">
+    <h2>Codes Admin</h2>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <label style="display:block;margin-bottom:6px">Code</label>
+        <input id="codeInput" placeholder="e.g. 256525457454">
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label style="display:block;margin-bottom:6px">Owner</label>
+        <input id="ownerInput" placeholder="e.g. SG-1">
+      </div>
+      <div>
+        <label style="display:block;margin-bottom:6px">Access</label>
+        <select id="accessInput">
+          <option value="true">true</option>
+          <option value="false">false</option>
+        </select>
+      </div>
+      <button id="btnAddCode">Add / Update</button>
+      <button id="btnRefreshCodes">Refresh</button>
+    </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+    <div class="log" style="margin-top:14px">
+      <div class="row" style="background:#0e1a20;font-weight:700">
+        <div>Code</div><div>Owner</div><div>Access</div><div>Actions</div>
+      </div>
+      <div id="codesTable"></div>
+    </div>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
+  <!-- Log -->
+  <div class="section">
+    <h2>Frequency Log</h2>
+    <div class="log" id="log">
+      <div class="row" style="background:#0e1a20;font-weight:700">
+        <div>Owner</div><div>Code</div><div>Status</div><div>Time</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    const signInBtn = document.getElementById("signInBtn");
-    const signOutBtn = document.getElementById("signOutBtn");
-    const authSection = document.getElementById("authSection");
-    const mainInterface = document.getElementById("mainInterface");
-    const waitingEl = document.getElementById("waiting");
-    const incomingEl = document.getElementById("incoming");
-    const messageEl = document.getElementById("message");
-    const travelerSound = document.getElementById("travelerSound");
-    const frequencySelect = document.getElementById("frequencySelect");
-    const soundBanner = document.getElementById("soundBanner");
+<!-- Overlay + audio -->
+<div id="baseAlertOverlay" aria-hidden="true">
+  <div class="baseAlert">BASE ALERT</div>
+  <div class="codeBox">CODE 9</div>
+</div>
+<div class="soundBanner" id="soundBanner">Klikni kamkoli pro povolení zvuku</div>
+<audio id="sndIncoming" preload="auto" src="incoming-traveler.mp3"></audio>
+<audio id="sndBase" preload="auto" loop src="basealert.mp3"></audio>
 
-    let currentListener = null;
-    let displayTimeout = null;
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, getIdTokenResult } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+  import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
-      incomingEl.style.display = "none";
-    }
+  // === CONFIG (VYMĚŇ)
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "YOUR_PROJECT",
+    appId: "YOUR_APP_ID"
+  };
 
-    function showMessage(text) {
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-      messageEl.textContent = text;
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-      if (displayTimeout) clearTimeout(displayTimeout);
-      displayTimeout = setTimeout(() => {
-        clearMessage();
-        document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-        soundBanner.style.opacity = 0;
-      }, 10000);
-    }
+  // UI refs
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  const selFreq = document.getElementById('selFreq');
+  const btnMonitor = document.getElementById('btnMonitor');
+  const stateEl = document.getElementById('state');
+  const logEl = document.getElementById('log');
+  const overlay = document.getElementById('baseAlertOverlay');
+  const sndIncoming = document.getElementById('sndIncoming');
+  const sndBase = document.getElementById('sndBase');
+  const soundBanner = document.getElementById('soundBanner');
 
-    function triggerGlow(status) {
-      document.body.classList.remove("glow-green", "glow-orange", "glow-red");
+  // Sections
+  const alertSection = document.getElementById('alertSection');
+  const codesPanel  = document.getElementById('codesPanel');
 
-      if (status === "verified") {
-        document.body.classList.add("glow-green");
-        soundBanner.style.background = "#00ff00";
-        soundBanner.style.boxShadow = "0 0 20px #00ff00aa";
-      } else if (status === "unknown") {
-        document.body.classList.add("glow-orange");
-        soundBanner.style.background = "#ffaa00";
-        soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
-      } else if (status === "invalid") {
-        document.body.classList.add("glow-red");
-        soundBanner.style.background = "#ff0000";
-        soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
+  // Alert controls
+  const btnCode9On  = document.getElementById('btnCode9On');
+  const btnCode9Off = document.getElementById('btnCode9Off');
+  const btnAllClear = document.getElementById('btnAllClear');
+  const code9State  = document.getElementById('code9State');
+
+  // Codes admin
+  const codeInput  = document.getElementById('codeInput');
+  const ownerInput = document.getElementById('ownerInput');
+  const accessInput= document.getElementById('accessInput');
+  const btnAddCode = document.getElementById('btnAddCode');
+  const btnRefresh = document.getElementById('btnRefreshCodes');
+  const codesTable = document.getElementById('codesTable');
+
+  let unsubFreq = null;
+  let unsubAlert = null;
+  let soundsEnabled = false;
+  let isAdmin = false;
+
+  // Enable audio on first click (autoplay policy)
+  window.addEventListener('pointerdown', () => { soundsEnabled = true; soundBanner.classList.remove('show'); }, { once: true });
+
+  // Auth
+  btnLogin.onclick = async () => { await signInWithPopup(auth, new GoogleAuthProvider()); };
+  btnLogout.onclick = () => signOut(auth);
+
+  onAuthStateChanged(auth, async (user) => {
+    stopFreq(); toggleBaseAlert(false);
+    if (user) {
+      btnLogin.style.display = 'none';
+      btnLogout.style.display = 'inline-block';
+      selFreq.disabled = false; btnMonitor.disabled = false;
+      stateEl.textContent = 'Awaiting Signal…'; stateEl.classList.add('blink');
+
+      try {
+        const token = await getIdTokenResult(user, true);
+        isAdmin = !!(token.claims && token.claims.admin === true);
+      } catch { isAdmin = false; }
+
+      // Show sections:
+      alertSection.style.display = 'block'; // každý přihlášený vidí stav alertu
+      codesPanel.style.display   = isAdmin ? 'block' : 'none'; // edit kódů jen admin
+
+      // Alert status live:
+      if (!unsubAlert) {
+        unsubAlert = onValue(ref(db, 'alerts/CODE 9'), (snap) => {
+          const active = snap.val() === true;
+          code9State.textContent = active ? 'CODE 9 ACTIVE' : 'CODE 9 OFF';
+          code9State.style.borderColor = active ? 'var(--bad)' : '#12313a';
+          toggleBaseAlert(active);
+        });
       }
-
-      soundBanner.style.opacity = 1;
+    } else {
+      btnLogin.style.display = 'inline-block';
+      btnLogout.style.display = 'none';
+      selFreq.disabled = true; btnMonitor.disabled = true;
+      stateEl.textContent = 'Sign in required'; stateEl.classList.remove('blink');
+      isAdmin = false;
+      alertSection.style.display = 'none';
+      codesPanel.style.display   = 'none';
     }
+  });
 
-    function listenToFrequency(freq) {
-      if (currentListener && currentListener.off) currentListener.off();
+  // Frequency monitoring
+  btnMonitor.onclick = () => {
+    stopFreq();
+    const ch = selFreq.value;
+    const path = `frequencies/${ch}/signals`;
+    stateEl.textContent = `Monitoring: ${ch}`;
+    stateEl.classList.add('blink');
 
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      currentListener = signalsRef;
-
-      onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        travelerSound.pause();
-        travelerSound.currentTime = 0;
-        travelerSound.volume = 1.0;
-        travelerSound.play().catch(() => {});
-
-        const code = data.decrypted || data.code || "UNKNOWN";
-        const codeRef = ref(db, `codes/${code}`);
-        const snap = await get(codeRef);
-
-        let statusText = "Received Unknown";
-        let owner = "UNKNOWN";
-        let statusClass = "unknown";
-
-        if (snap.exists()) {
-          const val = snap.val();
-          owner = val.owner || "UNKNOWN";
-          if (val.access === true) {
-            statusText = "Received and Verified";
-            statusClass = "verified";
-          } else if (val.access === false) {
-            statusText = "Received INVALID";
-            statusClass = "invalid";
-          }
-        }
-
-        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
-        triggerGlow(statusClass);
-
-        setTimeout(() => {
-          remove(snapshot.ref).catch(console.error);
-        }, 15000);
-      });
-
-      clearMessage();
-    }
-
-    signInBtn.onclick = () => signInWithPopup(auth, provider).catch(console.error);
-    signOutBtn.onclick = () => signOut(auth).catch(console.error);
-    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authSection.style.display = "none";
-        mainInterface.style.display = "block";
-        listenToFrequency(frequencySelect.value);
-      } else {
-        authSection.style.display = "block";
-        mainInterface.style.display = "none";
-        if (currentListener && currentListener.off) currentListener.off();
-      }
+    unsubFreq = onChildAdded(ref(db, path), async (snap) => {
+      const data = snap.val();
+      await handleIncomingSignal(ch, data);
+      // cleanup ~15s
+      setTimeout(() => remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 15000);
     });
-  </script>
+  };
+  function stopFreq(){ if (unsubFreq){ unsubFreq(); unsubFreq = null; } }
+
+  async function handleIncomingSignal(ch, sig){
+    if (soundsEnabled) { try { sndIncoming.currentTime = 0; sndIncoming.play(); } catch{} }
+    const code = (sig?.code || "").toString().trim();
+    const codeSnap = await get(child(ref(db), `codes/${code}`));
+    let status = 'UNKNOWN', cls='warn', owner='—';
+    if (codeSnap.exists()) {
+      const c = codeSnap.val();
+      owner = c.owner || '—';
+      if (c.access === true) { status = 'VERIFIED'; cls='ok'; }
+      else { status = 'INVALID'; cls='bad'; }
+    }
+    appendRow(owner, code, status, cls);
+    flashStatus(status);
+  }
+  function appendRow(owner, code, status, cls){
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <div>${escapeHtml(owner)}</div>
+      <div>${escapeHtml(code)}</div>
+      <div><span class="tag ${cls}">${status}</span></div>
+      <div>${new Date().toLocaleTimeString()}</div>
+    `;
+    logEl.appendChild(row); logEl.scrollTop = logEl.scrollHeight;
+  }
+  function flashStatus(status){
+    let color = 'var(--warn)'; if (status==='VERIFIED') color='var(--ok)'; if (status==='INVALID') color='var(--bad)';
+    stateEl.style.borderColor = color; stateEl.style.boxShadow = `0 0 16px ${color}55`;
+    setTimeout(()=>{ stateEl.style.boxShadow='none'; }, 1200);
+  }
+
+  // Overlay control
+  function toggleBaseAlert(active){
+    overlay.classList.toggle('show', !!active);
+    if (active && soundsEnabled) { try { sndBase.play(); } catch{} }
+    else { try { sndBase.pause(); sndBase.currentTime = 0; } catch{} }
+    if (active && !soundsEnabled) soundBanner.classList.add('show'); else soundBanner.classList.remove('show');
+  }
+
+  // === ISSUE ALERTS (write requires admin in rules)
+  btnCode9On.onclick  = async () => { await set(ref(db, 'alerts/CODE 9'), true); };
+  btnCode9Off.onclick = async () => { await set(ref(db, 'alerts/CODE 9'), false); };
+  btnAllClear.onclick = async () => {
+    await Promise.all([
+      set(ref(db, 'alerts/CODE 9'), false)
+      // sem můžeš přidat další klíče alertů, pokud je zavedeme
+    ]);
+  };
+
+  // === CODES ADMIN
+  async function loadCodesOnce(){
+    const snap = await get(ref(db, 'codes'));
+    renderCodes(snap.exists() ? snap.val() : {});
+  }
+  function renderCodes(obj){
+    codesTable.innerHTML = '';
+    const entries = Object.entries(obj || {});
+    if (entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'row';
+      empty.innerHTML = `<div style="grid-column:1/5;opacity:.7">No codes</div>`;
+      codesTable.appendChild(empty); return;
+    }
+    for (const [code, rec] of entries) {
+      const access = rec && rec.access === true ? 'true' : 'false';
+      const owner  = (rec && rec.owner) ? rec.owner : '—';
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div>${escapeHtml(code)}</div>
+        <div>${escapeHtml(owner)}</div>
+        <div><span class="tag ${access==='true'?'ok':'bad'}">${access}</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button data-act="toggle" data-code="${escapeAttr(code)}">${access==='true'?'Disable':'Enable'}</button>
+          <button data-act="edit" data-code="${escapeAttr(code)}">Edit</button>
+          <button data-act="del" data-code="${escapeAttr(code)}" style="border-color:#ff3b3b;color:#ff3b3b">Delete</button>
+        </div>
+      `;
+      codesTable.appendChild(row);
+    }
+  }
+  btnAddCode.onclick = async () => {
+    if (!isAdmin) return alert('Not authorized');
+    const code = (codeInput.value||'').trim();
+    const owner = (ownerInput.value||'').trim() || '—';
+    const access = accessInput.value === 'true';
+    if (!code) return alert('Code required');
+    await set(ref(db, `codes/${code}`), { owner, access });
+    codeInput.value=''; ownerInput.value=''; accessInput.value='true';
+    await loadCodesOnce();
+  };
+  btnRefresh.onclick = loadCodesOnce;
+  codesTable.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button'); if (!btn) return;
+    const code = btn.getAttribute('data-code'); if (!code) return;
+    const act = btn.getAttribute('data-act');
+
+    if (act === 'toggle') {
+      const snap = await get(ref(db, `codes/${code}`));
+      if (snap.exists()) {
+        const current = !!snap.val().access;
+        await update(ref(db, `codes/${code}`), { access: !current });
+        await loadCodesOnce();
+      }
+    } else if (act === 'edit') {
+      const snap = await get(ref(db, `codes/${code}`));
+      if (snap.exists()) {
+        const rec = snap.val();
+        codeInput.value = code;
+        ownerInput.value = rec.owner || '';
+        accessInput.value = rec.access === true ? 'true' : 'false';
+        window.scrollTo({ top: codesPanel.offsetTop - 10, behavior: 'smooth' });
+      }
+    } else if (act === 'del') {
+      if (!isAdmin) return alert('Not authorized');
+      if (confirm(`Delete code ${code}?`)) {
+        await remove(ref(db, `codes/${code}`));
+        await loadCodesOnce();
+      }
+    }
+  });
+
+  // utils
+  function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function escapeAttr(s){return String(s).replace(/"/g,'&quot;')}
+</script>
 </body>
 </html>
