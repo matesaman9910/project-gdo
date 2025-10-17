@@ -1,214 +1,103 @@
-<!DOCTYPE html>
-<html lang="en" >
+<!doctype html>
+<html lang="cs">
 <head>
-  <meta charset="UTF-8" />
-  <title>SGC GDO</title>
-  <style>
-    /* Stargate-themed styling - same as listener */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      user-select: none;
-      overflow: hidden;
-      text-align: center;
-      padding: 2rem;
-    }
-
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 0.2em;
-      text-shadow: 0 0 8px #00ffff;
-      letter-spacing: 0.1em;
-    }
-
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      text-shadow: 0 0 6px #00ffffaa;
-    }
-
-    select, input[type="text"] {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.3rem;
-      padding: 0.4rem 0.6rem;
-      margin-top: 0.4rem;
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      background: #001419;
-      color: #8df9ff;
-      outline: none;
-      width: 220px;
-      text-align: center;
-      box-shadow:
-        0 0 8px #00ffff88,
-        inset 0 0 12px #00ffff44;
-      user-select: text;
-      transition: border-color 0.3s ease;
-    }
-
-    select:focus, input[type="text"]:focus {
-      border-color: #00ffffee;
-      box-shadow:
-        0 0 20px #00ffffcc,
-        inset 0 0 20px #00ffffbb;
-    }
-
-    button {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.5rem;
-      padding: 0.6rem 3rem;
-      margin-top: 2rem;
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      background: #001419;
-      color: #8df9ff;
-      cursor: pointer;
-      user-select: none;
-      box-shadow:
-        0 0 15px #00ffffaa;
-      transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    button:hover:enabled {
-      background-color: #00ffff;
-      color: #001419;
-      box-shadow:
-        0 0 30px #00ffffee,
-        0 0 40px #00ffffee;
-    }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    #log {
-      margin-top: 2rem;
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      width: 420px;
-      max-width: 90vw;
-      min-height: 120px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow:
-        0 0 10px #00ffff88,
-        inset 0 0 15px #00ffff66;
-      user-select: text;
-      text-align: left;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GDO Transmitter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0f14;--fg:#d9faff;--accent:#00e6e6}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0a0f14;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .card{width:min(560px,92vw);background:#0f1b23;border:1px solid #12313a;border-radius:16px;padding:18px 18px 22px;box-shadow:0 0 40px #00e6e61f}
+  h1{margin:0 0 8px;color:var(--accent)}
+  label{display:block;margin:12px 0 6px}
+  input,select,button{width:100%;background:#0b141a;color:#d9faff;border:1px solid #12313a;border-radius:10px;padding:10px 12px;font-family:inherit}
+  button{cursor:pointer}
+  .row{display:grid;grid-template-columns:1fr 160px;gap:10px}
+  .hint{opacity:.8;font-size:12px;margin-top:4px}
+  .out{margin-top:12px;font-size:12px;word-break:break-all}
+  .ok{color:#2ee66b}.warn{color:#ffb02e}
+</style>
 </head>
 <body>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+      <h1>GDO Transmitter</h1>
+      <a href="index.html" style="text-decoration:none"><button>← Back</button></a>
+    </div>
+    <label for="code">Access Code</label>
+    <input id="code" autocomplete="off" placeholder="Enter code…"/>
+    <div class="row">
+      <div>
+        <label for="freq">Frequency</label>
+        <select id="freq">
+          <option value="alpha-1">alpha-1</option>
+          <option value="bravo-2">bravo-2</option>
+          <option value="charlie-3">charlie-3</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="send">Transmit</button>
+      </div>
+    </div>
+    <div class="hint">This device is intentionally unauthenticated. Do not send real secrets.</div>
+    <div class="out"><b>Status:</b> <span id="status">Idle</span></div>
+    <div class="out"><b>Encrypted:</b> <span id="enc">—</span></div>
+    <div class="out"><b>Decrypted:</b> <span id="dec">—</span></div>
+  </div>
 
-  <h1>SGC TRANSMITTER</h1>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getDatabase, ref, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  <label for="frequency">Select Frequency:</label>
-  <select id="frequency">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-    <option value="charlie-3">Charlie-3</option>
-  </select>
+  // === CONFIG (STEJNÝ jako Listener) ===
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "YOUR_PROJECT",
+    appId: "YOUR_APP_ID"
+  };
 
-  <label for="codeInput">Enter Code (numbers only, max 9 digits):</label>
-  <input id="codeInput" type="text" maxlength="9" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Enter code..." />
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-  <button id="transmitBtn" disabled>Transmit</button>
+  const codeEl = document.getElementById('code');
+  const freqEl = document.getElementById('freq');
+  const sendBtn = document.getElementById('send');
+  const stEl = document.getElementById('status');
+  const encEl = document.getElementById('enc');
+  const decEl = document.getElementById('dec');
 
-  <div id="log">Waiting to transmit...</div>
+  let cooldown = false;
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+  sendBtn.onclick = async () => {
+    if (cooldown) return;
+    const code = (codeEl.value||"").trim();
+    const ch = freqEl.value;
+    if (!code) { stEl.textContent = "Enter code"; stEl.className='warn'; return; }
 
-    // Firebase config (your config here)
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.firebasestorage.app",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+    cooldown = true; sendBtn.disabled = true;
+    stEl.textContent = "Encrypting…"; stEl.className='';
+    decEl.textContent = code;
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    // fake encryption: Base64 + malé zpoždění
+    const encrypted = btoa(unescape(encodeURIComponent(code)));
+    await new Promise(r => setTimeout(r, 400));
+    encEl.textContent = encrypted;
 
-    const codeInput = document.getElementById('codeInput');
-    const frequencySelect = document.getElementById('frequency');
-    const transmitBtn = document.getElementById('transmitBtn');
-    const log = document.getElementById('log');
+    const path = `frequencies/${ch}/signals`;
+    const newRef = push(ref(db, path));
+    await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
 
-    // Enable button only if code is valid (numbers only, length 1-9)
-    codeInput.addEventListener('input', () => {
-      // Remove any non-digit characters immediately
-      codeInput.value = codeInput.value.replace(/\D/g, '');
+    stEl.textContent = "Transmitted"; stEl.className='ok';
+    await new Promise(r => setTimeout(r, 900));
+    stEl.textContent = "Cooldown 10s…"; stEl.className='';
 
-      transmitBtn.disabled = !(codeInput.value.length > 0);
-    });
-
-    // Transmit function
-    async function transmit() {
-      const code = codeInput.value.trim();
-      const freq = frequencySelect.value;
-
-      if (!code) {
-        log.textContent = "Please enter a valid code before transmitting.";
-        return;
-      }
-
-      transmitBtn.disabled = true;
-      frequencySelect.disabled = true;
-      codeInput.disabled = true;
-
-      log.textContent = "Encrypting...";
-
-      // Simulate encryption delay
-      await new Promise(r => setTimeout(r, 1000));
-      log.textContent = "Transmitting...";
-
-      // Push to Firebase DB path: frequencies/{freq}/signals/{unique}
-      try {
-        const timestamp = Date.now();
-        const signalRef = ref(db, `frequencies/${freq}/signals/${timestamp}`);
-
-        await set(signalRef, {
-          code: code,
-          timestamp: timestamp
-        });
-
-        log.textContent = `Code "${code}" transmitted on frequency "${freq}".`;
-      } catch (err) {
-        log.textContent = `Transmit error: ${err.message}`;
-      }
-
-      // Clear input and reset button after 15 seconds
-      setTimeout(() => {
-        codeInput.value = '';
-        log.textContent = "Waiting to transmit...";
-        transmitBtn.disabled = true;
-        frequencySelect.disabled = false;
-        codeInput.disabled = false;
-      }, 15000);
-    }
-
-    transmitBtn.addEventListener('click', transmit);
-
-  </script>
+    for (let i=10;i>0;i--){ stEl.textContent = `Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
+    stEl.textContent = "Idle"; cooldown = false; sendBtn.disabled = false;
+  };
+</script>
 </body>
 </html>
