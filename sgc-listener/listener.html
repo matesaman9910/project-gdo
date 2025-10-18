@@ -25,17 +25,17 @@
   .tab{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#0b141c;cursor:pointer}
   .tab.active{outline:2px solid #1e94aa}
   .grid{display:grid;grid-template-columns:1fr;gap:12px}
-  @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
   .panel h2{margin:0 0 8px;font-size:18px;color:#9fefff}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
   .blink{animation:blink 1s infinite} @keyframes blink{50%{opacity:.35}}
-  .tag{border-radius:999px;padding:4px 10px;border:1px solid transparent;font-size:12px}
-  .ok{border-color:var(--ok);color:var(--ok)} .bad{border-color:var(--bad);color:var(--bad)} .warn{border-color:var(--warn);color:var(--warn)}
+  .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
+  .ok{border-color:var(--ok);color:#0f0} .bad{border-color:var(--bad);color:#ff3b3b} .warn{border-color:var(--warn);color:#ffb02e}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+
   .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
 
-  /* blue INCOMING banner */
+  /* INCOMING banner (longer show) */
   #incomingBanner{
     position:fixed; left:50%; transform:translateX(-50%) translateY(-120%); top:10px;
     background:var(--alertBlue); color:#fff; z-index:9000; border:3px solid #cfe8ff;
@@ -43,9 +43,15 @@
   }
   #incomingBanner .t1{display:block;font-weight:900;color:#ff3b3b;text-shadow:0 0 6px #7a0000}
   #incomingBanner .t2{display:block;font-weight:800;color:#ff3b3b}
-  #incomingBanner.show{animation:bannerIn .35s ease-out forwards, bannerPulse 1.2s ease-in-out 1 .35s}
+  #incomingBanner.show{animation:bannerIn .35s ease-out forwards, bannerHold 3.15s linear 0.35s, bannerOut .35s ease-in 3.5s forwards}
   @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}
-  @keyframes bannerPulse{0%{filter:brightness(1)}50%{filter:brightness(1.25)}100%{filter:brightness(1)}}
+  @keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}
+  @keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
+
+  /* emphasized Owner / Result */
+  .emph{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .ownerBig{font-size:22px}
+  .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border-width:2px}
 </style>
 </head>
 <body>
@@ -65,7 +71,7 @@
       </div>
     </div>
 
-    <!-- LISTENER VIEW (no history log) -->
+    <!-- LISTENER VIEW -->
     <section id="viewListener">
       <div class="grid">
         <div class="panel">
@@ -80,35 +86,27 @@
             <div id="state" class="status">Sign in required</div>
           </div>
 
+          <!-- live pipeline (no history) -->
           <div class="panel" style="margin:10px 0 0">
             <div style="margin:6px 0"><b>Status:</b> <span id="sigStatus">Idle</span></div>
             <div style="margin:6px 0"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
             <div style="margin:6px 0"><b>Decrypted:</b> <span id="decView" class="mono">—</span></div>
-            <div style="margin:6px 0"><b>Owner:</b> <span id="ownerView">—</span> &nbsp; <b>Result:</b> <span id="resView" class="tag warn">—</span></div>
+
+            <div class="emph">
+              <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
+              <div><b>Result:</b> <span id="resView" class="tag resultBig warn">—</span></div>
+            </div>
           </div>
         </div>
 
         <div class="panel">
-          <h2>Quick Info</h2>
-          <div style="opacity:.8">No signal history is stored or shown. Latest signal only.</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- MANAGEMENT (CODE 9 + Codes CRUD) -->
-    <section id="viewMgmt" style="display:none">
-      <div class="grid">
-        <div class="panel">
-          <h2>Alerts</h2>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <h2>Alerts & Codes</h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button id="btnCode9On">Activate CODE 9</button>
             <button id="btnCode9Off">Deactivate CODE 9</button>
             <span id="code9State" class="badge">CODE 9 OFF</span>
           </div>
-        </div>
-
-        <div class="panel">
-          <h2>Codes</h2>
+          <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
           <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
             <div style="flex:1;min-width:180px">
               <label style="display:block;margin-bottom:6px">Code</label>
@@ -125,13 +123,12 @@
             <button id="btnAddCode">Add / Update</button>
             <button id="btnRefreshCodes">Refresh</button>
           </div>
-
-          <div class="panel" style="margin-top:12px">
-            <div class="log" id="codesTable" style="border:0;background:transparent"></div>
-          </div>
+          <div id="codesInfo" style="opacity:.8;font-size:12px;margin-top:8px">Codes table hidden (no history). Use Refresh to ensure latest.</div>
         </div>
       </div>
     </section>
+
+    <!-- MANAGEMENT TAB (optional: keep same as your last version if you prefer full CRUD table there). -->
   </div>
 </main>
 
@@ -169,7 +166,7 @@
 
   const btnCode9On=document.getElementById('btnCode9On'), btnCode9Off=document.getElementById('btnCode9Off'), code9State=document.getElementById('code9State');
   const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
-  const btnAddCode=document.getElementById('btnAddCode'), btnRefresh=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
+  const btnAddCode=document.getElementById('btnAddCode'), btnRefresh=document.getElementById('btnRefreshCodes');
 
   const sndIncoming=document.getElementById('sndIncoming'), incomingBanner=document.getElementById('incomingBanner');
 
@@ -177,8 +174,8 @@
 
   // Tabs
   function activateTab(which){
-    if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; viewMgmt.style.display='none'; }
-    else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); viewMgmt.style.display='block'; viewListener.style.display='none'; }
+    if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; if(viewMgmt) viewMgmt.style.display='none'; }
+    else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); if(viewMgmt) viewMgmt.style.display='block'; viewListener.style.display='none'; }
   }
   tabListener.onclick=()=>activateTab('listener');
   tabMgmt.onclick=()=>activateTab('mgmt');
@@ -192,27 +189,25 @@
     if (user){
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
+
       // auto start on alpha-1
       selFreq.value='alpha-1'; startMonitor();
 
-      // CODE 9 badge only
+      // CODE 9 badge (no overlay here)
       if (!unsubAlert){
-        unsubAlert=onValue(ref(db,'alerts/CODE 9'),(snap)=>{
-          const v=snap.val(); const active=(typeof v==='boolean')?v:!!(v&&v.value===true);
-          code9State.textContent=active?'CODE 9 ACTIVE':'CODE 9 OFF';
-          code9State.style.color=active?'#ff2a2a':'#9fefff';
-          code9State.style.borderColor=active?'#ff2a2a':'#135760';
+        unsubAlert = onValue(ref(db,'alerts/CODE 9'), (snap)=>{
+          const v = snap.val();
+          const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
+          code9State.textContent = active ? 'CODE 9 ACTIVE' : 'CODE 9 OFF';
+          code9State.style.color = active ? '#ff2a2a' : '#9fefff';
+          code9State.style.borderColor = active ? '#ff2a2a' : '#135760';
         });
       }
-
-      // load codes table initially
-      await refreshCodesTable();
-    }else{
+    } else {
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
       if (unsubAlert){unsubAlert();unsubAlert=null;}
-      codesTable.innerHTML='';
     }
   });
 
@@ -226,26 +221,25 @@
     stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
     unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
       const data=snap.val(); await handleIncomingSignal(ch,data);
-      // auto-delete after 10s
-      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000);
+      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s delete
     });
   }
   function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
 
   // Incoming pipeline (ALLOWED / DENIED / UNKNOWN)
   async function handleIncomingSignal(ch,sig){
-    // banner animation
+    // banner longer
     incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
-    setTimeout(()=>incomingBanner.classList.remove('show'),1600);
+    setTimeout(()=>incomingBanner.classList.remove('show'), 3850);
     try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
 
     const code=(sig?.code||'').toString().trim();
     const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
     sigStatus.textContent=`INCOMING on ${ch}`;
-    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag warn';
+    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag resultBig warn';
 
-    await sleep(180);
+    await sleep(200);
     encView.textContent=encrypted;
     sigStatus.textContent='DECRYPTING…';
     await sleep(520);
@@ -259,69 +253,23 @@
       else { label='DENIED'; cls='bad'; }
     }
     ownerView.textContent=owner;
-    resView.textContent=label; resView.className=`tag ${cls}`;
+    resView.textContent=label; resView.className=`tag resultBig ${cls}`;
   }
 
-  // Alerts
+  // Alerts + Codes
   btnCode9On.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),true); };
   btnCode9Off.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),false); };
-
-  // Codes CRUD
   btnAddCode.onclick=async()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
     await set(ref(db,'codes/'+code),{ owner, access });
     codeInput.value=''; ownerInput.value=''; accessInput.value='true';
-    await refreshCodesTable();
   };
-  btnRefresh.onclick=refreshCodesTable;
-
-  async function refreshCodesTable(){
-    const snap=await get(ref(db,'codes'));
-    const data=snap.exists()?snap.val():{};
-    const entries=Object.entries(data);
-    const html=[`
-      <div class="row" style="display:grid;grid-template-columns:180px 1fr 140px 160px;gap:8px;padding:10px 14px;background:#0e1a20;font-weight:700;border-radius:10px">
-        <div>Code</div><div>Owner</div><div>Access</div><div>Actions</div>
-      </div>`];
-    if(entries.length===0){
-      html.push(`<div style="opacity:.7;margin-top:10px">No codes</div>`);
-    }else{
-      for (const [code,rec] of entries){
-        const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
-        html.push(`
-          <div class="row" style="display:grid;grid-template-columns:180px 1fr 140px 160px;gap:8px;padding:10px 14px;border-top:1px solid #102028">
-            <div>${esc(code)}</div>
-            <div>${esc(owner)}</div>
-            <div><span class="tag ${access==='true'?'ok':'bad'}">${access}</span></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button data-act="toggle" data-code="${att(code)}">${access==='true'?'Disable':'Enable'}</button>
-              <button data-act="edit" data-code="${att(code)}">Edit</button>
-              <button data-act="del" data-code="${att(code)}" style="border-color:#ff3b3b;color:#ff3b3b">Delete</button>
-            </div>
-          </div>`);
-      }
-    }
-    codesTable.innerHTML=html.join('');
-  }
-  codesTable.addEventListener('click', async e=>{
-    const btn=e.target.closest('button'); if(!btn) return;
-    const code=btn.getAttribute('data-code'); const act=btn.getAttribute('data-act');
-    if (act==='toggle'){
-      const sc=await get(ref(db,'codes/'+code));
-      if (sc.exists()){ const current=!!sc.val().access; await update(ref(db,'codes/'+code),{ access:!current }); await refreshCodesTable(); }
-    } else if (act==='edit'){
-      const sc=await get(ref(db,'codes/'+code));
-      if (sc.exists()){ const rec=sc.val(); codeInput.value=code; ownerInput.value=rec.owner||''; accessInput.value=rec.access===true?'true':'false';
-        activateTab('mgmt'); window.scrollTo({top:0,behavior:'smooth'}); }
-    } else if (act==='del'){
-      if (confirm(`Delete code ${code}?`)){ await set(ref(db,'codes/'+code),null); await refreshCodesTable(); }
-    }
-  });
+  btnRefresh.onclick=async()=>{
+    const snap=await get(ref(db,'codes')); alert(snap.exists()?'Codes loaded (hidden view).':'No codes present.');
+  };
 
   function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-  function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-  function att(s){return String(s).replace(/"/g,'&quot;')}
 </script>
 </body>
 </html>
