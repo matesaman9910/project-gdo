@@ -12,12 +12,10 @@
   .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}
   select,button,input{background:#0f1b23;color:var(--fg);border:1px solid #135760;border-radius:10px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid #12313a}
-  .status.blink{animation:blink 1s infinite}
-  @keyframes blink{50%{opacity:.35}}
+  .status.blink{animation:blink 1s infinite} @keyframes blink{50%{opacity:.35}}
   .section{margin-top:18px;border:1px solid #12313a;border-radius:14px;padding:14px;background:#0b141a}
   .section h2{margin:0 0 10px;font-size:18px;color:#9fefff}
-  .grid2{display:grid;grid-template-columns:1fr;gap:10px}
-  @media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
+  .grid2{display:grid;grid-template-columns:1fr;gap:10px} @media(min-width:760px){.grid2{grid-template-columns:1fr 1fr}}
   .log{margin-top:16px;border:1px solid #12313a;border-radius:14px;overflow:hidden;background:#0b141a}
   .log .row{display:grid;grid-template-columns:160px 1fr 140px 140px;gap:8px;padding:10px 14px;border-top:1px solid #102028}
   .log .row:first-child{border-top:none}
@@ -63,7 +61,7 @@
     </div>
   </div>
 
-  <!-- Codes Admin (pro všechny přihlášené) -->
+  <!-- Codes (CRUD pro všechny přihlášené) -->
   <div class="section" id="codesPanel" style="display:none">
     <h2>Codes</h2>
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
@@ -116,13 +114,15 @@
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // === CONFIG (VYMĚŇ) ===
+  // === TVŮJ KONFIG ===
   const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "YOUR_PROJECT",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
 
   const app = initializeApp(firebaseConfig);
@@ -156,7 +156,7 @@
       selFreq.disabled=false; btnMonitor.disabled=false;
       stateEl.textContent='Awaiting Signal…'; stateEl.classList.add('blink');
 
-      // Zobrazí sekce operátora
+      // Show operator sections
       alertSection.style.display='block';
       codesPanel.style.display='block';
 
@@ -177,7 +177,7 @@
     }
   });
 
-  // Monitor frekvence
+  // Monitor
   btnMonitor.onclick = ()=>{
     stopFreq();
     const ch = selFreq.value, path=`frequencies/${ch}/signals`;
@@ -210,12 +210,12 @@
     stateEl.style.borderColor=color; stateEl.style.boxShadow=`0 0 16px ${color}55`; setTimeout(()=>{stateEl.style.boxShadow='none';},1200);
   }
 
-  // Alerts write (povoleno každému přihlášenému)
+  // Alerts write (každý přihlášený)
   btnCode9On.onclick  = async ()=>{ await set(ref(db,'alerts/CODE 9'), true); };
   btnCode9Off.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
   btnAllClear.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
 
-  // Codes CRUD (povoleno každému přihlášenému)
+  // Codes CRUD (každý přihlášený)
   btnAddCode.onclick = async ()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
@@ -230,7 +230,11 @@
   }
   function renderCodes(obj){
     codesTable.innerHTML=''; const entries=Object.entries(obj||{});
-    if(entries.length===0){ const empty=document.createElement('div'); empty.className='row'; empty.innerHTML=`<div style="grid-column:1/5;opacity:.7">No codes</div>`; codesTable.appendChild(empty); return; }
+    if(entries.length===0){
+      const empty=document.createElement('div'); empty.className='row';
+      empty.innerHTML=`<div style="grid-column:1/5;opacity:.7">No codes</div>`;
+      codesTable.appendChild(empty); return;
+    }
     for (const [code,rec] of entries){
       const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
       const row=document.createElement('div'); row.className='row';
