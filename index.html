@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Project GDO — Landing</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -14,10 +13,7 @@
   p{opacity:.9;line-height:1.5}
   .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
   @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-  a.big{
-    display:block;text-decoration:none;color:var(--fg);background:#0b141a;border:1px solid #12313a;border-radius:14px;
-    padding:18px 20px;transition:.15s box-shadow, .15s transform
-  }
+  a.big{display:block;text-decoration:none;color:var(--fg);background:#0b141a;border:1px solid #12313a;border-radius:14px;padding:18px 20px;transition:.15s box-shadow,.15s transform}
   a.big:hover{box-shadow:0 0 16px #00e6e640;transform:translateY(-2px)}
   .tag{display:inline-block;border:1px solid #135760;border-radius:999px;padding:4px 10px;font-size:12px;margin-top:8px;opacity:.85}
   .foot{opacity:.65;font-size:12px;margin-top:18px}
@@ -27,22 +23,20 @@
 <div class="wrap">
   <div class="card">
     <h1>Project GDO</h1>
-    <p>Dvojice webových aplikací inspirovaných Stargate GDO/SGC. <b>Listener</b> (základna) ověřuje příchozí kódy z Realtime DB a umí vyhlásit alerty (např. CODE&nbsp;9). <b>Transmitter</b> (ruční GDO) anonymně odesílá kódy na zvolenou frekvenci — s cooldownem.</p>
-
+    <p><b>Listener</b> (základna) po přihlášení Googlem poslouchá frekvence, ověřuje kódy a umí vyhlásit/ukončit alerty (např. CODE&nbsp;9). <b>Transmitter</b> je anonymní ruční GDO s cooldownem.</p>
     <div class="grid">
       <a class="big" href="listener.html">
         <h2 style="margin:0 0 6px">SGC Listener</h2>
-        <div>Poslech frekvencí, verifikace kódů, přepínač alertů (CODE&nbsp;9), admin správa kódů.</div>
+        <div>Poslech, verifikace, vyhlašování alertů a správa kódů.</div>
         <span class="tag">Vyžaduje Google přihlášení</span>
       </a>
       <a class="big" href="transmitter.html">
         <h2 style="margin:0 0 6px">GDO Transmitter</h2>
-        <div>Anonymní odesílač kódů na vybranou frekvenci. Vizualizace „šifrování“ + 10s cooldown.</div>
+        <div>Anonymní odesílač kódů. Vizualizace „šifrování“ + 10s cooldown.</div>
         <span class="tag">Bez přihlášení</span>
       </a>
     </div>
-
-    <div class="foot">Frontend: čisté HTML/CSS/JS • Backend: Firebase Realtime DB + Auth • Host: GitHub Pages</div>
+    <div class="foot">HTML/CSS/JS • Firebase Realtime DB + Auth • GitHub Pages</div>
   </div>
 </div>
 </body>
