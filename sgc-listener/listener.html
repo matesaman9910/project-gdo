@@ -44,22 +44,12 @@
   .tag{border-radius:999px;padding:4px 10px;border:1px solid transparent;font-size:12px;justify-self:start}
   .ok{border-color:var(--ok);color:var(--ok)} .bad{border-color:var(--bad);color:var(--bad)} .warn{border-color:var(--warn);color:var(--warn)}
 
-  /* Signal pipeline */
   .pipeline{display:grid;gap:10px}
   .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
   .step b{color:#9fefff}
-  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
 
-  /* Fullscreen CODE 9 overlay */
-  #baseAlertOverlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:9999;align-items:center;justify-content:center;flex-direction:column}
-  #baseAlertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.96;text-shadow:0 0 18px #900}
-  .alertTitle .base{font-size:min(12vw,110px);letter-spacing:4px}
-  .alertTitle .alert{font-size:min(12vw,110px);letter-spacing:4px;margin-top:8px}
-  .codeBox{margin-top:20px;border:10px solid #ff2a2a;color:#ff2a2a;padding:8px 24px;font-weight:900;
-    font-size:min(10vw,90px);letter-spacing:6px;box-shadow:0 0 26px #900 inset}
-  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid var(--line);padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
-  .soundBanner.show{display:block}
+  /* tiny CODE-9 badge only (no overlay on listener) */
+  .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -121,7 +111,7 @@
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button id="btnCode9On">Activate CODE 9</button>
             <button id="btnCode9Off">Deactivate CODE 9</button>
-            <span id="code9State" class="status" style="border-color:#12313a">Unknown</span>
+            <span id="code9State" class="badge">CODE 9 OFF</span>
           </div>
         </div>
 
@@ -156,24 +146,15 @@
   </div>
 </main>
 
-<!-- Fullscreen overlay + sounds -->
-<div id="baseAlertOverlay" aria-hidden="true">
-  <div class="alertTitle">
-    <div class="base">BASE</div>
-    <div class="alert">ALERT</div>
-  </div>
-  <div class="codeBox">CODE 9</div>
-</div>
-<div class="soundBanner" id="soundBanner">Click anywhere to enable sounds</div>
+<!-- Listener: only single-shot incoming sound -->
 <audio id="sndIncoming" preload="auto" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"></audio>
-<audio id="sndBase" preload="auto" loop src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // Firebase (your project)
+  // Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -203,12 +184,12 @@
   const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
 
   const btnCode9On=document.getElementById('btnCode9On'), btnCode9Off=document.getElementById('btnCode9Off'), code9State=document.getElementById('code9State');
+
   const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
   const btnAddCode=document.getElementById('btnAddCode'), btnRefresh=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
 
-  const overlay=document.getElementById('baseAlertOverlay'), sndIncoming=document.getElementById('sndIncoming'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
-
-  let unsubFreq=null, unsubAlert=null, soundsEnabled=false;
+  const sndIncoming=document.getElementById('sndIncoming');
+  let unsubFreq=null, unsubAlert=null;
 
   // Tabs
   function activateTab(which){
@@ -218,39 +199,34 @@
   tabListener.onclick = ()=>activateTab('listener');
   tabMgmt.onclick = ()=>activateTab('mgmt');
 
-  // Enable audio on first user gesture (autoplay policy)
-  window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
-
   // Auth
   btnLogin.onclick = async ()=>{ await signInWithPopup(auth, new GoogleAuthProvider()); };
   btnLogout.onclick = ()=> signOut(auth);
 
   onAuthStateChanged(auth, async (user)=>{
-    stopFreq(); toggleBaseAlert(false);
+    stopFreq();
     if (user){
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
       stateEl.textContent='Awaiting Signal…'; stateEl.classList.add('blink');
 
-      // Start alert listener (works for both boolean and {value:true})
+      // CODE 9 badge only (no overlay/siren here)
       if (!unsubAlert){
         unsubAlert = onValue(ref(db,'alerts/CODE 9'), (snap)=>{
           const v = snap.val();
           const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
           code9State.textContent = active ? 'CODE 9 ACTIVE' : 'CODE 9 OFF';
-          code9State.style.borderColor = active ? 'var(--bad)' : '#12313a';
-          toggleBaseAlert(active);
+          code9State.style.color = active ? '#ff2a2a' : '#9fefff';
+          code9State.style.borderColor = active ? '#ff2a2a' : '#135760';
         });
       }
 
-      // Preload management table once on login
       await loadCodesOnce();
-
     } else {
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
-      if (unsubAlert){unsubAlert();unsubAlert=null;}
+      if (unsubAlert){ unsubAlert(); unsubAlert=null; }
       codesTable.innerHTML='';
     }
   });
@@ -262,19 +238,17 @@
     stateEl.textContent = `Monitoring: ${ch}`; stateEl.classList.add('blink');
     unsubFreq = onChildAdded(ref(db, path), async (snap)=>{
       const data = snap.val(); await handleIncomingSignal(ch, data);
-      // cleanup after 15s
       setTimeout(()=>remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 15000);
     });
   };
   function stopFreq(){ if (unsubFreq){ unsubFreq(); unsubFreq=null; } }
 
-  // Incoming signal pipeline + single-shot sound
+  // Incoming signal pipeline + one-shot sound
   async function handleIncomingSignal(ch, sig){
-    try{ if (soundsEnabled){ sndIncoming.currentTime=0; await sndIncoming.play(); } }catch{}
+    try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
     const code = (sig?.code||'').toString().trim();
     const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
-    // Pipeline animation
     sigStatus.textContent=`INCOMING SIGNAL on ${ch}`;
     encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag warn';
 
@@ -302,7 +276,7 @@
     logEl.appendChild(row); logEl.scrollTop=logEl.scrollHeight;
   }
 
-  // Alerts (any signed-in operator)
+  // Alerts write
   btnCode9On.onclick  = async ()=>{ await set(ref(db,'alerts/CODE 9'), true); };
   btnCode9Off.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
 
@@ -313,7 +287,7 @@
     await set(ref(db,'codes/'+code), { owner, access });
     codeInput.value=''; ownerInput.value=''; accessInput.value='true';
     await loadCodesOnce();
-    activateTab('listener'); // jump back to receiver after save
+    activateTab('listener');
   };
   btnRefresh.onclick = loadCodesOnce;
 
@@ -355,14 +329,6 @@
       if (confirm(`Delete code ${code}?`)){ await set(ref(db,'codes/'+code), null); await loadCodesOnce(); }
     }
   });
-
-  // Overlay control
-  function toggleBaseAlert(active){
-    overlay.classList.toggle('show', !!active);
-    if (active && soundsEnabled){ try{ sndBase.play(); }catch{} }
-    else { try{ sndBase.pause(); sndBase.currentTime=0; }catch{} }
-    if (active && !soundsEnabled) soundBanner.classList.add('show'); else soundBanner.classList.remove('show');
-  }
 
   // utils
   function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
