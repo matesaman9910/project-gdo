@@ -5,44 +5,42 @@
 <title>SGC Listener</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#000;--panel:#0c1620;--panel-2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff2a2a;--accent:#00e6e6;--alertBlue:#1d8bd6}
+  :root{--bg:#000;--panel:#0c1620;--panel-2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6;--alertBlue:#1d8bd6}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
-  .page:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
+  .page:before{content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),
+    radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
   .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
-  .tabs{display:flex;gap:10px}
-  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
-  .tab.active{outline:2px solid #1e94aa}
+  .tabs{display:flex;gap:10px}.tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}.tab.active{outline:2px solid #1e94aa}
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
   .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
-  .pipe{display:grid;gap:10px;margin-top:10px}
-  .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
-  .emph{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .ownerBig{font-size:22px}
+  .pipe{display:grid;gap:10px;margin-top:10px}.step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
+  .emph{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.ownerBig{font-size:22px}
   .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
   .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
   .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
-  .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
   #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:var(--alertBlue);color:#fff;z-index:9000;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;letter-spacing:1px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
   #incomingBanner .t1{display:block;font-weight:900;color:#ff3b3b;text-shadow:0 0 6px #7a0000}
   #incomingBanner .t2{display:block;font-weight:800;color:#ff3b3b}
   #incomingBanner.show{animation:bannerIn .35s ease-out forwards,bannerHold 3.15s linear .35s,bannerOut .35s ease-in 3.5s forwards}
-  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
+  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}
+  @keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}
+  @keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
   #viewListener{display:block}#viewMgmt{display:none}
-
-  /* Codes table */
   .table{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
   .thead,.trow{display:grid;grid-template-columns:200px 1fr 140px 200px;gap:8px}
   .thead{background:#0e1a20;font-weight:700}
   .tcell{padding:10px 14px;border-top:1px solid #102028}
   .thead .tcell{border-top:none}
+  .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -62,11 +60,11 @@
       </div>
     </div>
 
-    <!-- LISTENER VIEW -->
+    <!-- LISTENER -->
     <section id="viewListener">
       <div class="panel">
         <div class="row">
-          <label for="selFreq" style="opacity:.85">Frequency</label>
+          <label style="opacity:.85">Frequency</label>
           <select id="selFreq" disabled>
             <option value="alpha-1">alpha-1</option>
             <option value="bravo-2">bravo-2</option>
@@ -75,7 +73,6 @@
           <button id="btnMonitor" disabled>Monitor</button>
           <div id="state" class="status">Sign in required</div>
         </div>
-
         <div class="pipe">
           <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
           <div class="step"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
@@ -90,9 +87,9 @@
 
     <!-- MANAGEMENT -->
     <section id="viewMgmt">
-      <div class="panel">
-        <h3 style="margin:0 0 10px">Alarm Codes (1–9)</h3>
-        <div id="alarmsContainer"></div>
+      <div class="panel" id="alertsPanel">
+        <h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3>
+        <!-- rows injected here -->
       </div>
 
       <div class="panel" style="margin-top:12px">
@@ -125,14 +122,13 @@
   </div>
 </main>
 
-<!-- Incoming traveller -->
 <div id="incomingBanner"><span class="t1">ALERT</span><span class="t2">INCOMING TRAVELLER</span></div>
 <audio id="sndIncoming" preload="auto" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"></audio>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-  import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+  import { getDatabase, ref, onChildAdded, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -144,11 +140,23 @@
     appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
 
+  const DESCS = {
+    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
+    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
+    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
+    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
+    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
+    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
+    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
+    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
+    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
+  };
+
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
-  // Elements
+  // UI refs
   const tabListener=document.getElementById('tabListener'), tabMgmt=document.getElementById('tabMgmt');
   const viewListener=document.getElementById('viewListener'), viewMgmt=document.getElementById('viewMgmt');
   const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
@@ -161,23 +169,10 @@
   const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
 
   const sndIncoming=document.getElementById('sndIncoming'), incomingBanner=document.getElementById('incomingBanner');
+  const alertsPanel=document.getElementById('alertsPanel');
 
-  let unsubFreq=null, unsubAlert=null;
+  let unsubFreq=null;
 
-  // --- Alarm Descriptions (your spec) ---
-  const DEFAULT_DESCS = {
-    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
-    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
-    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
-    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
-    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
-    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
-    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
-    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
-    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
-  };
-
-  // Tabs
   function activateTab(which){
     if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; viewMgmt.style.display='none'; }
     else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); viewMgmt.style.display='block'; viewListener.style.display='none'; }
@@ -185,7 +180,6 @@
   tabListener.onclick=()=>activateTab('listener');
   tabMgmt.onclick=()=>activateTab('mgmt');
 
-  // Auth
   btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
   btnLogout.onclick=()=>signOut(auth);
 
@@ -194,41 +188,34 @@
     if (user){
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
-
-      // auto start alpha-1
       selFreq.value='alpha-1'; startMonitor();
       stateEl.textContent='Monitoring: alpha-1'; stateEl.classList.add('blink');
 
-      // build alarms UI
       await buildAlarmUI();
-
-      // load codes table
       await refreshCodesTable();
-    } else {
+    }else{
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
-      const ac=document.getElementById('alarmsContainer'); if(ac) ac.innerHTML='';
       codesTable.innerHTML='';
+      const ac=document.getElementById('alarmsContainer'); if(ac) ac.remove();
     }
   });
 
-  // Monitor
   btnMonitor.onclick=()=>startMonitor();
   selFreq.addEventListener('change',()=>startMonitor());
 
   function startMonitor(){
     stopMonitor();
-    const ch=selFreq.value, path=`frequencies/${ch}/signals`;
+    const ch=`${selFreq.value}`, path=`frequencies/${ch}/signals`;
     stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
     unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
       const data=snap.val(); await handleIncomingSignal(ch,data);
-      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s cleanup
+      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000);
     });
   }
   function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
 
-  // Incoming pipeline
   async function handleIncomingSignal(ch,sig){
     incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
     setTimeout(()=>incomingBanner.classList.remove('show'),3850);
@@ -250,44 +237,63 @@
     ownerView.textContent=owner; resView.textContent=label; resView.className=`tag resultBig ${cls}`;
   }
 
-  // ===== Management: Alarms 1–9 =====
+  // ===== Management: Alarms 1–9 (mutual exclusive) =====
+  const ORDER=[1,2,3,4,5,6,7,8,9].map(i=>`CODE ${i}`);
+  function mkAlarmRow(code, active=false, desc=""){
+    const row=document.createElement('div');
+    row.className='row'; row.style.cssText='gap:8px;align-items:stretch;margin-top:8px';
+    row.innerHTML=`
+      <div style="min-width:95px;display:flex;align-items:center"><b>${code}</b></div>
+      <input data-k="desc" data-code="${code}" value="${(desc||DESCS[code]||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:240px"/>
+      <button data-k="toggle" data-code="${code}">${active?'Turn OFF':'Turn ON'}</button>
+      <span class="badge" id="badge-${code}">${active?code+' ACTIVE':code+' OFF'}</span>
+    `;
+    return row;
+  }
+
   async function buildAlarmUI(){
-    const wrap=document.getElementById('alarmsContainer');
-    wrap.innerHTML='';
-    const snap=await get(ref(db,'alerts'));
-    const alerts=snap.exists()?snap.val():{};
-    for(let i=1;i<=9;i++){
-      const code=`CODE ${i}`;
-      const node=alerts[code]&&typeof alerts[code]==='object'?alerts[code]:{};
-      const active=!!node.active; const desc=node.desc ?? DEFAULT_DESCS[code] ?? '';
-      const row=document.createElement('div');
-      row.className='row'; row.style.margin='8px 0';
-      row.innerHTML=`
-        <div style="min-width:92px"><b>${code}</b></div>
-        <input data-k="desc" data-code="${code}" value="${(desc||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:240px"/>
-        <button data-k="toggle" data-code="${code}">${active?'Turn OFF':'Turn ON'}</button>
-        <span class="badge" id="badge-${code}">${active?code+' ACTIVE':code+' OFF'}</span>
-      `;
-      wrap.appendChild(row);
+    let container=document.getElementById('alarmsContainer'); if (container) container.remove();
+    container=document.createElement('div'); container.id='alarmsContainer'; alertsPanel.appendChild(container);
+
+    const snap=await get(ref(db,'alerts')); const alerts=snap.exists()?snap.val():{};
+    for (const code of ORDER){
+      const node=alerts[code]||{};
+      container.appendChild(mkAlarmRow(code, !!node.active, node.desc));
     }
 
-    wrap.addEventListener('click', async e=>{
+    // Mutual exclusivity: turning one ON will turn all others OFF in a single multi-update
+    container.addEventListener('click', async e=>{
       const btn=e.target.closest('button[data-k="toggle"]'); if(!btn) return;
-      const code=btn.getAttribute('data-code'); const badge=document.getElementById('badge-'+code);
-      const sc=await get(ref(db,`alerts/${code}/active`)); const now=sc.exists()?!!sc.val():false;
-      await set(ref(db,`alerts/${code}/active`), !now);
-      if (code==='CODE 9'){ await set(ref(db,'alerts/CODE 9'), !now); } // legacy mirror for GDO overlay
-      btn.textContent = !now ? 'Turn OFF' : 'Turn ON';
-      badge.textContent = !now ? `${code} ACTIVE` : `${code} OFF`;
+      const code=btn.getAttribute('data-code');
+      const nowSnap=await get(ref(db,`alerts/${code}/active`));
+      const isActive=nowSnap.exists()?!!nowSnap.val():false;
+
+      const updates={};
+      if (!isActive){
+        for (const c of ORDER){ updates[`alerts/${c}/active`] = (c===code); }
+      } else {
+        updates[`alerts/${code}/active`] = false;
+      }
+      // Keep legacy boolean for CODE 9 for transmitter overlay
+      if (code==='CODE 9'){ updates['alerts/CODE 9'] = !isActive; }
+      await update(ref(db), updates);
+
+      // refresh row buttons/badges (local)
+      for (const c of ORDER){
+        const on = (!isActive && c===code) ? true : false;
+        const b=document.getElementById('badge-'+c);
+        const t=container.querySelector(`button[data-k="toggle"][data-code="${c}"]`);
+        if (b && t){ b.textContent = on?`${c} ACTIVE`:`${c} OFF`; t.textContent = on?'Turn OFF':'Turn ON'; }
+      }
     });
 
-    wrap.addEventListener('change', async e=>{
+    container.addEventListener('change', async e=>{
       const inp=e.target.closest('input[data-k="desc"]'); if(!inp) return;
       const code=inp.getAttribute('data-code'); await set(ref(db,`alerts/${code}/desc`), inp.value.trim());
     });
   }
 
-  // ===== Management: Access Codes CRUD =====
+  // Codes CRUD
   btnAddCode.onclick=async()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
@@ -299,10 +305,10 @@
 
   async function refreshCodesTable(){
     const snap=await get(ref(db,'codes'));
-    const data=snap.exists()?snap.val():{}; const entries=Object.entries(data);
-    const tbl=document.getElementById('codesTable');
-    if (entries.length===0){ tbl.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
-    tbl.innerHTML=entries.map(([code,rec])=>{
+    const data=snap.exists()?snap.val():{};
+    const entries=Object.entries(data);
+    if (entries.length===0){ codesTable.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
+    codesTable.innerHTML = entries.map(([code,rec])=>{
       const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
       return `
         <div class="trow">
@@ -317,8 +323,7 @@
         </div>`;
     }).join('');
   }
-
-  document.getElementById('codesWrap').addEventListener('click', async e=>{
+  document.getElementById('codesWrap').addEventListener('click', async (e)=>{
     const btn=e.target.closest('button'); if(!btn) return;
     const code=btn.getAttribute('data-code'); const act=btn.getAttribute('data-act');
     if (act==='toggle'){
@@ -332,7 +337,6 @@
     }
   });
 
-  // utils
   function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
   function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
   function attr(s){return String(s).replace(/"/g,'&quot;')}
