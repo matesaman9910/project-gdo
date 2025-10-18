@@ -1,57 +1,53 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Project GDO — Landing</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--bg:#0a0f14;--fg:#d9faff;--accent:#00e6e6}
-    html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 20% 10%, #092029 0%, #0a0f14 60%);color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-    .wrap{min-height:100%;display:grid;place-items:center;padding:32px}
-    .card{max-width:860px;width:min(92vw,860px);background:#0f1b23;border:1px solid #12313a;border-radius:18px;padding:24px 26px;box-shadow:0 0 40px #00e6e61f}
-    h1{margin:0 0 10px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 16px #00e6e645}
-    p{opacity:.9;line-height:1.5}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:18px}
-    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    a.big{display:block;text-decoration:none;color:var(--fg);background:#0b141a;border:1px solid #12313a;border-radius:14px;padding:18px 20px;transition:.15s box-shadow,.15s transform}
-    a.big:hover{box-shadow:0 0 16px #00e6e640;transform:translateY(-2px)}
-    .tag{display:inline-block;border:1px solid #135760;border-radius:999px;padding:4px 10px;font-size:12px;margin-top:8px;opacity:.85}
-    .foot{opacity:.65;font-size:12px;margin-top:18px}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Project GDO</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#020202;--fg:#d9faff;--accent:#00e6e6}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
+  .scan:before{content:"";position:absolute;inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
+      radial-gradient(1200px 800px at 20% 10%, #051319 0%, #000 55%);
+    pointer-events:none}
+  .card{z-index:1;width:min(960px,92vw);border:1px solid #12313a;border-radius:20px;background:#0b141a;
+    box-shadow:0 0 50px #00e6e62e;padding:28px}
+  h1{margin:0 0 10px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 16px #00e6e645}
+  p{opacity:.9;line-height:1.5}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}
+  @media(min-width:780px){.grid{grid-template-columns:1fr 1fr}}
+  a.big{display:block;text-decoration:none;color:var(--fg);background:#0d1a20;border:1px solid #12313a;
+    border-radius:16px;padding:20px;transition:.15s box-shadow,.15s transform}
+  a.big:hover{box-shadow:0 0 16px #00e6e640;transform:translateY(-2px)}
+  .tag{display:inline-block;border:1px solid #135760;border-radius:999px;padding:4px 10px;font-size:12px;margin-top:8px;opacity:.85}
+  .foot{opacity:.65;font-size:12px;margin-top:18px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Project GDO</h1>
-      <p>
-        Dvě webové aplikace inspirované Stargate GDO/SGC.
-        <b>Listener</b> (po přihlášení Googlem) poslouchá frekvence, ověřuje kódy a umí vyhlásit/ukončit alerty (CODE&nbsp;9).
-        <b>Transmitter</b> (ruční GDO) anonymně odesílá kódy na zvolenou frekvenci — s cooldownem a
-        zobrazuje plnoobrazovkový alert overlay při CODE&nbsp;9.
-      </p>
-
-      <div class="grid">
-        <a class="big" href="sgc-listener/listener.html">
-          <h2 style="margin:0 0 6px">SGC Listener</h2>
-          <div>Poslech, verifikace, přepínání alertů (CODE&nbsp;9), správa kódů.</div>
-          <span class="tag">Vyžaduje Google přihlášení</span>
-        </a>
-
-        <a class="big" href="gdo-transmitter/gdo.html">
-          <h2 style="margin:0 0 6px">GDO Transmitter</h2>
-          <div>Anonymní odesílač kódů. Vizualizace „šifrování“ + 10s cooldown. Zobrazuje alert overlay.</div>
-          <span class="tag">Bez přihlášení</span>
-        </a>
-      </div>
-
-      <div class="foot">
-        HTML/CSS/JS • Firebase Realtime DB + Auth • Host: GitHub Pages<br/>
-        Public demo URLs:<br/>
-        <a href="https://matesaman9910.github.io/project-gdo/sgc-listener/listener.html">/sgc-listener/listener.html</a> •
-        <a href="https://matesaman9910.github.io/project-gdo/gdo-transmitter/gdo.html">/gdo-transmitter/gdo.html</a>
-      </div>
+<main class="page scan">
+  <div class="card">
+    <h1>Project GDO</h1>
+    <p><b>Listener</b> (Google Sign-In) poslouchá frekvence, zobrazuje a DECRYPTuje signály, přehrává zvuk „Incoming traveller“, a vyhlásí/ruší <b>CODE 9</b> (plnoobrazovkový overlay + siréna). <b>Transmitter</b> anonymně odesílá kódy s falešným ENCRYPT → RTDB.</p>
+    <div class="grid">
+      <a class="big" href="sgc-listener/listener.html">
+        <h2 style="margin:0 0 6px">SGC Listener (Receiver + Management)</h2>
+        <div>Poslech + vizualizace, CODE 9 ovládání, CRUD pro kódy.</div>
+        <span class="tag">Google Sign-In</span>
+      </a>
+      <a class="big" href="gdo-transmitter/gdo.html">
+        <h2 style="margin:0 0 6px">GDO Transmitter</h2>
+        <div>ENCRYPT → transmit with cooldown. Zobrazuje overlay při CODE 9.</div>
+        <span class="tag">No sign-in</span>
+      </a>
+    </div>
+    <div class="foot">
+      Live: /sgc-listener/listener.html • /gdo-transmitter/gdo.html
     </div>
   </div>
+</main>
 </body>
 </html>
