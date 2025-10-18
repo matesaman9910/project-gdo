@@ -94,40 +94,35 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-    authDomain: "project-gdo.firebaseapp.com",
-    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "project-gdo",
-    storageBucket: "project-gdo.appspot.com",
-    messagingSenderId: "758705115255",
-    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  /* =======================
+     🔊 EASY SOUND SWAPS
+     -----------------------
+     Edit the URLs below only. Nothing else.
+     LOOP: per-code looping alarm
+     ANN:  per-code one-shot announcement (optional)
+     ======================= */
+  const SOUNDS = {
+    LOOP: {
+      "CODE 1": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/panicalarm_realistic.mp3",
+      "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/security-alarm_realistic.mp3",
+      "CODE 3": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/code3_realistic.mp3",
+      "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/incomingalarm_realistic.mp3",
+      "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Security%20Alarm%20(1%20Hour%20of%20Ambience)%20%5B8r4cNMKf4Hw%5D.mp3",
+      "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/1%20HOUR%20-%20Emergency%20Base%20ALARM%20%5BrlxFz29bcyg%5D.mp3",
+      "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Emergency%20Lockdown%20Alarm%20%5B1ua4r3mhW3U%5D.mp3",
+      "CODE 8": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/doorsalarm_realistic.mp3",
+      "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/evac_realistic.mp3"
+    },
+    ANN: {
+      "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%202%20Stargate%20Horizons%20%5BMcCRu_SawAc%5D.mp3",
+      "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%204%20Stargate%20Horizons%20%5BnptsmOeQ0u4%5D.mp3",
+      "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%205%20Stargate%20Horizons%20%5BJIuYroVSrr0%5D.mp3",
+      "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%206%20Stargate%20Horizons%20%5B3t7YH6A0cxc%5D.mp3",
+      "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%207%20Stargate%20Horizons%20%5B0l5vnUf6ypg%5D.mp3",
+      "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%209%20Stargate%20Horizons%20%5B-0tvyBMhnNA%5D.mp3"
+    }
   };
 
-  // === Per-code SOUNDS (loop) ===
-  const LOOP = {
-    "CODE 1": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/panicalarm_realistic.mp3",                       // Personnel Panic
-    "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/security-alarm_realistic.mp3",                 // Medical Emergency (cleaner loop)
-    "CODE 3": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/code3_realistic.mp3",                          // Anomaly
-    "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/incomingalarm_realistic.mp3",                  // Gate Room conflict
-    "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/security%20Alarm%20(1%20Hour%20of%20Ambience)%20%5B8r4cNMKf4Hw%5D.mp3", // Combat in facility
-    "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/1%20HOUR%20-%20Emergency%20Base%20ALARM%20%5BrlxFz29bcyg%5D.mp3",      // Hostile force mobilization
-    "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Emergency%20Lockdown%20Alarm%20%5B1ua4r3mhW3U%5D.mp3",                  // Lockdown
-    "CODE 8": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/doorsalarm_realistic.mp3",                      // Forced entry
-    "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/evac_realistic.mp3"                             // Rogue/compromised (distinct tone)
-  };
-
-  // === Optional one-shot ANNOUNCEMENTS (only if provided) ===
-  const ANN = {
-    "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%202%20Stargate%20Horizons%20%5BMcCRu_SawAc%5D.mp3",
-    "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%204%20Stargate%20Horizons%20%5BnptsmOeQ0u4%5D.mp3",
-    "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%205%20Stargate%20Horizons%20%5BJIuYroVSrr0%5D.mp3",
-    "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%206%20Stargate%20Horizons%20%5B3t7YH6A0cxc%5D.mp3",
-    "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%207%20Stargate%20Horizons%20%5B0l5vnUf6ypg%5D.mp3",
-    "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%209%20Stargate%20Horizons%20%5B-0tvyBMhnNA%5D.mp3"
-  };
-
-  // Fallback descriptions (used if DB lacks one)
   const DEFAULT_DESC = {
     "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
     "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
@@ -140,26 +135,37 @@
     "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
   };
 
+  // Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  };
   const app = initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
   // UI refs
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
-
   const overlay=document.getElementById('alertOverlay'), codeBox=document.getElementById('codeBox'), descBox=document.getElementById('descBox');
   const sndLoop=document.getElementById('sndLoop'), sndAnn=document.getElementById('sndAnn'), soundBanner=document.getElementById('soundBanner');
 
   let soundsEnabled=false;
-  let currentActive=null;          // e.g. "CODE 4"
-  let announcedFor=null;           // track which code's announcement already played
+  let currentActive=null;  // "CODE X"
+  let announcedFor=null;
 
-  // Enable sound after first user action
+  // Show the banner immediately on load
+  soundBanner.classList.add('show');
+
+  // Enable audio after first user action
   function enableAudio(){
     if (soundsEnabled) return;
     soundsEnabled=true;
     soundBanner.classList.remove('show');
-    // if there is an active code at the moment, start loop and (if not yet) announcement
     if (currentActive){
       startLoop(currentActive);
       playAnnouncement(currentActive);
@@ -168,35 +174,52 @@
   soundBanner.addEventListener('click', enableAudio);
   window.addEventListener('pointerdown', enableAudio, { once:true });
 
+  // Robust loop helpers
+  function stopAllAudio(){
+    try{ sndLoop.pause(); }catch{}
+    try{ sndAnn.pause(); }catch{}
+    try{ sndLoop.currentTime=0; }catch{}
+    try{ sndAnn.currentTime=0; }catch{}
+  }
+  async function playWithRetry(audioEl){
+    // try a few times — helps some mobile browsers
+    for (let i=0;i<3;i++){
+      try{ await audioEl.play(); return; }catch{ await new Promise(r=>setTimeout(r,150)); }
+    }
+  }
+  function startLoop(code){
+    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
+    const url = SOUNDS.LOOP[code];
+    if (!url){ stopAllAudio(); return; }
+    if (sndLoop.src !== url){ sndLoop.src = url; sndLoop.load(); }
+    sndLoop.loop = true; // safety, plus we also guard with 'ended'
+    sndLoop.volume = 1.0;
+    sndLoop.currentTime = 0;
+    playWithRetry(sndLoop);
+  }
+  function playAnnouncement(code){
+    const url = SOUNDS.ANN[code];
+    if (!url || !soundsEnabled) return;
+    if (announcedFor === code) return;  // one-shot per activation
+    announcedFor = code;
+    sndAnn.src = url; sndAnn.load();
+    sndAnn.currentTime = 0;
+    playWithRetry(sndAnn);
+  }
+  // Safety re-loop if some browser ignores loop flag
+  sndLoop.addEventListener('ended', ()=>{ try{ sndLoop.currentTime=0; sndLoop.play(); }catch{} });
+  // Resume loop after tab becomes visible again
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState==='visible' && currentActive && soundsEnabled){
+      startLoop(currentActive);
+    }
+  });
+
   function showOverlay(active, code, desc){
     if (!active){ overlay.classList.remove('show'); return; }
     codeBox.textContent = code || '';
     descBox.textContent = (desc && desc.trim()) || DEFAULT_DESC[code] || '—';
     overlay.classList.add('show');
-  }
-
-  function stopAllAudio(){
-    try{ sndLoop.pause(); sndLoop.currentTime=0; }catch{}
-    try{ sndAnn.pause();  sndAnn.currentTime=0; }catch{}
-    // reload not required; keeps buffers hot
-  }
-
-  function startLoop(code){
-    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
-    const url = LOOP[code];
-    if (!url){ stopAllAudio(); return; }
-    if (sndLoop.src !== url) sndLoop.src = url;
-    try{ sndLoop.currentTime=0; sndLoop.play(); }catch{}
-  }
-
-  function playAnnouncement(code){
-    const url = ANN[code];
-    if (!url) return;                 // only if provided
-    if (announcedFor === code) return; // do not repeat for the same activation
-    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
-    announcedFor = code;
-    sndAnn.src = url;
-    try{ sndAnn.currentTime=0; sndAnn.play(); }catch{}
   }
 
   function activeFrom(alerts){
@@ -207,18 +230,18 @@
     return null;
   }
 
-  // Initial read then subscribe (avoids flash)
+  // Initial read then subscribe (no flash)
   (async ()=>{
     try{
       const first = await get(ref(db,'alerts'));
       const a = first.exists()? first.val() : {};
       const act = activeFrom(a);
       currentActive = act ? act.code : null;
-      announcedFor = null;                    // reset on load
+      announcedFor = null;
       showOverlay(!!act, act?.code||'', act?.desc||'');
       if (currentActive){
-        if (soundsEnabled) { startLoop(currentActive); playAnnouncement(currentActive); }
-        else { soundBanner.classList.add('show'); }   // prompt user to click
+        if (soundsEnabled){ startLoop(currentActive); playAnnouncement(currentActive); }
+        // banner already shown on load to prompt click
       } else {
         stopAllAudio();
       }
@@ -228,27 +251,28 @@
       const act = activeFrom(a);
       const next = act ? act.code : null;
 
-      // overlay text/desc
+      // overlay always reflects latest state
       showOverlay(!!act, act?.code||'', act?.desc||'');
 
-      // sounds
+      // audio management
       if (next !== currentActive){
         currentActive = next;
-        announcedFor = null; // allow announcement for the newly activated code
-        if (currentActive){
+        announcedFor = null; // allow new announcement for new code
+        if (currentActive && soundsEnabled){
           startLoop(currentActive);
           playAnnouncement(currentActive);
-        } else {
+        } else if (!currentActive){
           stopAllAudio();
         }
-      } else if (currentActive){
-        // same code still active; keep loop going, no re-announce
+      } else if (currentActive && soundsEnabled){
+        // keep loop alive if same code remains
         startLoop(currentActive);
       }
     });
   })();
 
-  // Transmit with fake encrypt + 15s cooldown
+  // --- Transmit with fake encrypt + 15s cooldown ---
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
   let cooldown=false;
   document.getElementById('send').onclick = async ()=>{
     if (cooldown) return;
@@ -259,14 +283,14 @@
     stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
 
     const encrypted=btoa(unescape(encodeURIComponent(code)));
-    await new Promise(r=>setTimeout(r,400)); document.getElementById('enc').textContent=encrypted;
+    await sleep(400); document.getElementById('enc').textContent=encrypted;
 
     const newRef = push(ref(db, `frequencies/${ch}/signals`));
     await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
 
     stEl.textContent="Transmitted"; stEl.className='ok';
-    await new Promise(r=>setTimeout(r,900));
-    for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
+    await sleep(900);
+    for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await sleep(1000); }
     stEl.textContent="Idle"; cooldown=false; sendBtn.disabled=false;
   };
 </script>
