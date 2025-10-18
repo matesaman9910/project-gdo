@@ -22,14 +22,13 @@
   /* Overlay */
   #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
   #alertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative}
-  .alertWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
-  .alertWord.base{top:0;animation-name:baseFade}
-  .alertWord.alert{top:0;animation-name:alertFade}
-  /* cross-fade loop: when BASE visible, ALERT hidden, then swap */
+  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative;height:min(14vw,120px)}
+  .alertWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;top:0;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
   @keyframes baseFade{0%{opacity:1}49%{opacity:1}50%{opacity:0}99%{opacity:0}}
   @keyframes alertFade{0%{opacity:0}49%{opacity:0}50%{opacity:1}99%{opacity:1}}
-  .codeBox{margin-top:110px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
+  .alertWord.base{animation-name:baseFade}
+  .alertWord.alert{animation-name:alertFade}
+  .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
   .desc{margin-top:12px;max-width:min(900px,92vw);text-align:center;font-size:min(4vw,22px);opacity:.95}
 
   /* Click-to-enable banner */
@@ -94,46 +93,61 @@
     messagingSenderId: "758705115255",
     appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
+  const DEFAULT_DESCS = {
+    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
+    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
+    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
+    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
+    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
+    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
+    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
+    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
+    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
+  };
+
   const app = initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
-  // UI
+  // Transmit UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
+
+  // Overlay/Sound UI
   const overlay=document.getElementById('alertOverlay'), codeBox=document.getElementById('codeBox'), descBox=document.getElementById('descBox');
   const sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
   let soundsEnabled=false;
-  let currentActive=null; // e.g., "CODE 4"
+  let currentActive=null; // e.g. "CODE 4"
 
-  // Sound enable banner
+  // Enable sound after first user action (or banner click)
   function enableSound(){
     if (soundsEnabled) return;
     soundsEnabled=true;
     soundBanner.classList.remove('show');
-    if (currentActive==='CODE 9'){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
+    if (currentActive){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
   }
   soundBanner.addEventListener('click', enableSound);
   window.addEventListener('pointerdown', enableSound, { once:true });
 
   function showOverlay(active, code, desc){
     if (!active){ overlay.classList.remove('show'); return; }
-    codeBox.textContent = code;
-    descBox.textContent = desc || '—';
+    codeBox.textContent = code || '';
+    // DB desc first, fallback to defaults
+    descBox.textContent = (desc && desc.trim()) || DEFAULT_DESCS[code] || '—';
     overlay.classList.add('show');
   }
-  function startSirenIfNeeded(code){
-    if (code!=='CODE 9') { stopSirenImmediate(); return; }
+  function playSirenIfActive(active){
+    if (!active){ stopSiren(); return; }
     if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
     try{ sndBase.currentTime=0; sndBase.play(); }catch{}
   }
-  function stopSirenImmediate(){
+  function stopSiren(){
     try{ sndBase.pause(); sndBase.currentTime=0; sndBase.load(); }catch{}
     soundBanner.classList.remove('show');
   }
 
-  // Compute active alarm from /alerts snapshot (mutual-exclusive expected)
-  function getActiveFrom(alerts){
+  // resolve which code is active from /alerts snapshot
+  function activeFrom(alerts){
     for (let i=1;i<=9;i++){
       const node = alerts?.[`CODE ${i}`];
       if (node && node.active) return { code:`CODE ${i}`, desc: node.desc || '' };
@@ -141,29 +155,24 @@
     return null;
   }
 
-  // Initial read THEN subscribe (prevents startup flash)
+  // Initial read then subscribe (no flash)
   (async ()=>{
     try{
-      const first = await get(ref(db, 'alerts'));
+      const first = await get(ref(db,'alerts'));
       const a = first.exists()? first.val() : {};
-      const act = getActiveFrom(a);
+      const act = activeFrom(a);
       currentActive = act ? act.code : null;
-      showOverlay(!!act, act?.code || '', act?.desc || '');
-      startSirenIfNeeded(currentActive || '');
-    }catch{/* ignore */}
-    onValue(ref(db, 'alerts'), snap=>{
+      showOverlay(!!act, act?.code||'', act?.desc||'');
+      playSirenIfActive(!!act);
+    }catch{}
+    onValue(ref(db,'alerts'), snap=>{
       const a = snap.exists()? snap.val() : {};
-      const act = getActiveFrom(a);
+      const act = activeFrom(a);
       const next = act ? act.code : null;
-      if (next !== currentActive){
-        currentActive = next;
-        if (next){ showOverlay(true, act.code, act.desc || ''); }
-        else { showOverlay(false); }
-        startSirenIfNeeded(next || '');
-      } else {
-        // same code; just keep UI/desc fresh
-        if (next){ showOverlay(true, act.code, act.desc || ''); }
-      }
+      const changed = next !== currentActive;
+      currentActive = next;
+      showOverlay(!!act, act?.code||'', act?.desc||'');
+      if (changed) playSirenIfActive(!!act);
     });
   })();
 
