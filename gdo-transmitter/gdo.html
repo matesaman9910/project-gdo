@@ -90,51 +90,57 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
-  // Enable audio after first click (policy)
   let soundsEnabled=false;
-  window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); try{ sndBase.play().catch(()=>{});}catch{} }, { once:true });
+  let code9Active=false;
 
-  function setAlertUI(active){
-    overlay.classList.toggle('show', !!active);
-    if (active){
-      if (!soundsEnabled){ soundBanner.classList.add('show'); }
-      else { try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
-    } else {
-      soundBanner.classList.remove('show');
-      try{ sndBase.pause(); sndBase.currentTime=0; }catch{}
+  // Make audio permission explicit; if CODE 9 is already active, start immediately after the first click.
+  window.addEventListener('pointerdown', async ()=>{
+    if (soundsEnabled) return;
+    soundsEnabled=true;
+    soundBanner.classList.remove('show');
+    if (code9Active){
+      try{ sndBase.currentTime=0; await sndBase.play(); }catch{}
     }
+  }, { once:true });
+
+  function showOverlay(active){
+    overlay.classList.toggle('show', !!active);
+  }
+  async function startSiren(){
+    if (!soundsEnabled) { soundBanner.classList.add('show'); return; }
+    try{ sndBase.currentTime=0; await sndBase.play(); }catch{}
+  }
+  function stopSirenImmediate(){
+    try{
+      sndBase.pause();
+      sndBase.currentTime=0;
+      // reload to cancel any pending decode/play that could “dribble” for a moment
+      sndBase.load();
+    }catch{}
+    soundBanner.classList.remove('show');
   }
 
-  // 1) Initial read (so overlay appears immediately on page load)
+  // Initial read so UI matches DB immediately
   (async ()=>{
     try{
       const snap = await get(ref(db,'alerts/CODE 9'));
-      setAlertUI(snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false);
+      code9Active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false;
+      showOverlay(code9Active);
+      if (code9Active) startSiren(); else stopSirenImmediate();
     }catch(e){ console.warn('Initial CODE 9 read failed', e); }
   })();
 
-  // 2) Realtime subscription
+  // Realtime subscription (authoritative)
   onValue(ref(db,'alerts/CODE 9'), snap=>{
     const v = snap.val();
-    const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
-    setAlertUI(active);
+    code9Active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
+    showOverlay(code9Active);
+    if (code9Active) startSiren(); else stopSirenImmediate();
   });
-
-  // 3) Safety poll (rare net hiccups)
-  setInterval(async ()=>{
-    try{
-      const snap = await get(ref(db,'alerts/CODE 9'));
-      const active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false;
-      // only adjust if out-of-sync
-      const shown = overlay.classList.contains('show');
-      if (active !== shown) setAlertUI(active);
-    }catch{}
-  }, 10000);
 
   // Transmit with fake encrypt + 15s cooldown
   let cooldown=false;
