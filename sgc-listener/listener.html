@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#0a0f14;--fg:#d9faff;--accent:#00e6e6;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b}
-  html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 20% 10%, #092029 0%, #0a0f14 60%);color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .wrap{max-width:1100px;margin:0 auto;padding:24px}
   h1{letter-spacing:2px;margin:0 0 16px;color:var(--accent);text-shadow:0 0 16px rgba(0,230,230,.35)}
   .bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}
@@ -21,12 +21,8 @@
   .log .row:first-child{border-top:none}
   .tag{border-radius:999px;padding:4px 10px;border:1px solid transparent;font-size:12px;justify-self:start}
   .ok{border-color:var(--ok);color:var(--ok)} .bad{border-color:var(--bad);color:var(--bad)} .warn{border-color:var(--warn);color:var(--warn)}
-  #baseAlertOverlay{position:fixed;inset:0;background:#7a0000;display:none;z-index:9999;align-items:center;justify-content:center;flex-direction:column}
-  #baseAlertOverlay.show{display:flex}
-  .baseAlert{font-size:64px;font-weight:700;letter-spacing:6px;color:#fff;animation:blink 1s infinite}
-  .codeBox{margin-top:18px;background:#000;border:6px solid #ff1a1a;color:#ff1a1a;padding:8px 20px;font-size:36px;font-weight:700;letter-spacing:4px}
-  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;padding:8px 12px;border-radius:10px;font-size:14px;display:none}
-  .soundBanner.show{display:block}
+  /* Small inline alert badge (no overlay on listener) */
+  .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -34,7 +30,7 @@
   <h1>SGC Listener</h1>
 
   <div class="bar">
-    <a href="index.html" style="text-decoration:none"><button>← Back</button></a>
+    <a href="../index.html" style="text-decoration:none"><button>← Back</button></a>
     <button id="btnLogin">Sign in with Google</button>
     <button id="btnLogout" style="display:none">Sign out</button>
     <select id="selFreq" disabled>
@@ -46,14 +42,14 @@
     <div id="state" class="status">Sign in required</div>
   </div>
 
-  <!-- Alerts -->
+  <!-- ALERT CONTROL (no fullscreen UI here) -->
   <div class="section" id="alertSection" style="display:none">
     <h2>Alerts</h2>
     <div class="grid2">
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button id="btnCode9On">Activate CODE 9</button>
         <button id="btnCode9Off">Deactivate CODE 9</button>
-        <span id="code9State" class="status" style="border-color:#12313a">Unknown</span>
+        <span id="code9State" class="badge">CODE 9 OFF</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button id="btnAllClear">All Clear</button>
@@ -61,7 +57,7 @@
     </div>
   </div>
 
-  <!-- Codes (CRUD pro všechny přihlášené) -->
+  <!-- Codes CRUD -->
   <div class="section" id="codesPanel" style="display:none">
     <h2>Codes</h2>
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
@@ -89,7 +85,7 @@
     </div>
   </div>
 
-  <!-- Log -->
+  <!-- Frequency Log -->
   <div class="section">
     <h2>Frequency Log</h2>
     <div class="log" id="log">
@@ -100,21 +96,13 @@
   </div>
 </div>
 
-<!-- Overlay + audio -->
-<div id="baseAlertOverlay" aria-hidden="true">
-  <div class="baseAlert">BASE ALERT</div>
-  <div class="codeBox">CODE 9</div>
-</div>
-<div class="soundBanner" id="soundBanner">Click anywhere to enable sounds</div>
-<audio id="sndIncoming" preload="auto" src="incoming-traveler.mp3"></audio>
-<audio id="sndBase" preload="auto" loop src="basealert.mp3"></audio>
+<!-- (No overlay / no siren audio here) -->
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // === TVŮJ KONFIG ===
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -129,44 +117,36 @@
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  // UI refs
+  // UI
   const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
   const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
-  const logEl=document.getElementById('log'), overlay=document.getElementById('baseAlertOverlay');
-  const sndIncoming=document.getElementById('sndIncoming'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
-
+  const logEl=document.getElementById('log');
   const alertSection=document.getElementById('alertSection'), codesPanel=document.getElementById('codesPanel');
   const btnCode9On=document.getElementById('btnCode9On'), btnCode9Off=document.getElementById('btnCode9Off'), btnAllClear=document.getElementById('btnAllClear'), code9State=document.getElementById('code9State');
-
   const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
   const btnAddCode=document.getElementById('btnAddCode'), btnRefresh=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
 
-  let unsubFreq=null, unsubAlert=null, soundsEnabled=false;
+  let unsubFreq=null, unsubAlert=null;
 
-  window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
-
-  // Auth
   btnLogin.onclick = async ()=>{ await signInWithPopup(auth, new GoogleAuthProvider()); };
   btnLogout.onclick = ()=> signOut(auth);
 
   onAuthStateChanged(auth, async (user)=>{
-    stopFreq(); toggleBaseAlert(false);
+    stopFreq();
     if (user){
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
       stateEl.textContent='Awaiting Signal…'; stateEl.classList.add('blink');
 
-      // Show operator sections
       alertSection.style.display='block';
       codesPanel.style.display='block';
 
-      // Live alert status
       if (!unsubAlert){
         unsubAlert = onValue(ref(db,'alerts/CODE 9'), (snap)=>{
           const active = snap.val() === true;
           code9State.textContent = active ? 'CODE 9 ACTIVE' : 'CODE 9 OFF';
-          code9State.style.borderColor = active ? 'var(--bad)' : '#12313a';
-          toggleBaseAlert(active);
+          code9State.style.color = active ? '#ff2a2a' : '#9fefff';
+          code9State.style.borderColor = active ? '#ff2a2a' : '#135760';
         });
       }
     } else {
@@ -190,7 +170,6 @@
   function stopFreq(){ if (unsubFreq){ unsubFreq(); unsubFreq=null; } }
 
   async function handleIncomingSignal(ch, sig){
-    if (soundsEnabled) try{ sndIncoming.currentTime=0; sndIncoming.play(); }catch{}
     const code = (sig?.code||'').toString().trim();
     const sc = await get(child(ref(db),'codes/'+code));
     let status='UNKNOWN', cls='warn', owner='—';
@@ -210,12 +189,12 @@
     stateEl.style.borderColor=color; stateEl.style.boxShadow=`0 0 16px ${color}55`; setTimeout(()=>{stateEl.style.boxShadow='none';},1200);
   }
 
-  // Alerts write (každý přihlášený)
+  // Alerts
   btnCode9On.onclick  = async ()=>{ await set(ref(db,'alerts/CODE 9'), true); };
   btnCode9Off.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
   btnAllClear.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
 
-  // Codes CRUD (každý přihlášený)
+  // Codes CRUD
   btnAddCode.onclick = async ()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
@@ -264,11 +243,7 @@
     }
   });
 
-  function toggleBaseAlert(active){
-    overlay.classList.toggle('show', !!active);
-    if (active && soundsEnabled) try{ sndBase.play(); }catch{} else { try{ sndBase.pause(); sndBase.currentTime=0; }catch{} }
-    if (active && !soundsEnabled) soundBanner.classList.add('show'); else soundBanner.classList.remove('show');
-  }
+  // utils
   function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
   function att(s){return String(s).replace(/"/g,'&quot;')}
 </script>
