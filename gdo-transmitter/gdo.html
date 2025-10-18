@@ -9,10 +9,8 @@
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
   .page:before{content:"";position:absolute;inset:0;
-    background:
-      repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
-      radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%);
-    pointer-events:none}
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
+               radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%)}
   .card{z-index:1;width:min(620px,92vw);background:#0f1b23;border:1px solid #12313a;border-radius:16px;padding:20px;box-shadow:0 0 40px #00e6e61f}
   h1{margin:0 0 8px;color:#00e6e6}
   label{display:block;margin:12px 0 6px}
@@ -22,7 +20,7 @@
   .out{margin-top:12px;font-size:12px;word-break:break-all}
   .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-  /* Fullscreen CODE 9 overlay */
+  /* CODE 9 overlay */
   #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.92);z-index:9999}
   #alertOverlay.show{display:flex}
   .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.96;text-shadow:0 0 18px #900}
@@ -63,7 +61,7 @@
   </div>
 </main>
 
-<!-- CODE 9 overlay + siren (optional on Tx) -->
+<!-- Overlay + siren -->
 <div id="alertOverlay" aria-hidden="true">
   <div class="alertTitle">
     <div class="base">BASE</div>
@@ -87,28 +85,35 @@
     messagingSenderId: "758705115255",
     appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
-
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
-  let cooldown=false, soundsEnabled=false;
+  // IMPORTANT: enable audio by first click
+  let soundsEnabled=false; window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
 
-  window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
-
-  // CODE 9 monitor (boolean or {value:true})
+  // Listen for CODE 9 — ensure overlay + siren
   onValue(ref(db,'alerts/CODE 9'), (snap)=>{
     const v = snap.val();
     const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
     overlay.classList.toggle('show', active);
-    if (active && soundsEnabled) { try{ sndBase.play(); }catch{} } else { try{ sndBase.pause(); sndBase.currentTime=0; }catch{} }
-    if (active && !soundsEnabled) soundBanner.classList.add('show'); else soundBanner.classList.remove('show');
+
+    if (active){
+      if (!soundsEnabled) soundBanner.classList.add('show');
+      // try to play; if blocked, banner stays visible until user taps
+      if (soundsEnabled){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
+    } else {
+      soundBanner.classList.remove('show');
+      try{ sndBase.pause(); sndBase.currentTime=0; }catch{}
+    }
   });
 
-  // Transmit
+  // Send with fake encrypt + 15s cooldown
+  let cooldown=false;
   sendBtn.onclick = async ()=>{
     if (cooldown) return;
     const code=(codeEl.value||"").trim(), ch=freqEl.value;
@@ -125,9 +130,7 @@
 
     stEl.textContent="Transmitted"; stEl.className='ok';
     await new Promise(r=>setTimeout(r,900));
-    stEl.textContent="Cooldown 10s…"; stEl.className='';
-
-    for (let i=10;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
+    for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
     stEl.textContent="Idle"; cooldown=false; sendBtn.disabled=false;
   };
 </script>
