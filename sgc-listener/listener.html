@@ -9,33 +9,45 @@
     --bg:#000; --panel:#0c1620; --panel-2:#091217; --line:#133645; --fg:#d9faff;
     --ok:#2ee66b; --warn:#ffb02e; --bad:#ff2a2a; --accent:#00e6e6; --alertBlue:#1d8bd6;
   }
+  *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
   .page:before{content:"";position:absolute;inset:0;
     background:repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px),
                radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%)}
   .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;
-    background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px 18px 24px}
-  .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-  .left{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
-  h1{margin:2px 0 10px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
-  .tabs{display:flex;gap:10px;margin:10px 0}
-  .tab{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#0b141c;cursor:pointer}
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
+
+  /* header */
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
+
+  /* tabs */
+  .tabs{display:flex;gap:10px}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
   .tab.active{outline:2px solid #1e94aa}
-  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+
+  /* panels */
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
-  .panel h2{margin:0 0 8px;font-size:18px;color:#9fefff}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
   .blink{animation:blink 1s infinite} @keyframes blink{50%{opacity:.35}}
+
+  /* pipeline */
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+  .pipe{display:grid;gap:10px;margin-top:10px}
+  .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
+  .emph{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .ownerBig{font-size:22px}
+  .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
   .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
   .ok{border-color:var(--ok);color:#0f0} .bad{border-color:var(--bad);color:#ff3b3b} .warn{border-color:var(--warn);color:#ffb02e}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
 
+  /* CODE 9 badge (notice only) */
   .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
 
-  /* INCOMING banner (longer show) */
+  /* INCOMING banner (3.5s visible) */
   #incomingBanner{
     position:fixed; left:50%; transform:translateX(-50%) translateY(-120%); top:10px;
     background:var(--alertBlue); color:#fff; z-index:9000; border:3px solid #cfe8ff;
@@ -48,24 +60,23 @@
   @keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}
   @keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
 
-  /* emphasized Owner / Result */
-  .emph{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
-  .ownerBig{font-size:22px}
-  .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border-width:2px}
+  /* views */
+  #viewListener{display:block}
+  #viewMgmt{display:none}
 </style>
 </head>
 <body>
 <main class="page">
   <div class="shell">
     <div class="topbar">
-      <div class="left">
+      <div class="row">
         <h1>SGC Listener</h1>
         <div class="tabs">
           <button id="tabListener" class="tab active">Listener View</button>
           <button id="tabMgmt" class="tab">Management</button>
         </div>
       </div>
-      <div class="right">
+      <div class="row">
         <button id="btnLogin">Sign in with Google</button>
         <button id="btnLogout" style="display:none">Sign out</button>
       </div>
@@ -73,62 +84,61 @@
 
     <!-- LISTENER VIEW -->
     <section id="viewListener">
-      <div class="grid">
-        <div class="panel">
-          <h2>Receiver</h2>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-            <select id="selFreq" disabled>
-              <option value="alpha-1">alpha-1</option>
-              <option value="bravo-2">bravo-2</option>
-              <option value="charlie-3">charlie-3</option>
-            </select>
-            <button id="btnMonitor" disabled>Monitor</button>
-            <div id="state" class="status">Sign in required</div>
-          </div>
-
-          <!-- live pipeline (no history) -->
-          <div class="panel" style="margin:10px 0 0">
-            <div style="margin:6px 0"><b>Status:</b> <span id="sigStatus">Idle</span></div>
-            <div style="margin:6px 0"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
-            <div style="margin:6px 0"><b>Decrypted:</b> <span id="decView" class="mono">—</span></div>
-
-            <div class="emph">
-              <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
-              <div><b>Result:</b> <span id="resView" class="tag resultBig warn">—</span></div>
-            </div>
-          </div>
+      <div class="panel">
+        <div class="row">
+          <label for="selFreq" style="opacity:.85">Frequency</label>
+          <select id="selFreq" disabled>
+            <option value="alpha-1">alpha-1</option>
+            <option value="bravo-2">bravo-2</option>
+            <option value="charlie-3">charlie-3</option>
+          </select>
+          <button id="btnMonitor" disabled>Monitor</button>
+          <div id="state" class="status">Sign in required</div>
         </div>
 
-        <div class="panel">
-          <h2>Alerts & Codes</h2>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <button id="btnCode9On">Activate CODE 9</button>
-            <button id="btnCode9Off">Deactivate CODE 9</button>
-            <span id="code9State" class="badge">CODE 9 OFF</span>
+        <!-- live pipeline; no history -->
+        <div class="pipe">
+          <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
+          <div class="step"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
+          <div class="step"><b>Decrypted:</b> <span id="decView" class="mono">—</span></div>
+          <div class="step emph">
+            <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
+            <div><b>Result:</b> <span id="resView" class="tag resultBig warn">—</span></div>
           </div>
-          <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-            <div style="flex:1;min-width:180px">
-              <label style="display:block;margin-bottom:6px">Code</label>
-              <input id="codeInput" placeholder="e.g. 256525457454">
-            </div>
-            <div style="flex:1;min-width:160px">
-              <label style="display:block;margin-bottom:6px">Owner</label>
-              <input id="ownerInput" placeholder="e.g. SG-1">
-            </div>
-            <div>
-              <label style="display:block;margin-bottom:6px">Access</label>
-              <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
-            </div>
-            <button id="btnAddCode">Add / Update</button>
-            <button id="btnRefreshCodes">Refresh</button>
-          </div>
-          <div id="codesInfo" style="opacity:.8;font-size:12px;margin-top:8px">Codes table hidden (no history). Use Refresh to ensure latest.</div>
         </div>
       </div>
     </section>
 
-    <!-- MANAGEMENT TAB (optional: keep same as your last version if you prefer full CRUD table there). -->
+    <!-- MANAGEMENT -->
+    <section id="viewMgmt">
+      <div class="panel">
+        <h3 style="margin:0 0 10px">Alerts</h3>
+        <div class="row">
+          <button id="btnCode9On">Activate CODE 9</button>
+          <button id="btnCode9Off">Deactivate CODE 9</button>
+          <span id="code9State" class="badge">CODE 9 OFF</span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3 style="margin:0 0 10px">Codes</h3>
+        <div class="row">
+          <div style="min-width:220px">
+            <label style="display:block;margin-bottom:6px">Code</label>
+            <input id="codeInput" placeholder="e.g. 256525457454">
+          </div>
+          <div style="min-width:220px">
+            <label style="display:block;margin-bottom:6px">Owner</label>
+            <input id="ownerInput" placeholder="e.g. SG-1">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:6px">Access</label>
+            <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
+          </div>
+          <button id="btnAddCode">Add / Update</button>
+        </div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -141,6 +151,7 @@
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
+  /* Firebase (your project) */
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -155,34 +166,55 @@
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  // Elements
-  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
-  const tabListener=document.getElementById('tabListener'), tabMgmt=document.getElementById('tabMgmt');
-  const viewListener=document.getElementById('viewListener'), viewMgmt=document.getElementById('viewMgmt');
+  /* Elements */
+  const tabListener = document.getElementById('tabListener');
+  const tabMgmt     = document.getElementById('tabMgmt');
+  const viewListener= document.getElementById('viewListener');
+  const viewMgmt    = document.getElementById('viewMgmt');
 
-  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
-  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
-  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout= document.getElementById('btnLogout');
 
-  const btnCode9On=document.getElementById('btnCode9On'), btnCode9Off=document.getElementById('btnCode9Off'), code9State=document.getElementById('code9State');
-  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
-  const btnAddCode=document.getElementById('btnAddCode'), btnRefresh=document.getElementById('btnRefreshCodes');
+  const selFreq  = document.getElementById('selFreq');
+  const btnMonitor = document.getElementById('btnMonitor');
+  const stateEl  = document.getElementById('state');
 
-  const sndIncoming=document.getElementById('sndIncoming'), incomingBanner=document.getElementById('incomingBanner');
+  const sigStatus= document.getElementById('sigStatus');
+  const encView  = document.getElementById('encView');
+  const decView  = document.getElementById('decView');
+  const ownerView= document.getElementById('ownerView');
+  const resView  = document.getElementById('resView');
 
-  let unsubFreq=null, unsubAlert=null;
+  const btnCode9On  = document.getElementById('btnCode9On');
+  const btnCode9Off = document.getElementById('btnCode9Off');
+  const code9State  = document.getElementById('code9State');
 
-  // Tabs
+  const codeInput = document.getElementById('codeInput');
+  const ownerInput= document.getElementById('ownerInput');
+  const accessInput= document.getElementById('accessInput');
+  const btnAddCode = document.getElementById('btnAddCode');
+
+  const sndIncoming = document.getElementById('sndIncoming');
+  const incomingBanner = document.getElementById('incomingBanner');
+
+  let unsubFreq = null, unsubAlert = null;
+
+  /* Tabs (strict 2 views; not merged) */
   function activateTab(which){
-    if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; if(viewMgmt) viewMgmt.style.display='none'; }
-    else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); if(viewMgmt) viewMgmt.style.display='block'; viewListener.style.display='none'; }
+    if (which === 'listener'){
+      tabListener.classList.add('active'); tabMgmt.classList.remove('active');
+      viewListener.style.display = 'block'; viewMgmt.style.display = 'none';
+    } else {
+      tabMgmt.classList.add('active'); tabListener.classList.remove('active');
+      viewMgmt.style.display = 'block'; viewListener.style.display = 'none';
+    }
   }
-  tabListener.onclick=()=>activateTab('listener');
-  tabMgmt.onclick=()=>activateTab('mgmt');
+  tabListener.onclick = ()=>activateTab('listener');
+  tabMgmt.onclick     = ()=>activateTab('mgmt');
 
-  // Auth
-  btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
-  btnLogout.onclick=()=>signOut(auth);
+  /* Auth */
+  btnLogin.onclick = async ()=>{ await signInWithPopup(auth, new GoogleAuthProvider()); };
+  btnLogout.onclick = ()=> signOut(auth);
 
   onAuthStateChanged(auth, async (user)=>{
     stopMonitor();
@@ -190,10 +222,11 @@
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
 
-      // auto start on alpha-1
-      selFreq.value='alpha-1'; startMonitor();
+      // Auto-monitor alpha-1; allow switching later
+      selFreq.value='alpha-1';
+      startMonitor();
 
-      // CODE 9 badge (no overlay here)
+      // CODE 9 badge (notice only)
       if (!unsubAlert){
         unsubAlert = onValue(ref(db,'alerts/CODE 9'), (snap)=>{
           const v = snap.val();
@@ -203,72 +236,85 @@
           code9State.style.borderColor = active ? '#ff2a2a' : '#135760';
         });
       }
+
+      stateEl.textContent='Monitoring: alpha-1';
+      stateEl.classList.add('blink');
     } else {
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
-      if (unsubAlert){unsubAlert();unsubAlert=null;}
+      if (unsubAlert){ unsubAlert(); unsubAlert=null; }
     }
   });
 
-  // Monitor
-  btnMonitor.onclick=()=>startMonitor();
-  selFreq.addEventListener('change',()=>startMonitor());
+  /* Monitor controls */
+  btnMonitor.onclick = ()=> startMonitor();
+  selFreq.addEventListener('change', ()=> startMonitor());
 
   function startMonitor(){
     stopMonitor();
-    const ch=selFreq.value, path=`frequencies/${ch}/signals`;
-    stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
-    unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
-      const data=snap.val(); await handleIncomingSignal(ch,data);
-      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s delete
+    const ch = selFreq.value, path = `frequencies/${ch}/signals`;
+    stateEl.textContent = `Monitoring: ${ch}`; stateEl.classList.add('blink');
+    unsubFreq = onChildAdded(ref(db, path), async (snap)=>{
+      const data = snap.val();
+      await handleIncomingSignal(ch, data);
+      // delete after 10s
+      setTimeout(()=>remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 10000);
     });
   }
   function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
 
-  // Incoming pipeline (ALLOWED / DENIED / UNKNOWN)
-  async function handleIncomingSignal(ch,sig){
-    // banner longer
+  /* Incoming pipeline */
+  async function handleIncomingSignal(ch, sig){
+    // Banner (3.5s)
     incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
     setTimeout(()=>incomingBanner.classList.remove('show'), 3850);
+
+    // Sound (one shot)
     try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
 
-    const code=(sig?.code||'').toString().trim();
-    const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
+    const code = (sig?.code || '').toString().trim();
+    const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
-    sigStatus.textContent=`INCOMING on ${ch}`;
-    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag resultBig warn';
+    // Pipeline reset
+    sigStatus.textContent = `INCOMING on ${ch}`;
+    encView.textContent = '…'; decView.textContent = '…';
+    ownerView.textContent = '—'; resView.textContent='—';
+    resView.className = 'tag resultBig warn';
 
+    // Show enc/dec
     await sleep(200);
-    encView.textContent=encrypted;
-    sigStatus.textContent='DECRYPTING…';
+    encView.textContent = encrypted;
+    sigStatus.textContent = 'DECRYPTING…';
     await sleep(520);
-    decView.textContent=code;
+    decView.textContent = code;
 
-    const sc=await get(child(ref(db),'codes/'+code));
+    // Verify code
+    const sc = await get(child(ref(db), 'codes/'+code));
     let label='UNKNOWN', cls='warn', owner='—';
     if (sc.exists()){
-      const c=sc.val(); owner=c.owner||'—';
-      if (c.access===true){ label='ALLOWED'; cls='ok'; }
+      const c = sc.val(); owner = c.owner || '—';
+      if (c.access === true){ label='ALLOWED'; cls='ok'; }
       else { label='DENIED'; cls='bad'; }
     }
-    ownerView.textContent=owner;
-    resView.textContent=label; resView.className=`tag resultBig ${cls}`;
+    ownerView.textContent = owner;
+    resView.textContent = label;
+    resView.className = `tag resultBig ${cls}`;
   }
 
-  // Alerts + Codes
-  btnCode9On.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),true); };
-  btnCode9Off.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),false); };
-  btnAddCode.onclick=async()=>{
+  /* Alerts & Codes (write) */
+  btnCode9On.onclick  = async ()=>{ await set(ref(db,'alerts/CODE 9'), true); };
+  btnCode9Off.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
+
+  btnAddCode.onclick = async ()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
-    await set(ref(db,'codes/'+code),{ owner, access });
+    await set(ref(db,'codes/'+code), { owner, access });
     codeInput.value=''; ownerInput.value=''; accessInput.value='true';
-  };
-  btnRefresh.onclick=async()=>{
-    const snap=await get(ref(db,'codes')); alert(snap.exists()?'Codes loaded (hidden view).':'No codes present.');
+    alert('Saved.');
   };
 
+  /* utils */
   function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 </script>
 </body>
