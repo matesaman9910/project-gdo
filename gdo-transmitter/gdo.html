@@ -1,77 +1,78 @@
 <!doctype html>
-<html lang="cs">
+<html lang="en">
 <head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>GDO Transmitter</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{--fg:#ff1919;--bg:#000}
-  html,body{height:100%;margin:0;background:var(--bg);color:#d9faff;font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .card{position:relative;z-index:0;width:min(560px,92vw);margin:40px auto;background:#0f1b23;border:1px solid #12313a;border-radius:16px;padding:18px 18px 22px;box-shadow:0 0 40px #00e6e61f}
+  :root{--fg:#d9faff;--bg:#000}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
+  .page:before{content:"";position:absolute;inset:0;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
+      radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%);
+    pointer-events:none}
+  .card{z-index:1;width:min(620px,92vw);background:#0f1b23;border:1px solid #12313a;border-radius:16px;padding:20px;box-shadow:0 0 40px #00e6e61f}
   h1{margin:0 0 8px;color:#00e6e6}
   label{display:block;margin:12px 0 6px}
   input,select,button{width:100%;background:#0b141a;color:#d9faff;border:1px solid #12313a;border-radius:10px;padding:10px 12px;font-family:inherit}
   button{cursor:pointer}
   .row{display:grid;grid-template-columns:1fr 160px;gap:10px}
-  .hint{opacity:.8;font-size:12px;margin-top:4px}
   .out{margin-top:12px;font-size:12px;word-break:break-all}
   .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-  /* FULLSCREEN ALERT (matches your image style) */
-  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
-    background:rgba(0,0,0,0.9);z-index:9999}
+  /* Fullscreen CODE 9 overlay */
+  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.92);z-index:9999}
   #alertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:800;text-transform:uppercase;text-align:center;line-height:0.95;
-    text-shadow:0 0 18px #900}
+  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.96;text-shadow:0 0 18px #900}
   .alertTitle .base{font-size:min(12vw,110px);letter-spacing:4px}
   .alertTitle .alert{font-size:min(12vw,110px);letter-spacing:4px;margin-top:8px}
   .codeBox{margin-top:20px;border:10px solid #ff2a2a;color:#ff2a2a;padding:8px 24px;font-weight:900;
     font-size:min(10vw,90px);letter-spacing:6px;box-shadow:0 0 26px #900 inset}
-  .blink{animation:blink 1s infinite} @keyframes blink{50%{opacity:.35}}
-
   .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
   .soundBanner.show{display:block}
 </style>
 </head>
 <body>
-
-<div class="card">
-  <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
-    <h1>GDO Transmitter</h1>
-    <a href="../index.html" style="text-decoration:none"><button>← Back</button></a>
-  </div>
-  <label for="code">Access Code</label>
-  <input id="code" autocomplete="off" placeholder="Enter code…"/>
-  <div class="row">
-    <div>
-      <label for="freq">Frequency</label>
-      <select id="freq">
-        <option value="alpha-1">alpha-1</option>
-        <option value="bravo-2">bravo-2</option>
-        <option value="charlie-3">charlie-3</option>
-      </select>
+<main class="page">
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+      <h1>GDO Transmitter</h1>
+      <a href="../index.html" style="text-decoration:none"><button>← Back</button></a>
     </div>
-    <div>
-      <label>&nbsp;</label>
-      <button id="send">Transmit</button>
+    <label for="code">Access Code</label>
+    <input id="code" autocomplete="off" placeholder="Enter code…"/>
+    <div class="row">
+      <div>
+        <label for="freq">Frequency</label>
+        <select id="freq">
+          <option value="alpha-1">alpha-1</option>
+          <option value="bravo-2">bravo-2</option>
+          <option value="charlie-3">charlie-3</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="send">Transmit</button>
+      </div>
     </div>
+    <div class="out"><b>Status:</b> <span id="status">Idle</span></div>
+    <div class="out"><b>Encrypted:</b> <span id="enc">—</span></div>
+    <div class="out"><b>Decrypted:</b> <span id="dec">—</span></div>
   </div>
-  <div class="hint">This device is intentionally unauthenticated. Do not send real secrets.</div>
-  <div class="out"><b>Status:</b> <span id="status">Idle</span></div>
-  <div class="out"><b>Encrypted:</b> <span id="enc">—</span></div>
-  <div class="out"><b>Decrypted:</b> <span id="dec">—</span></div>
-</div>
+</main>
 
-<!-- Fullscreen alert UI (only on transmitter) -->
+<!-- CODE 9 overlay + siren (optional on Tx) -->
 <div id="alertOverlay" aria-hidden="true">
   <div class="alertTitle">
     <div class="base">BASE</div>
-    <div class="alert blink">ALERT</div>
+    <div class="alert">ALERT</div>
   </div>
   <div class="codeBox">CODE 9</div>
 </div>
 <div class="soundBanner" id="soundBanner">Click anywhere to enable sounds</div>
-<audio id="sndBase" preload="auto" loop src="../assets/basealert.mp3"></audio>
+<audio id="sndBase" preload="auto" loop src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
@@ -90,22 +91,20 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
   let cooldown=false, soundsEnabled=false;
 
-  // Enable audio on first click (autoplay policy)
   window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
 
-  // Listen for CODE 9 and show full overlay here
+  // CODE 9 monitor (boolean or {value:true})
   onValue(ref(db,'alerts/CODE 9'), (snap)=>{
-    const active = snap.val() === true;
+    const v = snap.val();
+    const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
     overlay.classList.toggle('show', active);
-    if (active && soundsEnabled) { try { sndBase.play(); } catch{} }
-    else { try { sndBase.pause(); sndBase.currentTime=0; } catch{} }
+    if (active && soundsEnabled) { try{ sndBase.play(); }catch{} } else { try{ sndBase.pause(); sndBase.currentTime=0; }catch{} }
     if (active && !soundsEnabled) soundBanner.classList.add('show'); else soundBanner.classList.remove('show');
   });
 
@@ -116,7 +115,7 @@
     if (!code){ stEl.textContent="Enter code"; stEl.className='warn'; return; }
 
     cooldown=true; sendBtn.disabled=true;
-    stEl.textContent="Encrypting…"; stEl.className=''; decEl.textContent=code;
+    stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
 
     const encrypted = btoa(unescape(encodeURIComponent(code)));
     await new Promise(r=>setTimeout(r,400)); encEl.textContent=encrypted;
