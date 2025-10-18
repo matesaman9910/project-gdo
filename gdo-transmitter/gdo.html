@@ -9,36 +9,31 @@
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   main{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
-  main:before{content:"";position:absolute;inset:0;background:
-    repeating-linear-gradient(0deg,rgba(255,255,255,.03)0 1px,transparent 1px 3px),
-    radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
-  .card{z-index:1;width:min(680px,92vw);background:var(--panel);border:1px solid var(--line);
-    border-radius:18px;padding:22px;box-shadow:0 0 44px #00e6e625}
+  main:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px),radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
+  .card{z-index:1;width:min(680px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 0 44px #00e6e625}
   h1{margin:0 0 12px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
   label{display:block;margin:12px 0 6px}
-  input,select,button{width:100%;background:#0b141a;color:var(--fg);border:1px solid var(--line);
-    border-radius:12px;padding:12px 14px;font-family:inherit}
+  input,select,button{width:100%;background:#0b141a;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit}
   button{cursor:pointer}
   .row{display:grid;grid-template-columns:1fr 160px;gap:10px}
   .out{margin-top:10px;font-size:12px;word-break:break-all}
   .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-  /* ===== Full-screen overlay (no flash on load) ===== */
+  /* Overlay */
   #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
   #alertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900}
-  .alertTitle .base,.alertTitle .alert{letter-spacing:4px;font-size:min(14vw,120px)}
-  /* Alternating fade (BASE off while ALERT on, and vice-versa), smooth loop */
-  .alertTitle .base{animation:baseAlt 2s linear infinite}
-  .alertTitle .alert{margin-top:8px;animation:alertAlt 2s linear infinite}
-  @keyframes baseAlt{0%{opacity:1}49%{opacity:1}50%{opacity:0}99%{opacity:0}100%{opacity:1}}
-  @keyframes alertAlt{0%{opacity:0}49%{opacity:0}50%{opacity:1}99%{opacity:1}100%{opacity:0}}
-  .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;
-    font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
+  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative}
+  .alertWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
+  .alertWord.base{top:0;animation-name:baseFade}
+  .alertWord.alert{top:0;animation-name:alertFade}
+  /* cross-fade loop: when BASE visible, ALERT hidden, then swap */
+  @keyframes baseFade{0%{opacity:1}49%{opacity:1}50%{opacity:0}99%{opacity:0}}
+  @keyframes alertFade{0%{opacity:0}49%{opacity:0}50%{opacity:1}99%{opacity:1}}
+  .codeBox{margin-top:110px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
+  .desc{margin-top:12px;max-width:min(900px,92vw);text-align:center;font-size:min(4vw,22px);opacity:.95}
 
   /* Click-to-enable banner */
-  #soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
-    padding:10px 14px;border-radius:12px;font-size:14px;z-index:10000;display:none;cursor:pointer}
+  #soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;padding:10px 14px;border-radius:12px;font-size:14px;z-index:10000;display:none;cursor:pointer}
   #soundBanner.show{display:block}
 </style>
 </head>
@@ -76,11 +71,12 @@
 
 <!-- Overlay + siren -->
 <div id="alertOverlay" aria-hidden="true">
-  <div class="alertTitle">
-    <div class="base">BASE</div>
-    <div class="alert">ALERT</div>
+  <div class="alertTitle" aria-live="polite">
+    <div class="alertWord base">BASE</div>
+    <div class="alertWord alert">ALERT</div>
   </div>
-  <div class="codeBox">CODE 9</div>
+  <div id="codeBox" class="codeBox">CODE 9</div>
+  <div id="descBox" class="desc">—</div>
 </div>
 <div id="soundBanner" title="Enable audio">🔊 This page plays alarm sounds. Due to browser policy, click here once to enable sound.</div>
 <audio id="sndBase" preload="auto" loop src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
@@ -101,62 +97,95 @@
   const app = initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
+  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
-  const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
+  const overlay=document.getElementById('alertOverlay'), codeBox=document.getElementById('codeBox'), descBox=document.getElementById('descBox');
+  const sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
   let soundsEnabled=false;
-  let code9Active=false;
+  let currentActive=null; // e.g., "CODE 4"
 
-  // Sound enable banner (no auto show until needed)
-  function enableSound(){ if (soundsEnabled) return; soundsEnabled=true; soundBanner.classList.remove('show'); if (code9Active) { try{ sndBase.currentTime=0; sndBase.play(); }catch{} } }
+  // Sound enable banner
+  function enableSound(){
+    if (soundsEnabled) return;
+    soundsEnabled=true;
+    soundBanner.classList.remove('show');
+    if (currentActive==='CODE 9'){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
+  }
   soundBanner.addEventListener('click', enableSound);
   window.addEventListener('pointerdown', enableSound, { once:true });
 
-  function showOverlay(active){ overlay.classList.toggle('show', !!active); }
-  async function startSiren(){
+  function showOverlay(active, code, desc){
+    if (!active){ overlay.classList.remove('show'); return; }
+    codeBox.textContent = code;
+    descBox.textContent = desc || '—';
+    overlay.classList.add('show');
+  }
+  function startSirenIfNeeded(code){
+    if (code!=='CODE 9') { stopSirenImmediate(); return; }
     if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
-    try{ sndBase.loop=true; sndBase.currentTime=0; await sndBase.play(); }catch{}
+    try{ sndBase.currentTime=0; sndBase.play(); }catch{}
   }
   function stopSirenImmediate(){
     try{ sndBase.pause(); sndBase.currentTime=0; sndBase.load(); }catch{}
     soundBanner.classList.remove('show');
   }
-  // keep siren alive even if a browser cancels loop on tab switch
-  sndBase.addEventListener('ended', ()=>{ if (code9Active && soundsEnabled) { try{ sndBase.play(); }catch{} } });
 
-  // Only use the new structure (no legacy fallback -> prevents the initial 0.5s flash)
-  const CODE9_PATH = 'alerts/CODE 9/active';
+  // Compute active alarm from /alerts snapshot (mutual-exclusive expected)
+  function getActiveFrom(alerts){
+    for (let i=1;i<=9;i++){
+      const node = alerts?.[`CODE ${i}`];
+      if (node && node.active) return { code:`CODE ${i}`, desc: node.desc || '' };
+    }
+    return null;
+  }
 
+  // Initial read THEN subscribe (prevents startup flash)
   (async ()=>{
     try{
-      const snap = await get(ref(db,CODE9_PATH));
-      code9Active = snap.exists() ? !!snap.val() : false;
-    }catch{ code9Active=false; }
-    showOverlay(code9Active);
-    if (code9Active) startSiren(); else stopSirenImmediate();
-    onValue(ref(db,CODE9_PATH), s=>{
-      code9Active = s.exists() ? !!s.val() : false;
-      showOverlay(code9Active);
-      if (code9Active) startSiren(); else stopSirenImmediate();
+      const first = await get(ref(db, 'alerts'));
+      const a = first.exists()? first.val() : {};
+      const act = getActiveFrom(a);
+      currentActive = act ? act.code : null;
+      showOverlay(!!act, act?.code || '', act?.desc || '');
+      startSirenIfNeeded(currentActive || '');
+    }catch{/* ignore */}
+    onValue(ref(db, 'alerts'), snap=>{
+      const a = snap.exists()? snap.val() : {};
+      const act = getActiveFrom(a);
+      const next = act ? act.code : null;
+      if (next !== currentActive){
+        currentActive = next;
+        if (next){ showOverlay(true, act.code, act.desc || ''); }
+        else { showOverlay(false); }
+        startSirenIfNeeded(next || '');
+      } else {
+        // same code; just keep UI/desc fresh
+        if (next){ showOverlay(true, act.code, act.desc || ''); }
+      }
     });
   })();
 
-  // Transmit (15s cooldown)
+  // Transmit with fake encrypt + 15s cooldown
   let cooldown=false;
   sendBtn.onclick = async ()=>{
     if (cooldown) return;
     const code=(codeEl.value||"").trim(), ch=freqEl.value;
     if (!code){ stEl.textContent="Enter code"; stEl.className='warn'; return; }
+
     cooldown=true; sendBtn.disabled=true;
     stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
-    const encrypted=btoa(unescape(encodeURIComponent(code)));
+
+    const encrypted = btoa(unescape(encodeURIComponent(code)));
     await new Promise(r=>setTimeout(r,400)); encEl.textContent=encrypted;
-    const newRef=push(ref(db,`frequencies/${ch}/signals`));
-    await set(newRef,{ code, decrypted:code, encrypted, timestamp:serverTimestamp() });
+
+    const newRef = push(ref(db, `frequencies/${ch}/signals`));
+    await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
+
     stEl.textContent="Transmitted"; stEl.className='ok';
     await new Promise(r=>setTimeout(r,900));
-    for(let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
+    for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
     stEl.textContent="Idle"; cooldown=false; sendBtn.disabled=false;
   };
 </script>
