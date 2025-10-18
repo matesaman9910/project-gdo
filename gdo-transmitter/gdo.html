@@ -4,45 +4,52 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>GDO Transmitter</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+
 <style>
-  :root{--fg:#d9faff;--bg:#000}
+  :root{--fg:#d9faff;--bg:#000;--panel:#0f1b23;--line:#12313a;--accent:#00e6e6}
+  *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
-  .page:before{content:"";position:absolute;inset:0;
+  main{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
+  main:before{content:"";position:absolute;inset:0;
     background:repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px),
                radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%)}
-  .card{z-index:1;width:min(620px,92vw);background:#0f1b23;border:1px solid #12313a;border-radius:16px;padding:20px;box-shadow:0 0 40px #00e6e61f}
-  h1{margin:0 0 8px;color:#00e6e6}
+  .card{z-index:1;width:min(680px,92vw);background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;padding:22px;box-shadow:0 0 44px #00e6e625}
+  h1{margin:0 0 12px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
   label{display:block;margin:12px 0 6px}
-  input,select,button{width:100%;background:#0b141a;color:#d9faff;border:1px solid #12313a;border-radius:10px;padding:10px 12px;font-family:inherit}
+  input,select,button{width:100%;background:#0b141a;color:var(--fg);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;font-family:inherit}
   button{cursor:pointer}
   .row{display:grid;grid-template-columns:1fr 160px;gap:10px}
-  .out{margin-top:12px;font-size:12px;word-break:break-all}
+  .out{margin-top:10px;font-size:12px;word-break:break-all}
   .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-  /* CODE 9 overlay */
-  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.92);z-index:9999}
+  /* ===== CODE 9 full-screen overlay ===== */
+  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
   #alertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.96;text-shadow:0 0 18px #900}
-  .alertTitle .base{font-size:min(12vw,110px);letter-spacing:4px}
-  .alertTitle .alert{font-size:min(12vw,110px);letter-spacing:4px;margin-top:8px}
-  .codeBox{margin-top:20px;border:10px solid #ff2a2a;color:#ff2a2a;padding:8px 24px;font-weight:900;
-    font-size:min(10vw,90px);letter-spacing:6px;box-shadow:0 0 26px #900 inset}
+  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900}
+  .alertTitle .base{font-size:min(14vw,120px);letter-spacing:4px}
+  .alertTitle .alert{font-size:min(14vw,120px);letter-spacing:4px;margin-top:8px}
+  .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;
+    font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset, 0 0 20px #900}
 
+  /* small banner prompting first click to enable audio */
   .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
     padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
   .soundBanner.show{display:block}
 </style>
 </head>
 <body>
-<main class="page">
+<main>
   <div class="card">
     <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
       <h1>GDO Transmitter</h1>
       <a href="../index.html" style="text-decoration:none"><button>← Back</button></a>
     </div>
+
     <label for="code">Access Code</label>
     <input id="code" autocomplete="off" placeholder="Enter code…"/>
+
     <div class="row">
       <div>
         <label for="freq">Frequency</label>
@@ -57,13 +64,14 @@
         <button id="send">Transmit</button>
       </div>
     </div>
+
     <div class="out"><b>Status:</b> <span id="status">Idle</span></div>
     <div class="out"><b>Encrypted:</b> <span id="enc">—</span></div>
     <div class="out"><b>Decrypted:</b> <span id="dec">—</span></div>
   </div>
 </main>
 
-<!-- Overlay + siren -->
+<!-- ===== Overlay + siren ===== -->
 <div id="alertOverlay" aria-hidden="true">
   <div class="alertTitle">
     <div class="base">BASE</div>
@@ -78,6 +86,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
+  /* Firebase (your project) */
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -88,8 +97,9 @@
     appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
   const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  const db  = getDatabase(app);
 
+  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
@@ -97,7 +107,7 @@
   let soundsEnabled=false;
   let code9Active=false;
 
-  // Make audio permission explicit; if CODE 9 is already active, start immediately after the first click.
+  // First click enables audio (autoplay policy). If CODE 9 is already active, start immediately.
   window.addEventListener('pointerdown', async ()=>{
     if (soundsEnabled) return;
     soundsEnabled=true;
@@ -107,34 +117,26 @@
     }
   }, { once:true });
 
-  function showOverlay(active){
-    overlay.classList.toggle('show', !!active);
-  }
+  function showOverlay(active){ overlay.classList.toggle('show', !!active); }
   async function startSiren(){
-    if (!soundsEnabled) { soundBanner.classList.add('show'); return; }
+    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
     try{ sndBase.currentTime=0; await sndBase.play(); }catch{}
   }
   function stopSirenImmediate(){
-    try{
-      sndBase.pause();
-      sndBase.currentTime=0;
-      // reload to cancel any pending decode/play that could “dribble” for a moment
-      sndBase.load();
-    }catch{}
+    try{ sndBase.pause(); sndBase.currentTime=0; sndBase.load(); }catch{}
     soundBanner.classList.remove('show');
   }
 
-  // Initial read so UI matches DB immediately
+  // --- CODE 9 sync: initial read + realtime (no polling) ---
   (async ()=>{
     try{
       const snap = await get(ref(db,'alerts/CODE 9'));
-      code9Active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false;
+      code9Active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val() && snap.val().value===true)) : false;
       showOverlay(code9Active);
       if (code9Active) startSiren(); else stopSirenImmediate();
-    }catch(e){ console.warn('Initial CODE 9 read failed', e); }
+    }catch{/* ignore permission errors if rules not updated yet */}
   })();
 
-  // Realtime subscription (authoritative)
   onValue(ref(db,'alerts/CODE 9'), snap=>{
     const v = snap.val();
     code9Active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
@@ -142,7 +144,7 @@
     if (code9Active) startSiren(); else stopSirenImmediate();
   });
 
-  // Transmit with fake encrypt + 15s cooldown
+  // --- Transmit flow with 15s cooldown ---
   let cooldown=false;
   sendBtn.onclick = async ()=>{
     if (cooldown) return;
@@ -153,7 +155,8 @@
     stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
 
     const encrypted = btoa(unescape(encodeURIComponent(code)));
-    await new Promise(r=>setTimeout(r,400)); encEl.textContent=encrypted;
+    await new Promise(r=>setTimeout(r,400));
+    encEl.textContent=encrypted;
 
     const newRef = push(ref(db, `frequencies/${ch}/signals`));
     await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
