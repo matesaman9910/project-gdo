@@ -28,7 +28,9 @@
   .alertTitle .alert{font-size:min(12vw,110px);letter-spacing:4px;margin-top:8px}
   .codeBox{margin-top:20px;border:10px solid #ff2a2a;color:#ff2a2a;padding:8px 24px;font-weight:900;
     font-size:min(10vw,90px);letter-spacing:6px;box-shadow:0 0 26px #900 inset}
-  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
+
+  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
+    padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
   .soundBanner.show{display:block}
 </style>
 </head>
@@ -74,7 +76,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-  import { getDatabase, ref, push, set, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+  import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -93,26 +95,48 @@
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
 
-  // IMPORTANT: enable audio by first click
-  let soundsEnabled=false; window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); }, { once:true });
+  // Enable audio after first click (policy)
+  let soundsEnabled=false;
+  window.addEventListener('pointerdown', ()=>{ soundsEnabled=true; soundBanner.classList.remove('show'); try{ sndBase.play().catch(()=>{});}catch{} }, { once:true });
 
-  // Listen for CODE 9 — ensure overlay + siren
-  onValue(ref(db,'alerts/CODE 9'), (snap)=>{
-    const v = snap.val();
-    const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
-    overlay.classList.toggle('show', active);
-
+  function setAlertUI(active){
+    overlay.classList.toggle('show', !!active);
     if (active){
-      if (!soundsEnabled) soundBanner.classList.add('show');
-      // try to play; if blocked, banner stays visible until user taps
-      if (soundsEnabled){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
+      if (!soundsEnabled){ soundBanner.classList.add('show'); }
+      else { try{ sndBase.currentTime=0; sndBase.play(); }catch{} }
     } else {
       soundBanner.classList.remove('show');
       try{ sndBase.pause(); sndBase.currentTime=0; }catch{}
     }
+  }
+
+  // 1) Initial read (so overlay appears immediately on page load)
+  (async ()=>{
+    try{
+      const snap = await get(ref(db,'alerts/CODE 9'));
+      setAlertUI(snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false);
+    }catch(e){ console.warn('Initial CODE 9 read failed', e); }
+  })();
+
+  // 2) Realtime subscription
+  onValue(ref(db,'alerts/CODE 9'), snap=>{
+    const v = snap.val();
+    const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
+    setAlertUI(active);
   });
 
-  // Send with fake encrypt + 15s cooldown
+  // 3) Safety poll (rare net hiccups)
+  setInterval(async ()=>{
+    try{
+      const snap = await get(ref(db,'alerts/CODE 9'));
+      const active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val()&&snap.val().value===true)) : false;
+      // only adjust if out-of-sync
+      const shown = overlay.classList.contains('show');
+      if (active !== shown) setAlertUI(active);
+    }catch{}
+  }, 10000);
+
+  // Transmit with fake encrypt + 15s cooldown
   let cooldown=false;
   sendBtn.onclick = async ()=>{
     if (cooldown) return;
