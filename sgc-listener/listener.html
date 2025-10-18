@@ -5,36 +5,22 @@
 <title>SGC Listener</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#000; --panel:#0c1620; --panel-2:#091217; --line:#133645; --fg:#d9faff;
-    --ok:#2ee66b; --warn:#ffb02e; --bad:#ff2a2a; --accent:#00e6e6; --alertBlue:#1d8bd6;
-  }
+  :root{--bg:#000;--panel:#0c1620;--panel-2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff2a2a;--accent:#00e6e6;--alertBlue:#1d8bd6}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
-  .page:before{content:"";position:absolute;inset:0;
-    background:repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px),
-               radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%)}
-  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;
-    background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
-
-  /* header */
+  .page:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
+  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
-
-  /* tabs */
   .tabs{display:flex;gap:10px}
   .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
   .tab.active{outline:2px solid #1e94aa}
-
-  /* panels */
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
-  .blink{animation:blink 1s infinite} @keyframes blink{50%{opacity:.35}}
-
-  /* pipeline */
+  .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
   .pipe{display:grid;gap:10px;margin-top:10px}
   .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
@@ -42,27 +28,21 @@
   .ownerBig{font-size:22px}
   .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
   .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
-  .ok{border-color:var(--ok);color:#0f0} .bad{border-color:var(--bad);color:#ff3b3b} .warn{border-color:var(--warn);color:#ffb02e}
-
-  /* CODE 9 badge (notice only) */
+  .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
   .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
-
-  /* INCOMING banner (3.5s visible) */
-  #incomingBanner{
-    position:fixed; left:50%; transform:translateX(-50%) translateY(-120%); top:10px;
-    background:var(--alertBlue); color:#fff; z-index:9000; border:3px solid #cfe8ff;
-    border-radius:8px; padding:10px 18px; letter-spacing:1px; box-shadow:0 6px 22px rgba(0,0,0,.6)
-  }
+  #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:var(--alertBlue);color:#fff;z-index:9000;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;letter-spacing:1px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
   #incomingBanner .t1{display:block;font-weight:900;color:#ff3b3b;text-shadow:0 0 6px #7a0000}
   #incomingBanner .t2{display:block;font-weight:800;color:#ff3b3b}
-  #incomingBanner.show{animation:bannerIn .35s ease-out forwards, bannerHold 3.15s linear 0.35s, bannerOut .35s ease-in 3.5s forwards}
-  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}
-  @keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}
-  @keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
+  #incomingBanner.show{animation:bannerIn .35s ease-out forwards,bannerHold 3.15s linear .35s,bannerOut .35s ease-in 3.5s forwards}
+  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
+  #viewListener{display:block}#viewMgmt{display:none}
 
-  /* views */
-  #viewListener{display:block}
-  #viewMgmt{display:none}
+  /* Codes table */
+  .table{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .thead,.trow{display:grid;grid-template-columns:200px 1fr 140px 200px;gap:8px}
+  .thead{background:#0e1a20;font-weight:700}
+  .tcell{padding:10px 14px;border-top:1px solid #102028}
+  .thead .tcell{border-top:none}
 </style>
 </head>
 <body>
@@ -96,7 +76,6 @@
           <div id="state" class="status">Sign in required</div>
         </div>
 
-        <!-- live pipeline; no history -->
         <div class="pipe">
           <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
           <div class="step"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
@@ -136,6 +115,15 @@
             <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
           </div>
           <button id="btnAddCode">Add / Update</button>
+          <button id="btnRefreshCodes">Refresh</button>
+        </div>
+
+        <!-- Codes table -->
+        <div class="table" id="codesWrap">
+          <div class="thead">
+            <div class="tcell">Code</div><div class="tcell">Owner</div><div class="tcell">Access</div><div class="tcell">Actions</div>
+          </div>
+          <div id="codesTable"></div>
         </div>
       </div>
     </section>
@@ -151,7 +139,6 @@
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, onValue, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  /* Firebase (your project) */
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -164,57 +151,37 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getDatabase(app);
+  const db   = getDatabase(app);
 
-  /* Elements */
-  const tabListener = document.getElementById('tabListener');
-  const tabMgmt     = document.getElementById('tabMgmt');
-  const viewListener= document.getElementById('viewListener');
-  const viewMgmt    = document.getElementById('viewMgmt');
+  // Elements
+  const tabListener=document.getElementById('tabListener'), tabMgmt=document.getElementById('tabMgmt');
+  const viewListener=document.getElementById('viewListener'), viewMgmt=document.getElementById('viewMgmt');
+  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
 
-  const btnLogin = document.getElementById('btnLogin');
-  const btnLogout= document.getElementById('btnLogout');
+  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
+  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
+  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
 
-  const selFreq  = document.getElementById('selFreq');
-  const btnMonitor = document.getElementById('btnMonitor');
-  const stateEl  = document.getElementById('state');
+  const btnCode9On=document.getElementById('btnCode9On'), btnCode9Off=document.getElementById('btnCode9Off'), code9State=document.getElementById('code9State');
 
-  const sigStatus= document.getElementById('sigStatus');
-  const encView  = document.getElementById('encView');
-  const decView  = document.getElementById('decView');
-  const ownerView= document.getElementById('ownerView');
-  const resView  = document.getElementById('resView');
+  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
+  const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
 
-  const btnCode9On  = document.getElementById('btnCode9On');
-  const btnCode9Off = document.getElementById('btnCode9Off');
-  const code9State  = document.getElementById('code9State');
+  const sndIncoming=document.getElementById('sndIncoming'), incomingBanner=document.getElementById('incomingBanner');
 
-  const codeInput = document.getElementById('codeInput');
-  const ownerInput= document.getElementById('ownerInput');
-  const accessInput= document.getElementById('accessInput');
-  const btnAddCode = document.getElementById('btnAddCode');
+  let unsubFreq=null, unsubAlert=null;
 
-  const sndIncoming = document.getElementById('sndIncoming');
-  const incomingBanner = document.getElementById('incomingBanner');
-
-  let unsubFreq = null, unsubAlert = null;
-
-  /* Tabs (strict 2 views; not merged) */
+  // Tabs
   function activateTab(which){
-    if (which === 'listener'){
-      tabListener.classList.add('active'); tabMgmt.classList.remove('active');
-      viewListener.style.display = 'block'; viewMgmt.style.display = 'none';
-    } else {
-      tabMgmt.classList.add('active'); tabListener.classList.remove('active');
-      viewMgmt.style.display = 'block'; viewListener.style.display = 'none';
-    }
+    if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; viewMgmt.style.display='none'; }
+    else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); viewMgmt.style.display='block'; viewListener.style.display='none'; }
   }
-  tabListener.onclick = ()=>activateTab('listener');
-  tabMgmt.onclick     = ()=>activateTab('mgmt');
+  tabListener.onclick=()=>activateTab('listener');
+  tabMgmt.onclick=()=>activateTab('mgmt');
 
-  /* Auth */
-  btnLogin.onclick = async ()=>{ await signInWithPopup(auth, new GoogleAuthProvider()); };
-  btnLogout.onclick = ()=> signOut(auth);
+  // Auth
+  btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
+  btnLogout.onclick=()=>signOut(auth);
 
   onAuthStateChanged(auth, async (user)=>{
     stopMonitor();
@@ -222,100 +189,120 @@
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
 
-      // Auto-monitor alpha-1; allow switching later
-      selFreq.value='alpha-1';
-      startMonitor();
+      selFreq.value='alpha-1'; startMonitor();
+      stateEl.textContent='Monitoring: alpha-1'; stateEl.classList.add('blink');
 
-      // CODE 9 badge (notice only)
+      // CODE 9 badge
       if (!unsubAlert){
-        unsubAlert = onValue(ref(db,'alerts/CODE 9'), (snap)=>{
-          const v = snap.val();
-          const active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
-          code9State.textContent = active ? 'CODE 9 ACTIVE' : 'CODE 9 OFF';
-          code9State.style.color = active ? '#ff2a2a' : '#9fefff';
-          code9State.style.borderColor = active ? '#ff2a2a' : '#135760';
+        unsubAlert=onValue(ref(db,'alerts/CODE 9'),(snap)=>{
+          const v=snap.val(); const active=(typeof v==='boolean')?v:!!(v&&v.value===true);
+          code9State.textContent=active?'CODE 9 ACTIVE':'CODE 9 OFF';
+          code9State.style.color=active?'#ff2a2a':'#9fefff';
+          code9State.style.borderColor=active?'#ff2a2a':'#135760';
         });
       }
 
-      stateEl.textContent='Monitoring: alpha-1';
-      stateEl.classList.add('blink');
+      // load codes table
+      await refreshCodesTable();
     } else {
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
-      if (unsubAlert){ unsubAlert(); unsubAlert=null; }
+      if (unsubAlert){unsubAlert();unsubAlert=null;}
+      codesTable.innerHTML='';
     }
   });
 
-  /* Monitor controls */
-  btnMonitor.onclick = ()=> startMonitor();
-  selFreq.addEventListener('change', ()=> startMonitor());
+  // Monitor
+  btnMonitor.onclick=()=>startMonitor();
+  selFreq.addEventListener('change',()=>startMonitor());
 
   function startMonitor(){
     stopMonitor();
-    const ch = selFreq.value, path = `frequencies/${ch}/signals`;
-    stateEl.textContent = `Monitoring: ${ch}`; stateEl.classList.add('blink');
-    unsubFreq = onChildAdded(ref(db, path), async (snap)=>{
-      const data = snap.val();
-      await handleIncomingSignal(ch, data);
-      // delete after 10s
-      setTimeout(()=>remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 10000);
+    const ch=`${selFreq.value}`, path=`frequencies/${ch}/signals`;
+    stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
+    unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
+      const data=snap.val(); await handleIncomingSignal(ch,data);
+      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s
     });
   }
   function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
 
-  /* Incoming pipeline */
-  async function handleIncomingSignal(ch, sig){
-    // Banner (3.5s)
+  // Incoming pipeline
+  async function handleIncomingSignal(ch,sig){
     incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
-    setTimeout(()=>incomingBanner.classList.remove('show'), 3850);
-
-    // Sound (one shot)
+    setTimeout(()=>incomingBanner.classList.remove('show'),3850);
     try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
 
-    const code = (sig?.code || '').toString().trim();
-    const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
+    const code=(sig?.code||'').toString().trim();
+    const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
-    // Pipeline reset
-    sigStatus.textContent = `INCOMING on ${ch}`;
-    encView.textContent = '…'; decView.textContent = '…';
-    ownerView.textContent = '—'; resView.textContent='—';
-    resView.className = 'tag resultBig warn';
+    sigStatus.textContent=`INCOMING on ${ch}`;
+    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag resultBig warn';
 
-    // Show enc/dec
-    await sleep(200);
-    encView.textContent = encrypted;
-    sigStatus.textContent = 'DECRYPTING…';
-    await sleep(520);
-    decView.textContent = code;
+    await sleep(200); encView.textContent=encrypted;
+    sigStatus.textContent='DECRYPTING…';
+    await sleep(520); decView.textContent=code;
 
-    // Verify code
-    const sc = await get(child(ref(db), 'codes/'+code));
+    const sc=await get(child(ref(db),'codes/'+code));
     let label='UNKNOWN', cls='warn', owner='—';
-    if (sc.exists()){
-      const c = sc.val(); owner = c.owner || '—';
-      if (c.access === true){ label='ALLOWED'; cls='ok'; }
-      else { label='DENIED'; cls='bad'; }
-    }
-    ownerView.textContent = owner;
-    resView.textContent = label;
-    resView.className = `tag resultBig ${cls}`;
+    if (sc.exists()){ const c=sc.val(); owner=c.owner||'—'; label=(c.access===true)?'ALLOWED':'DENIED'; cls=(c.access===true)?'ok':'bad'; }
+    ownerView.textContent=owner; resView.textContent=label; resView.className=`tag resultBig ${cls}`;
   }
 
-  /* Alerts & Codes (write) */
-  btnCode9On.onclick  = async ()=>{ await set(ref(db,'alerts/CODE 9'), true); };
-  btnCode9Off.onclick = async ()=>{ await set(ref(db,'alerts/CODE 9'), false); };
+  // Alerts
+  btnCode9On.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),true); };
+  btnCode9Off.onclick=async()=>{ await set(ref(db,'alerts/CODE 9'),false); };
 
-  btnAddCode.onclick = async ()=>{
+  // Codes CRUD with live table
+  btnAddCode.onclick=async()=>{
     const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
     const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
-    await set(ref(db,'codes/'+code), { owner, access });
+    await set(ref(db,'codes/'+code),{ owner, access });
     codeInput.value=''; ownerInput.value=''; accessInput.value='true';
-    alert('Saved.');
+    await refreshCodesTable();
   };
+  btnRefreshCodes.onclick=refreshCodesTable;
 
-  /* utils */
+  async function refreshCodesTable(){
+    const snap=await get(ref(db,'codes'));
+    const data=snap.exists()?snap.val():{};
+    const entries=Object.entries(data);
+    if (entries.length===0){ codesTable.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
+    codesTable.innerHTML = entries.map(([code,rec])=>{
+      const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
+      return `
+        <div class="trow">
+          <div class="tcell mono">${escapeHtml(code)}</div>
+          <div class="tcell">${escapeHtml(owner)}</div>
+          <div class="tcell"><span class="tag ${access==='true'?'ok':'bad'}">${access}</span></div>
+          <div class="tcell">
+            <button data-act="toggle" data-code="${attr(code)}">${access==='true'?'Disable':'Enable'}</button>
+            <button data-act="edit" data-code="${attr(code)}">Edit</button>
+            <button data-act="del" data-code="${attr(code)}" style="border-color:#ff3b3b;color:#ff3b3b">Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Row actions
+  document.getElementById('codesWrap').addEventListener('click', async (e)=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const code=btn.getAttribute('data-code'); const act=btn.getAttribute('data-act');
+    if (act==='toggle'){
+      const sc=await get(ref(db,'codes/'+code));
+      if (sc.exists()){ const current=!!sc.val().access; await update(ref(db,'codes/'+code),{ access:!current }); await refreshCodesTable(); }
+    } else if (act==='edit'){
+      const sc=await get(ref(db,'codes/'+code));
+      if (sc.exists()){ const rec=sc.val(); codeInput.value=code; ownerInput.value=rec.owner||''; accessInput.value=rec.access===true?'true':'false'; activateTab('mgmt'); window.scrollTo({top:0,behavior:'smooth'}); }
+    } else if (act==='del'){
+      if (confirm(`Delete code ${code}?`)){ await set(ref(db,'codes/'+code),null); await refreshCodesTable(); }
+    }
+  });
+
   function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+  function attr(s){return String(s).replace(/"/g,'&quot;')}
 </script>
 </body>
 </html>
