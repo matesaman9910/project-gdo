@@ -3,123 +3,297 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SGC Listener — Sign-in Fixed</title>
+<title>SGC Listener</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#000;--panel:#0c1620;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6}
+  :root{--bg:#000;--panel:#0c1620;--panel2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6}
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui}
-  .shell{max-width:1200px;margin:auto;padding:20px;background:var(--panel);border-radius:20px;box-shadow:0 0 40px #00e6e633}
-  h1{color:var(--accent);text-align:center;margin:0 0 15px;text-shadow:0 0 10px #00e6e6aa}
-  .tabs{display:flex;gap:10px;justify-content:center;margin-bottom:15px}
-  .tab{padding:10px 20px;border:1px solid var(--line);border-radius:10px;background:#0d1a23;cursor:pointer}
-  .tab.active{outline:2px solid var(--accent)}
-  .view{display:none}
-  .view.active{display:block}
-  .panel{background:#0d1a23;padding:15px;border-radius:15px;margin-bottom:15px;border:1px solid var(--line)}
-  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  select,input,button{background:#0c1620;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-family:inherit}
-  .ownerBig{font-size:32px;font-weight:800;color:#00e6e6;text-shadow:0 0 8px #00e6e680}
-  .resultBig{font-size:42px;font-weight:900;letter-spacing:2px;padding:8px 20px;border-radius:14px;border:3px solid transparent;text-transform:uppercase}
-  .ok{border-color:var(--ok);color:#0f0}
-  .bad{border-color:var(--bad);color:#ff3b3b}
-  .warn{border-color:var(--warn);color:#ffb02e}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .page{min-height:100dvh;display:grid;place-items:center;overflow:hidden}
+  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel2));box-shadow:0 0 60px #00e6e633;padding:18px}
   .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .signin{display:flex;gap:10px}
+  h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
+  .tabs{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
+  .tab.active{outline:2px solid #1e94aa}
+  .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px;margin-top:10px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
+  .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
+  .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
+  .view{display:none}.view.active{display:block}
+
+  /* Big Owner + Result */
+  .pipe{display:grid;gap:10px;margin-top:10px}
+  .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
+  .emph{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+  .ownerBig{font-size:32px;font-weight:800;color:#00e6e6;text-shadow:0 0 10px #00e6e650}
+  .resultBig{font-size:42px;font-weight:900;letter-spacing:2px;padding:10px 20px;border-radius:14px;border:3px solid transparent;text-transform:uppercase}
+  .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
+
+  /* Codes table rows */
   .codeRow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #123}
   .codeRow b{min-width:140px}
 </style>
 </head>
 <body>
-<div class="shell">
-  <div class="topbar">
-    <h1>SGC Listener</h1>
-    <div class="signin">
-      <button id="btnLogin">Sign in with Google</button>
-      <button id="btnLogout" style="display:none">Sign out</button>
-    </div>
-  </div>
-  <div class="tabs">
-    <button id="tabListener" class="tab active">Listener</button>
-    <button id="tabMgmt" class="tab">Management</button>
-  </div>
-
-  <section id="viewListener" class="view active">
-    <div class="panel">
-      <div class="row">
-        <label>Frequency:</label>
-        <select id="selFreq" disabled>
-          <option value="alpha-1">alpha-1</option>
-          <option value="bravo-2">bravo-2</option>
-          <option value="charlie-3">charlie-3</option>
-        </select>
-        <div id="state">Sign in required</div>
+<main class="page">
+  <div class="shell">
+    <div class="topbar">
+      <h1>SGC Listener</h1>
+      <div>
+        <button id="btnLogin">Sign in with Google</button>
+        <button id="btnLogout" style="display:none">Sign out</button>
       </div>
-      <div style="margin-top:10px">
-        <b>Status:</b> <span id="sigStatus">Idle</span><br>
-        <b>Encrypted:</b> <span id="encView">—</span><br>
-        <b>Decrypted:</b> <span id="decView">—</span>
-        <div class="row" style="margin-top:10px;justify-content:space-between">
-          <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
-          <div><b>Result:</b> <span id="resView" class="resultBig warn">—</span></div>
+    </div>
+
+    <div class="tabs">
+      <button id="tabListener" class="tab active">Listener</button>
+      <button id="tabMgmt" class="tab">Management</button>
+    </div>
+
+    <!-- LISTENER -->
+    <section id="viewListener" class="view active">
+      <div class="panel">
+        <div class="row">
+          <label for="selFreq" style="opacity:.85">Frequency</label>
+          <select id="selFreq" disabled>
+            <option value="alpha-1">alpha-1</option>
+            <option value="bravo-2">bravo-2</option>
+            <option value="charlie-3">charlie-3</option>
+          </select>
+          <div id="state" class="status">Sign in required</div>
+        </div>
+
+        <div class="pipe">
+          <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
+          <div class="step"><b>Encrypted:</b> <span id="encView">—</span></div>
+          <div class="step"><b>Decrypted:</b> <span id="decView">—</span></div>
+          <div class="step emph">
+            <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
+            <div><b>Result:</b> <span id="resView" class="resultBig warn">—</span></div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="viewMgmt" class="view">
-    <div class="panel" id="alertsPanel"><h3>Alarms (Codes 1–9)</h3></div>
-    <div class="panel">
-      <h3>Access Codes</h3>
-      <div class="row">
-        <input id="codeInput" placeholder="Code">
-        <input id="ownerInput" placeholder="Owner">
-        <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
-        <button id="btnAddCode">Add / Update</button>
-        <button id="btnRefreshCodes">Refresh</button>
+    <!-- MANAGEMENT -->
+    <section id="viewMgmt" class="view">
+      <div class="panel" id="alertsPanel"><h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3></div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3 style="margin:0 0 10px">Access Codes</h3>
+        <div class="row">
+          <input id="codeInput" placeholder="Code">
+          <input id="ownerInput" placeholder="Owner">
+          <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
+          <button id="btnAddCode">Add / Update</button>
+          <button id="btnRefreshCodes">Refresh</button>
+        </div>
+        <div id="codesTable" style="margin-top:10px"></div>
       </div>
-      <div id="codesTable" style="margin-top:10px"></div>
-    </div>
-  </section>
-</div>
+    </section>
+  </div>
+</main>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-import { getDatabase, ref, onChildAdded, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+  import { getDatabase, ref, onChildAdded, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-const firebaseConfig={apiKey:"AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",authDomain:"project-gdo.firebaseapp.com",databaseURL:"https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",projectId:"project-gdo",storageBucket:"project-gdo.appspot.com",messagingSenderId:"758705115255",appId:"1:758705115255:web:878f5e64c164b75c507672"};
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getDatabase(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getDatabase(app);
 
-const tabListener=document.getElementById('tabListener'),tabMgmt=document.getElementById('tabMgmt'),viewListener=document.getElementById('viewListener'),viewMgmt=document.getElementById('viewMgmt');
-function switchTab(which){tabListener.classList.toggle('active',which==='listener');tabMgmt.classList.toggle('active',which==='mgmt');viewListener.classList.toggle('active',which==='listener');viewMgmt.classList.toggle('active',which==='mgmt');}
-tabListener.onclick=()=>switchTab('listener');tabMgmt.onclick=()=>switchTab('mgmt');
+  // Tabs
+  const tabListener = document.getElementById('tabListener');
+  const tabMgmt     = document.getElementById('tabMgmt');
+  const viewListener= document.getElementById('viewListener');
+  const viewMgmt    = document.getElementById('viewMgmt');
+  function activateTab(which){
+    tabListener.classList.toggle('active', which==='listener');
+    tabMgmt.classList.toggle('active', which==='mgmt');
+    viewListener.classList.toggle('active', which==='listener');
+    viewMgmt.classList.toggle('active', which==='mgmt');
+  }
+  tabListener.onclick = () => activateTab('listener');
+  tabMgmt.onclick     = () => activateTab('mgmt');
 
-const selFreq=document.getElementById('selFreq'),stateEl=document.getElementById('state'),sigStatus=document.getElementById('sigStatus'),encView=document.getElementById('encView'),decView=document.getElementById('decView'),ownerView=document.getElementById('ownerView'),resView=document.getElementById('resView');
-const btnLogin=document.getElementById('btnLogin'),btnLogout=document.getElementById('btnLogout');
-let unsub=null;
+  // Listener refs
+  const selFreq   = document.getElementById('selFreq');
+  const stateEl   = document.getElementById('state');
+  const sigStatus = document.getElementById('sigStatus');
+  const encView   = document.getElementById('encView');
+  const decView   = document.getElementById('decView');
+  const ownerView = document.getElementById('ownerView');
+  const resView   = document.getElementById('resView');
 
-btnLogin.onclick=()=>signInWithPopup(auth,new GoogleAuthProvider());
-btnLogout.onclick=()=>signOut(auth);
+  // Auth buttons
+  const btnLogin  = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  btnLogin.onclick  = () => signInWithPopup(auth, new GoogleAuthProvider());
+  btnLogout.onclick = () => signOut(auth);
 
-onAuthStateChanged(auth,user=>{stopListen();if(user){btnLogin.style.display='none';btnLogout.style.display='inline-block';selFreq.disabled=false;selFreq.value='alpha-1';startListen();stateEl.textContent='Monitoring alpha-1';buildAlarms();buildCodes();}else{btnLogin.style.display='inline-block';btnLogout.style.display='none';selFreq.disabled=true;stateEl.textContent='Sign in required';switchTab('listener');}});
+  let unsubFreq = null;
 
-selFreq.onchange=()=>startListen();
+  onAuthStateChanged(auth, async user=>{
+    stopMonitor();
+    if (user){
+      btnLogin.style.display='none';
+      btnLogout.style.display='inline-block';
+      selFreq.disabled=false;
+      selFreq.value='alpha-1';
+      startMonitor();
+      stateEl.textContent='Monitoring alpha-1'; stateEl.classList.add('blink');
+      await buildAlarms();
+      await buildCodes();
+    } else {
+      btnLogin.style.display='inline-block';
+      btnLogout.style.display='none';
+      selFreq.disabled=true;
+      stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
+      activateTab('listener');
+    }
+  });
 
-function startListen(){stopListen();const path=`frequencies/${selFreq.value}/signals`;stateEl.textContent=`Monitoring ${selFreq.value}`;unsub=onChildAdded(ref(db,path),async snap=>{const data=snap.val();await onSignal(data);setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000);});}
-function stopListen(){if(unsub){unsub();unsub=null;}}
+  selFreq.addEventListener('change', ()=> startMonitor());
 
-async function onSignal(sig){const code=(sig?.code||'').trim();const encrypted=sig?.encrypted||btoa(unescape(encodeURIComponent(code)));
-encView.textContent=encrypted;decView.textContent=code;const sc=await get(child(ref(db),'codes/'+code));let label='UNKNOWN',cls='warn',owner='—';if(sc.exists()){const c=sc.val();owner=c.owner||'—';label=c.access===true?'ALLOWED':'DENIED';cls=c.access===true?'ok':'bad';}ownerView.textContent=owner;resView.textContent=label;resView.className=`resultBig ${cls}`;}
+  function startMonitor(){
+    stopMonitor();
+    const ch = selFreq.value;
+    const path = `frequencies/${ch}/signals`;
+    stateEl.textContent = `Monitoring: ${ch}`; stateEl.classList.add('blink');
+    unsubFreq = onChildAdded(ref(db, path), async (snap)=>{
+      const data = snap.val();
+      await handleSignal(ch, data);
+      // auto-clean after 10s
+      setTimeout(()=> remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 10000);
+    });
+  }
+  function stopMonitor(){ if (unsubFreq){ unsubFreq(); unsubFreq = null; } }
 
-async function buildAlarms(){const p=document.getElementById('alertsPanel');p.innerHTML='<h3>Alarms (Codes 1–9)</h3>';const snap=await get(ref(db),'alerts');const data=snap.exists()?snap.val():{};for(let i=1;i<=9;i++){const code=`CODE ${i}`;const act=data[code]?.active||false;const div=document.createElement('div');div.className='row';div.innerHTML=`<div style="min-width:90px">${code}</div><button data-code="${code}">${act?'Turn OFF':'Turn ON'}</button><span id="badge-${code}">${act?code+' ACTIVE':code+' OFF'}</span>`;p.appendChild(div);}p.onclick=async e=>{const b=e.target.closest('button[data-code]');if(!b)return;const code=b.dataset.code;const actSnap=await get(ref(db,`alerts/${code}/active`));const act=actSnap.exists()?actSnap.val():false;const updates={};for(let i=1;i<=9;i++)updates[`alerts/CODE ${i}/active`]=false;if(!act)updates[`alerts/${code}/active`]=true;await update(ref(db),updates);buildAlarms();};}
+  async function handleSignal(ch, sig){
+    const code = (sig?.code || '').trim();
+    const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
-async function buildCodes(){const t=document.getElementById('codesTable');const snap=await get(ref(db),'codes');if(!snap.exists()){t.innerHTML='<i>No codes.</i>';return;}const data=snap.val();t.innerHTML='';Object.entries(data).forEach(([code,v])=>{const r=document.createElement('div');r.className='codeRow';r.innerHTML=`<b>${code}</b><span>${v.owner||'—'}</span><span>Access: ${v.access}</span><button data-toggle="${code}">Toggle Access</button><button data-del="${code}">Delete</button>`;t.appendChild(r);});t.querySelectorAll('button[data-del]').forEach(b=>b.onclick=async()=>{await remove(ref(db),'codes/'+b.dataset.del);buildCodes();});t.querySelectorAll('button[data-toggle]').forEach(b=>b.onclick=async()=>{const id=b.dataset.toggle;const snap=await get(ref(db),'codes/'+id);if(!snap.exists())return;const v=snap.val();await update(ref(db),'codes/'+id,{owner:v.owner||'—',access:!v.access});buildCodes();});}
+    sigStatus.textContent = `INCOMING on ${ch}`;
+    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='resultBig warn';
+    await new Promise(r=>setTimeout(r,200));
+    encView.textContent = encrypted;
+    sigStatus.textContent = 'DECRYPTING…';
+    await new Promise(r=>setTimeout(r,520));
+    decView.textContent = code;
 
-document.getElementById('btnAddCode').onclick=async()=>{const code=document.getElementById('codeInput').value.trim();if(!code)return alert('Code required');const owner=document.getElementById('ownerInput').value.trim()||'—';const access=document.getElementById('accessInput').value==='true';await set(ref(db),'codes/'+code,{owner,access});buildCodes();};
-document.getElementById('btnRefreshCodes').onclick=buildCodes;
+    const sc = await get(ref(db, 'codes/'+code));
+    let label='UNKNOWN', cls='warn', owner='—';
+    if (sc.exists()){
+      const c = sc.val();
+      owner = c.owner || '—';
+      label = (c.access===true) ? 'ALLOWED' : 'DENIED';
+      cls   = (c.access===true) ? 'ok'      : 'bad';
+    }
+    ownerView.textContent = owner;
+    resView.textContent   = label;
+    resView.className     = `resultBig ${cls}`;
+  }
+
+  // --------- Management ----------
+  const codeInput   = document.getElementById('codeInput');
+  const ownerInput  = document.getElementById('ownerInput');
+  const accessInput = document.getElementById('accessInput');
+  const btnAddCode  = document.getElementById('btnAddCode');
+  const btnRefresh  = document.getElementById('btnRefreshCodes');
+  const codesTable  = document.getElementById('codesTable');
+  const alertsPanel = document.getElementById('alertsPanel');
+
+  btnAddCode.onclick = async ()=>{
+    const code=(codeInput.value||'').trim();
+    if(!code) return alert('Code required');
+    const owner=(ownerInput.value||'').trim()||'—';
+    const access=(accessInput.value==='true');
+    await set(ref(db, 'codes/'+code), { owner, access });
+    codeInput.value=''; ownerInput.value=''; accessInput.value='true';
+    await buildCodes();
+  };
+  btnRefresh.onclick = buildCodes;
+
+  async function buildAlarms(){
+    alertsPanel.innerHTML = '<h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3>';
+    const snap = await get(ref(db, 'alerts'));
+    const data = snap.exists()? snap.val() : {};
+    for (let i=1;i<=9;i++){
+      const code = `CODE ${i}`;
+      const act  = !!(data[code]?.active);
+      const row = document.createElement('div');
+      row.className='row';
+      row.innerHTML = `
+        <div style="min-width:90px"><b>${code}</b></div>
+        <button data-code="${code}">${act?'Turn OFF':'Turn ON'}</button>
+        <span id="badge-${code}">${act?code+' ACTIVE':code+' OFF'}</span>`;
+      alertsPanel.appendChild(row);
+    }
+    alertsPanel.onclick = async e=>{
+      const btn = e.target.closest('button[data-code]');
+      if(!btn) return;
+      const code = btn.dataset.code;
+      const actSnap = await get(ref(db, `alerts/${code}/active`));
+      const isActive = actSnap.exists()? !!actSnap.val() : false;
+
+      // one active at a time
+      const updates = {};
+      for (let i=1;i<=9;i++){ updates[`alerts/CODE ${i}/active`] = false; }
+      if(!isActive) updates[`alerts/${code}/active`] = true;
+
+      await update(ref(db), updates); // multi-location update on root ref
+      await buildAlarms();
+    };
+  }
+
+  async function buildCodes(){
+    codesTable.innerHTML='';
+    const snap = await get(ref(db, 'codes'));
+    if(!snap.exists()){ codesTable.innerHTML='<i>No codes.</i>'; return; }
+    const data = snap.val();
+    for (const [code, v] of Object.entries(data)){
+      const row = document.createElement('div');
+      row.className='codeRow';
+      row.innerHTML = `
+        <b>${code}</b>
+        <span>${v.owner||'—'}</span>
+        <span>Access: ${v.access}</span>
+        <button data-toggle="${code}">Toggle Access</button>
+        <button data-del="${code}">Delete</button>`;
+      codesTable.appendChild(row);
+    }
+    // delete
+    codesTable.querySelectorAll('button[data-del]').forEach(b=>{
+      b.onclick = async ()=>{
+        const id = b.dataset.del;
+        await remove(ref(db, 'codes/'+id));
+        await buildCodes();
+      };
+    });
+    // toggle
+    codesTable.querySelectorAll('button[data-toggle]').forEach(b=>{
+      b.onclick = async ()=>{
+        const id = b.dataset.toggle;
+        const s = await get(ref(db, 'codes/'+id));
+        if(!s.exists()) return;
+        const val = s.val();
+        await update(ref(db, 'codes/'+id), { owner: val.owner||'—', access: !val.access });
+        await buildCodes();
+      };
+    });
+  }
 </script>
 </body>
 </html>
