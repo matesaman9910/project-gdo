@@ -13,7 +13,8 @@
   .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
   .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
-  .tabs{display:flex;gap:10px}.tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
+  .tabs{display:flex;gap:10px}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
   .tab.active{outline:2px solid #1e94aa}
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -28,7 +29,10 @@
   .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
   .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
   .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
-  .badge{display:inline-block;padding:8px 12px;border:2px solid #ff2a2a;color:#ff2a2a;border-radius:8px;letter-spacing:2px}
+
+  /* Strict tabbed views */
+  .view{display:none}
+  .view.active{display:block}
 
   /* INCOMING banner */
   #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:var(--alertBlue);color:#fff;z-index:9000;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;letter-spacing:1px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
@@ -63,7 +67,7 @@
     </div>
 
     <!-- LISTENER VIEW -->
-    <section id="viewListener">
+    <section id="viewListener" class="view active">
       <div class="panel">
         <div class="row">
           <label for="selFreq" style="opacity:.85">Frequency</label>
@@ -89,7 +93,7 @@
     </section>
 
     <!-- MANAGEMENT -->
-    <section id="viewMgmt">
+    <section id="viewMgmt" class="view">
       <div class="panel" id="alertsPanel">
         <h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3>
         <!-- rows injected -->
@@ -159,52 +163,56 @@
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
-  // Elements
-  const tabListener=document.getElementById('tabListener'), tabMgmt=document.getElementById('tabMgmt');
-  const viewListener=document.getElementById('viewListener'), viewMgmt=document.getElementById('viewMgmt');
-  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
-
-  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
-  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
-  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
-
-  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
-  const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
-
-  const sndIncoming=document.getElementById('sndIncoming'), incomingBanner=document.getElementById('incomingBanner');
-  const alertsPanel=document.getElementById('alertsPanel');
-
-  let unsubFreq=null;
-
-  // Tabs
+  // ----- Strict tabs (only here controls visibility) -----
+  const tabListener=document.getElementById('tabListener');
+  const tabMgmt=document.getElementById('tabMgmt');
+  const viewListener=document.getElementById('viewListener');
+  const viewMgmt=document.getElementById('viewMgmt');
   function activateTab(which){
-    if (which==='listener'){ tabListener.classList.add('active'); tabMgmt.classList.remove('active'); viewListener.style.display='block'; viewMgmt.style.display='none'; }
-    else { tabMgmt.classList.add('active'); tabListener.classList.remove('active'); viewMgmt.style.display='block'; viewListener.style.display='none'; }
+    tabListener.classList.toggle('active', which==='listener');
+    tabMgmt.classList.toggle('active', which==='mgmt');
+    viewListener.classList.toggle('active', which==='listener');
+    viewMgmt.classList.toggle('active', which==='mgmt');
   }
   tabListener.onclick=()=>activateTab('listener');
   tabMgmt.onclick=()=>activateTab('mgmt');
 
+  // Elements (listener)
+  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
+  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
+  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
+
+  // Elements (codes)
+  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
+  const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
+
+  // Elements (alerts mgmt)
+  const alertsPanel=document.getElementById('alertsPanel');
+
   // Auth
+  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
   btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
   btnLogout.onclick=()=>signOut(auth);
+
+  let unsubFreq=null;
 
   onAuthStateChanged(auth, async (user)=>{
     stopMonitor();
     if (user){
       btnLogin.style.display='none'; btnLogout.style.display='inline-block';
       selFreq.disabled=false; btnMonitor.disabled=false;
-
       selFreq.value='alpha-1'; startMonitor();
       stateEl.textContent='Monitoring: alpha-1'; stateEl.classList.add('blink');
 
-      await buildAlarmUI();           // management UI
-      await refreshCodesTable();      // codes table
+      await buildAlarmUI();
+      await refreshCodesTable();
     } else {
       btnLogin.style.display='inline-block'; btnLogout.style.display='none';
       selFreq.disabled=true; btnMonitor.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
       codesTable.innerHTML='';
       const ac=document.getElementById('alarmsContainer'); if(ac) ac.remove();
+      activateTab('listener');
     }
   });
 
@@ -224,9 +232,10 @@
 
   // Incoming pipeline
   async function handleIncomingSignal(ch,sig){
-    incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
-    setTimeout(()=>incomingBanner.classList.remove('show'),3850);
-    try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
+    const banner=document.getElementById('incomingBanner'), snd=document.getElementById('sndIncoming');
+    banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+    setTimeout(()=>banner.classList.remove('show'),3850);
+    try{ snd.currentTime=0; await snd.play(); }catch{}
 
     const code=(sig?.code||'').toString().trim();
     const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
@@ -244,53 +253,40 @@
     ownerView.textContent=owner; resView.textContent=label; resView.className=`tag resultBig ${cls}`;
   }
 
-  // ===== Management: Alarms (1–9), mutual exclusivity =====
+  // ===== Management: Alarms (1–9) =====
   async function buildAlarmUI(){
     let container=document.getElementById('alarmsContainer');
     if (container) container.remove();
     container=document.createElement('div'); container.id='alarmsContainer';
 
-    // read current alerts once
-    const snap = await get(ref(db,'alerts'));
-    const alerts = snap.exists()? snap.val() : {};
+    // read current once
+    const snap=await get(ref(db,'alerts')); const alerts=snap.exists()?snap.val():{};
     for(let i=1;i<=9;i++){
-      const code=`CODE ${i}`;
-      const node=(alerts[code] && typeof alerts[code]==='object')? alerts[code] : {};
+      const code=`CODE ${i}`; const node=alerts[code]||{};
       container.appendChild(mkAlarmRow(code, !!node.active, node.desc ?? DEFAULT_DESCS[code]));
     }
     alertsPanel.appendChild(container);
 
-    // toggle click -> set chosen active, others false (single multi-location update)
+    // toggle logic: click -> if already active => all OFF; if inactive => only that ON
     container.addEventListener('click', async e=>{
       const btn=e.target.closest('button[data-k="toggle"]'); if(!btn) return;
       const code=btn.getAttribute('data-code');
+      // is it currently active?
+      const actSnap=await get(ref(db,`alerts/${code}/active`));
+      const isActive=actSnap.exists()?!!actSnap.val():false;
 
-      // compute multi-location update
       const updates={};
       for(let i=1;i<=9;i++){ updates[`alerts/CODE ${i}/active`]=false; }
-      updates[`alerts/${code}/active`]=true;
+      if (!isActive){ updates[`alerts/${code}/active`]=true; }  // else: all go OFF
 
       await update(ref(db), updates);
 
-      // legacy mirror removed (we only use structured alerts now)
-      // refresh UI labels locally
+      // refresh UI locally
       container.querySelectorAll('button[data-k="toggle"]').forEach(b=>{
         const c=b.getAttribute('data-code'); const badge=document.getElementById('badge-'+c);
-        const active = (c===code);
-        b.textContent = active?'Turn OFF':'Turn ON'; // UI shows OFF for active one
+        const active = (!isActive && c===code) ? true : false;
+        b.textContent = active?'Turn OFF':'Turn ON';
         badge.textContent = active?`${c} ACTIVE`:`${c} OFF`;
-      });
-    });
-
-    // OFF behaviour: clicking active code again -> all OFF
-    container.addEventListener('dblclick', async e=>{
-      const b=e.target.closest('button[data-k="toggle"]'); if(!b) return;
-      const code=b.getAttribute('data-code');
-      const updates={}; for(let i=1;i<=9;i++){ updates[`alerts/CODE ${i}/active`]=false; }
-      await update(ref(db), updates);
-      container.querySelectorAll('button[data-k="toggle"]').forEach(x=>{
-        const c=x.getAttribute('data-code'); const badge=document.getElementById('badge-'+c);
-        x.textContent='Turn ON'; badge.textContent=`${c} OFF`;
       });
     });
 
@@ -326,8 +322,9 @@
     const snap=await get(ref(db,'codes'));
     const data=snap.exists()?snap.val():{};
     const entries=Object.entries(data);
-    if (entries.length===0){ codesTable.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
-    codesTable.innerHTML = entries.map(([code,rec])=>{
+    const tbl=document.getElementById('codesTable');
+    if (entries.length===0){ tbl.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
+    tbl.innerHTML = entries.map(([code,rec])=>{
       const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
       return `
         <div class="trow">
