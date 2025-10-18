@@ -1,214 +1,298 @@
-<!DOCTYPE html>
-<html lang="en" >
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SGC GDO</title>
-  <style>
-    /* Stargate-themed styling - same as listener */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GDO Transmitter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+<style>
+  :root{--fg:#d9faff;--panel:#0f1b23;--line:#12313a;--accent:#00e6e6}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  main{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
+  main:before{content:"";position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 3px),
+    radial-gradient(1200px 800px at 20% 10%, #08131a 0%, #000 55%)}
+  .card{z-index:1;width:min(680px,92vw);background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;padding:22px;box-shadow:0 0 44px #00e6e625}
+  h1{margin:0 0 12px;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
+  label{display:block;margin:12px 0 6px}
+  input,select,button{width:100%;background:#0b141a;color:var(--fg);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;font-family:inherit}
+  button{cursor:pointer}
+  .row{display:grid;grid-template-columns:1fr 160px;gap:10px}
+  .out{margin-top:10px;font-size:12px;word-break:break-all}
+  .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      user-select: none;
-      overflow: hidden;
-      text-align: center;
-      padding: 2rem;
-    }
+  /* Overlay */
+  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
+  #alertOverlay.show{display:flex}
+  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative;height:min(14vw,120px)}
+  .alertWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;top:0;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
+  @keyframes baseFade{0%{opacity:1}49%{opacity:1}50%{opacity:0}99%{opacity:0}}
+  @keyframes alertFade{0%{opacity:0}49%{opacity:0}50%{opacity:1}99%{opacity:1}}
+  .alertWord.base{animation-name:baseFade}
+  .alertWord.alert{animation-name:alertFade}
+  .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;
+    font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
+  .desc{margin-top:12px;max-width:min(900px,92vw);text-align:center;font-size:min(4vw,22px);opacity:.95}
 
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 0.2em;
-      text-shadow: 0 0 8px #00ffff;
-      letter-spacing: 0.1em;
-    }
-
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      text-shadow: 0 0 6px #00ffffaa;
-    }
-
-    select, input[type="text"] {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.3rem;
-      padding: 0.4rem 0.6rem;
-      margin-top: 0.4rem;
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      background: #001419;
-      color: #8df9ff;
-      outline: none;
-      width: 220px;
-      text-align: center;
-      box-shadow:
-        0 0 8px #00ffff88,
-        inset 0 0 12px #00ffff44;
-      user-select: text;
-      transition: border-color 0.3s ease;
-    }
-
-    select:focus, input[type="text"]:focus {
-      border-color: #00ffffee;
-      box-shadow:
-        0 0 20px #00ffffcc,
-        inset 0 0 20px #00ffffbb;
-    }
-
-    button {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.5rem;
-      padding: 0.6rem 3rem;
-      margin-top: 2rem;
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      background: #001419;
-      color: #8df9ff;
-      cursor: pointer;
-      user-select: none;
-      box-shadow:
-        0 0 15px #00ffffaa;
-      transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    button:hover:enabled {
-      background-color: #00ffff;
-      color: #001419;
-      box-shadow:
-        0 0 30px #00ffffee,
-        0 0 40px #00ffffee;
-    }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    #log {
-      margin-top: 2rem;
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem 2rem;
-      width: 420px;
-      max-width: 90vw;
-      min-height: 120px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow:
-        0 0 10px #00ffff88,
-        inset 0 0 15px #00ffff66;
-      user-select: text;
-      text-align: left;
-    }
-  </style>
+  /* Click-to-enable banner */
+  #soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
+    padding:10px 14px;border-radius:12px;font-size:14px;z-index:10000;display:none;cursor:pointer}
+  #soundBanner.show{display:block}
+</style>
 </head>
 <body>
+<main>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+      <h1>GDO Transmitter</h1>
+      <a href="../index.html" style="text-decoration:none"><button>← Back</button></a>
+    </div>
 
-  <h1>SGC TRANSMITTER</h1>
+    <label for="code">Access Code</label>
+    <input id="code" autocomplete="off" placeholder="Enter code…"/>
 
-  <label for="frequency">Select Frequency:</label>
-  <select id="frequency">
-    <option value="alpha-1">Alpha-1</option>
-    <option value="bravo-2">Bravo-2</option>
-    <option value="charlie-3">Charlie-3</option>
-  </select>
+    <div class="row">
+      <div>
+        <label for="freq">Frequency</label>
+        <select id="freq">
+          <option value="alpha-1">alpha-1</option>
+          <option value="bravo-2">bravo-2</option>
+          <option value="charlie-3">charlie-3</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button id="send">Transmit</button>
+      </div>
+    </div>
 
-  <label for="codeInput">Enter Code (numbers only, max 9 digits):</label>
-  <input id="codeInput" type="text" maxlength="9" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Enter code..." />
+    <div class="out"><b>Status:</b> <span id="status">Idle</span></div>
+    <div class="out"><b>Encrypted:</b> <span id="enc">—</span></div>
+    <div class="out"><b>Decrypted:</b> <span id="dec">—</span></div>
+  </div>
+</main>
 
-  <button id="transmitBtn" disabled>Transmit</button>
+<!-- Overlay + sounds -->
+<div id="alertOverlay" aria-hidden="true">
+  <div class="alertTitle" aria-live="polite">
+    <div class="alertWord base">BASE</div>
+    <div class="alertWord alert">ALERT</div>
+  </div>
+  <div id="codeBox" class="codeBox">CODE 9</div>
+  <div id="descBox" class="desc">—</div>
+</div>
 
-  <div id="log">Waiting to transmit...</div>
+<div id="soundBanner" title="Enable audio">🔊 This page plays alarm sounds. Due to browser policy, click here once to enable audio.</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+<!-- loop alarm + one-shot announcement -->
+<audio id="sndLoop" preload="auto" loop></audio>
+<audio id="sndAnn"  preload="auto"></audio>
 
-    // Firebase config (your config here)
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.firebasestorage.app",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const codeInput = document.getElementById('codeInput');
-    const frequencySelect = document.getElementById('frequency');
-    const transmitBtn = document.getElementById('transmitBtn');
-    const log = document.getElementById('log');
-
-    // Enable button only if code is valid (numbers only, length 1-9)
-    codeInput.addEventListener('input', () => {
-      // Remove any non-digit characters immediately
-      codeInput.value = codeInput.value.replace(/\D/g, '');
-
-      transmitBtn.disabled = !(codeInput.value.length > 0);
-    });
-
-    // Transmit function
-    async function transmit() {
-      const code = codeInput.value.trim();
-      const freq = frequencySelect.value;
-
-      if (!code) {
-        log.textContent = "Please enter a valid code before transmitting.";
-        return;
-      }
-
-      transmitBtn.disabled = true;
-      frequencySelect.disabled = true;
-      codeInput.disabled = true;
-
-      log.textContent = "Encrypting...";
-
-      // Simulate encryption delay
-      await new Promise(r => setTimeout(r, 1000));
-      log.textContent = "Transmitting...";
-
-      // Push to Firebase DB path: frequencies/{freq}/signals/{unique}
-      try {
-        const timestamp = Date.now();
-        const signalRef = ref(db, `frequencies/${freq}/signals/${timestamp}`);
-
-        await set(signalRef, {
-          code: code,
-          timestamp: timestamp
-        });
-
-        log.textContent = `Code "${code}" transmitted on frequency "${freq}".`;
-      } catch (err) {
-        log.textContent = `Transmit error: ${err.message}`;
-      }
-
-      // Clear input and reset button after 15 seconds
-      setTimeout(() => {
-        codeInput.value = '';
-        log.textContent = "Waiting to transmit...";
-        transmitBtn.disabled = true;
-        frequencySelect.disabled = false;
-        codeInput.disabled = false;
-      }, 15000);
+  /* =======================
+     🔊 EASY SOUND SWAPS
+     -----------------------
+     Edit the URLs below only. Nothing else.
+     LOOP: per-code looping alarm
+     ANN:  per-code one-shot announcement (optional)
+     ======================= */
+  const SOUNDS = {
+    LOOP: {
+      "CODE 1": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/panicalarm_realistic.mp3",
+      "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/security-alarm_realistic.mp3",
+      "CODE 3": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/code3_realistic.mp3",
+      "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/incomingalarm_realistic.mp3",
+      "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Security%20Alarm%20(1%20Hour%20of%20Ambience)%20%5B8r4cNMKf4Hw%5D.mp3",
+      "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/1%20HOUR%20-%20Emergency%20Base%20ALARM%20%5BrlxFz29bcyg%5D.mp3",
+      "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Emergency%20Lockdown%20Alarm%20%5B1ua4r3mhW3U%5D.mp3",
+      "CODE 8": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/doorsalarm_realistic.mp3",
+      "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/evac_realistic.mp3"
+    },
+    ANN: {
+      "CODE 2": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%202%20Stargate%20Horizons%20%5BMcCRu_SawAc%5D.mp3",
+      "CODE 4": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%204%20Stargate%20Horizons%20%5BnptsmOeQ0u4%5D.mp3",
+      "CODE 5": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%205%20Stargate%20Horizons%20%5BJIuYroVSrr0%5D.mp3",
+      "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%206%20Stargate%20Horizons%20%5B3t7YH6A0cxc%5D.mp3",
+      "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%207%20Stargate%20Horizons%20%5B0l5vnUf6ypg%5D.mp3",
+      "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%209%20Stargate%20Horizons%20%5B-0tvyBMhnNA%5D.mp3"
     }
+  };
 
-    transmitBtn.addEventListener('click', transmit);
+  const DEFAULT_DESC = {
+    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
+    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
+    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
+    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
+    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
+    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
+    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
+    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
+    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
+  };
 
-  </script>
+  // Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // UI refs
+  const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
+  const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
+  const overlay=document.getElementById('alertOverlay'), codeBox=document.getElementById('codeBox'), descBox=document.getElementById('descBox');
+  const sndLoop=document.getElementById('sndLoop'), sndAnn=document.getElementById('sndAnn'), soundBanner=document.getElementById('soundBanner');
+
+  let soundsEnabled=false;
+  let currentActive=null;  // "CODE X"
+  let announcedFor=null;
+
+  // Show the banner immediately on load
+  soundBanner.classList.add('show');
+
+  // Enable audio after first user action
+  function enableAudio(){
+    if (soundsEnabled) return;
+    soundsEnabled=true;
+    soundBanner.classList.remove('show');
+    if (currentActive){
+      startLoop(currentActive);
+      playAnnouncement(currentActive);
+    }
+  }
+  soundBanner.addEventListener('click', enableAudio);
+  window.addEventListener('pointerdown', enableAudio, { once:true });
+
+  // Robust loop helpers
+  function stopAllAudio(){
+    try{ sndLoop.pause(); }catch{}
+    try{ sndAnn.pause(); }catch{}
+    try{ sndLoop.currentTime=0; }catch{}
+    try{ sndAnn.currentTime=0; }catch{}
+  }
+  async function playWithRetry(audioEl){
+    // try a few times — helps some mobile browsers
+    for (let i=0;i<3;i++){
+      try{ await audioEl.play(); return; }catch{ await new Promise(r=>setTimeout(r,150)); }
+    }
+  }
+  function startLoop(code){
+    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
+    const url = SOUNDS.LOOP[code];
+    if (!url){ stopAllAudio(); return; }
+    if (sndLoop.src !== url){ sndLoop.src = url; sndLoop.load(); }
+    sndLoop.loop = true; // safety, plus we also guard with 'ended'
+    sndLoop.volume = 1.0;
+    sndLoop.currentTime = 0;
+    playWithRetry(sndLoop);
+  }
+  function playAnnouncement(code){
+    const url = SOUNDS.ANN[code];
+    if (!url || !soundsEnabled) return;
+    if (announcedFor === code) return;  // one-shot per activation
+    announcedFor = code;
+    sndAnn.src = url; sndAnn.load();
+    sndAnn.currentTime = 0;
+    playWithRetry(sndAnn);
+  }
+  // Safety re-loop if some browser ignores loop flag
+  sndLoop.addEventListener('ended', ()=>{ try{ sndLoop.currentTime=0; sndLoop.play(); }catch{} });
+  // Resume loop after tab becomes visible again
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState==='visible' && currentActive && soundsEnabled){
+      startLoop(currentActive);
+    }
+  });
+
+  function showOverlay(active, code, desc){
+    if (!active){ overlay.classList.remove('show'); return; }
+    codeBox.textContent = code || '';
+    descBox.textContent = (desc && desc.trim()) || DEFAULT_DESC[code] || '—';
+    overlay.classList.add('show');
+  }
+
+  function activeFrom(alerts){
+    for (let i=1;i<=9;i++){
+      const node = alerts?.[`CODE ${i}`];
+      if (node && node.active) return { code:`CODE ${i}`, desc: node.desc || '' };
+    }
+    return null;
+  }
+
+  // Initial read then subscribe (no flash)
+  (async ()=>{
+    try{
+      const first = await get(ref(db,'alerts'));
+      const a = first.exists()? first.val() : {};
+      const act = activeFrom(a);
+      currentActive = act ? act.code : null;
+      announcedFor = null;
+      showOverlay(!!act, act?.code||'', act?.desc||'');
+      if (currentActive){
+        if (soundsEnabled){ startLoop(currentActive); playAnnouncement(currentActive); }
+        // banner already shown on load to prompt click
+      } else {
+        stopAllAudio();
+      }
+    }catch{}
+    onValue(ref(db,'alerts'), snap=>{
+      const a = snap.exists()? snap.val() : {};
+      const act = activeFrom(a);
+      const next = act ? act.code : null;
+
+      // overlay always reflects latest state
+      showOverlay(!!act, act?.code||'', act?.desc||'');
+
+      // audio management
+      if (next !== currentActive){
+        currentActive = next;
+        announcedFor = null; // allow new announcement for new code
+        if (currentActive && soundsEnabled){
+          startLoop(currentActive);
+          playAnnouncement(currentActive);
+        } else if (!currentActive){
+          stopAllAudio();
+        }
+      } else if (currentActive && soundsEnabled){
+        // keep loop alive if same code remains
+        startLoop(currentActive);
+      }
+    });
+  })();
+
+  // --- Transmit with fake encrypt + 15s cooldown ---
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  let cooldown=false;
+  document.getElementById('send').onclick = async ()=>{
+    if (cooldown) return;
+    const code=(codeEl.value||"").trim(), ch=freqEl.value;
+    if (!code){ stEl.textContent="Enter code"; stEl.className='warn'; return; }
+
+    cooldown=true; sendBtn.disabled=true;
+    stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
+
+    const encrypted=btoa(unescape(encodeURIComponent(code)));
+    await sleep(400); document.getElementById('enc').textContent=encrypted;
+
+    const newRef = push(ref(db, `frequencies/${ch}/signals`));
+    await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
+
+    stEl.textContent="Transmitted"; stEl.className='ok';
+    await sleep(900);
+    for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await sleep(1000); }
+    stEl.textContent="Idle"; cooldown=false; sendBtn.disabled=false;
+  };
+</script>
 </body>
 </html>

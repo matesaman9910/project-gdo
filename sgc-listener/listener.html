@@ -1,279 +1,362 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SGC Listener</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SGC Listener</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#000;--panel:#0c1620;--panel-2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6;--alertBlue:#1d8bd6}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
+  .page:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
+  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
+  .tabs{display:flex;gap:10px}
+  .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
+  .tab.active{outline:2px solid #1e94aa}
+  .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
+  .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
+  .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .pipe{display:grid;gap:10px;margin-top:10px}
+  .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
+  .emph{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .ownerBig{font-size:22px}
+  .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
+  .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
+  .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
 
-    body {
-      margin: 0;
-      background: radial-gradient(circle at center, #02050a 0%, #001419 90%);
-      color: #8df9ff;
-      font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      user-select: none;
-      overflow-x: hidden;
-      text-align: center;
-      padding: 2rem;
-      transition: box-shadow 0.4s ease;
-    }
+  /* Strict tabbed views */
+  .view{display:none}
+  .view.active{display:block}
 
-    h1 {
-      font-size: 2.8rem;
-      margin-bottom: 0.3em;
-      text-shadow: 0 0 8px #00ffff;
-    }
+  /* INCOMING banner */
+  #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:var(--alertBlue);color:#fff;z-index:9000;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;letter-spacing:1px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
+  #incomingBanner .t1{display:block;font-weight:900;color:#ff3b3b;text-shadow:0 0 6px #7a0000}
+  #incomingBanner .t2{display:block;font-weight:800;color:#ff3b3b}
+  #incomingBanner.show{animation:bannerIn .35s ease-out forwards,bannerHold 3.15s linear .35s,bannerOut .35s ease-in 3.5s forwards}
+  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
 
-    #status {
-      font-size: 1.5rem;
-      margin: 1em 0;
-    }
-
-    #incoming {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: #00ffff;
-      text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      animation: blink 1s infinite;
-      margin: 1em 0;
-    }
-
-    @keyframes blink {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.2; }
-    }
-
-    #log {
-      background: rgba(0, 20, 30, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 440px;
-      max-width: 95vw;
-      min-height: 180px;
-      color: #00ffff;
-      font-size: 1.25rem;
-      white-space: pre-wrap;
-      box-shadow: 0 0 10px #00ffff88, inset 0 0 15px #00ffff66;
-    }
-
-    #authSection, #mainInterface {
-      margin-top: 2rem;
-    }
-
-    select, button {
-      background: #001c25;
-      color: #8df9ff;
-      border: 1px solid #00ffff;
-      padding: 0.6rem 1.2rem;
-      font-family: 'Orbitron', monospace;
-      font-size: 1.1rem;
-      margin: 0.5rem;
-      cursor: pointer;
-    }
-
-    #waiting {
-      font-style: italic;
-      opacity: 0.6;
-    }
-
-    #soundBanner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 12px;
-      background: #00ffff;
-      box-shadow: 0 0 20px #00ffffaa;
-      opacity: 0;
-      transition: opacity 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-      z-index: 999;
-    }
-
-    /* GLOW COLORS */
-    .glow-green {
-      box-shadow: inset 0 0 100px #00ff00cc;
-    }
-
-    .glow-orange {
-      box-shadow: inset 0 0 100px #ffaa00cc;
-    }
-
-    .glow-red {
-      box-shadow: inset 0 0 100px #ff0000cc;
-    }
-  </style>
+  /* Codes table */
+  .table{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .thead,.trow{display:grid;grid-template-columns:160px 1fr 140px 210px;gap:8px}
+  .thead{background:#0e1a20;font-weight:700}
+  .tcell{padding:10px 14px;border-top:1px solid #102028}
+  .thead .tcell{border-top:none}
+</style>
 </head>
 <body>
-  <div id="soundBanner"></div>
-
-  <h1>SGC COMMAND TERMINAL</h1>
-
-  <div id="authSection">
-    <button id="signInBtn">Sign in with Google</button>
-  </div>
-
-  <div id="mainInterface" style="display:none;">
-    <label for="frequencySelect">Frequency:</label>
-    <select id="frequencySelect">
-      <option value="alpha-1">Alpha-1</option>
-      <option value="bravo-2">Bravo-2</option>
-      <option value="charlie-3">Charlie-3</option>
-    </select>
-
-    <div id="status">
-      <div id="waiting">Awaiting Signal...</div>
-      <div id="incoming" style="display:none;">!INCOMING TRAVELER!</div>
+<main class="page">
+  <div class="shell">
+    <div class="topbar">
+      <div class="row">
+        <h1>SGC Listener</h1>
+        <div class="tabs">
+          <button id="tabListener" class="tab active">Listener View</button>
+          <button id="tabMgmt" class="tab">Management</button>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnLogin">Sign in with Google</button>
+        <button id="btnLogout" style="display:none">Sign out</button>
+      </div>
     </div>
 
-    <div id="log">
-      <div id="message">No signals received yet.</div>
-    </div>
+    <!-- LISTENER VIEW -->
+    <section id="viewListener" class="view active">
+      <div class="panel">
+        <div class="row">
+          <label for="selFreq" style="opacity:.85">Frequency</label>
+          <select id="selFreq" disabled>
+            <option value="alpha-1">alpha-1</option>
+            <option value="bravo-2">bravo-2</option>
+            <option value="charlie-3">charlie-3</option>
+          </select>
+          <button id="btnMonitor" disabled>Monitor</button>
+          <div id="state" class="status">Sign in required</div>
+        </div>
 
-    <button id="signOutBtn">Sign Out</button>
+        <div class="pipe">
+          <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
+          <div class="step"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
+          <div class="step"><b>Decrypted:</b> <span id="decView" class="mono">—</span></div>
+          <div class="step emph">
+            <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
+            <div><b>Result:</b> <span id="resView" class="tag resultBig warn">—</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MANAGEMENT -->
+    <section id="viewMgmt" class="view">
+      <div class="panel" id="alertsPanel">
+        <h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3>
+        <!-- rows injected -->
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3 style="margin:0 0 10px">Access Codes</h3>
+        <div class="row">
+          <div style="min-width:200px">
+            <label style="display:block;margin-bottom:6px">Code</label>
+            <input id="codeInput" placeholder="e.g. 256525457454">
+          </div>
+          <div style="min-width:200px">
+            <label style="display:block;margin-bottom:6px">Owner</label>
+            <input id="ownerInput" placeholder="e.g. SG-1">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:6px">Access</label>
+            <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
+          </div>
+          <button id="btnAddCode">Add / Update</button>
+          <button id="btnRefreshCodes">Refresh</button>
+        </div>
+
+        <div class="table" id="codesWrap">
+          <div class="thead">
+            <div class="tcell">Code</div><div class="tcell">Owner</div><div class="tcell">Access</div><div class="tcell">Actions</div>
+          </div>
+          <div id="codesTable"></div>
+        </div>
+      </div>
+    </section>
   </div>
+</main>
 
-  <audio id="travelerSound" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3" preload="auto"></audio>
+<div id="incomingBanner"><span class="t1">ALERT</span><span class="t2">INCOMING TRAVELLER</span></div>
+<audio id="sndIncoming" preload="auto" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"></audio>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-    import { getDatabase, ref, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+  import { getDatabase, ref, onChildAdded, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
-      authDomain: "project-gdo.firebaseapp.com",
-      databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "project-gdo",
-      storageBucket: "project-gdo.appspot.com",
-      messagingSenderId: "758705115255",
-      appId: "1:758705115255:web:878f5e64c164b75c507672"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const db = getDatabase(app);
-    const provider = new GoogleAuthProvider();
+  const DEFAULT_DESCS = {
+    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
+    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
+    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
+    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
+    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
+    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
+    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
+    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
+    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
+  };
 
-    const signInBtn = document.getElementById("signInBtn");
-    const signOutBtn = document.getElementById("signOutBtn");
-    const authSection = document.getElementById("authSection");
-    const mainInterface = document.getElementById("mainInterface");
-    const waitingEl = document.getElementById("waiting");
-    const incomingEl = document.getElementById("incoming");
-    const messageEl = document.getElementById("message");
-    const travelerSound = document.getElementById("travelerSound");
-    const frequencySelect = document.getElementById("frequencySelect");
-    const soundBanner = document.getElementById("soundBanner");
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getDatabase(app);
 
-    let currentListener = null;
-    let displayTimeout = null;
+  // ----- Strict tabs (only here controls visibility) -----
+  const tabListener=document.getElementById('tabListener');
+  const tabMgmt=document.getElementById('tabMgmt');
+  const viewListener=document.getElementById('viewListener');
+  const viewMgmt=document.getElementById('viewMgmt');
+  function activateTab(which){
+    tabListener.classList.toggle('active', which==='listener');
+    tabMgmt.classList.toggle('active', which==='mgmt');
+    viewListener.classList.toggle('active', which==='listener');
+    viewMgmt.classList.toggle('active', which==='mgmt');
+  }
+  tabListener.onclick=()=>activateTab('listener');
+  tabMgmt.onclick=()=>activateTab('mgmt');
 
-    function clearMessage() {
-      messageEl.textContent = "No signals received yet.";
-      waitingEl.style.display = "block";
-      incomingEl.style.display = "none";
+  // Elements (listener)
+  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
+  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
+  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
+
+  // Elements (codes)
+  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
+  const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
+
+  // Elements (alerts mgmt)
+  const alertsPanel=document.getElementById('alertsPanel');
+
+  // Auth
+  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
+  btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
+  btnLogout.onclick=()=>signOut(auth);
+
+  let unsubFreq=null;
+
+  onAuthStateChanged(auth, async (user)=>{
+    stopMonitor();
+    if (user){
+      btnLogin.style.display='none'; btnLogout.style.display='inline-block';
+      selFreq.disabled=false; btnMonitor.disabled=false;
+      selFreq.value='alpha-1'; startMonitor();
+      stateEl.textContent='Monitoring: alpha-1'; stateEl.classList.add('blink');
+
+      await buildAlarmUI();
+      await refreshCodesTable();
+    } else {
+      btnLogin.style.display='inline-block'; btnLogout.style.display='none';
+      selFreq.disabled=true; btnMonitor.disabled=true;
+      stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
+      codesTable.innerHTML='';
+      const ac=document.getElementById('alarmsContainer'); if(ac) ac.remove();
+      activateTab('listener');
     }
+  });
 
-    function showMessage(text) {
-      waitingEl.style.display = "none";
-      incomingEl.style.display = "block";
-      messageEl.textContent = text;
-
-      if (displayTimeout) clearTimeout(displayTimeout);
-      displayTimeout = setTimeout(() => {
-        clearMessage();
-        document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-        soundBanner.style.opacity = 0;
-      }, 10000);
-    }
-
-    function triggerGlow(status) {
-      document.body.classList.remove("glow-green", "glow-orange", "glow-red");
-
-      if (status === "verified") {
-        document.body.classList.add("glow-green");
-        soundBanner.style.background = "#00ff00";
-        soundBanner.style.boxShadow = "0 0 20px #00ff00aa";
-      } else if (status === "unknown") {
-        document.body.classList.add("glow-orange");
-        soundBanner.style.background = "#ffaa00";
-        soundBanner.style.boxShadow = "0 0 20px #ffaa00aa";
-      } else if (status === "invalid") {
-        document.body.classList.add("glow-red");
-        soundBanner.style.background = "#ff0000";
-        soundBanner.style.boxShadow = "0 0 20px #ff0000aa";
-      }
-
-      soundBanner.style.opacity = 1;
-    }
-
-    function listenToFrequency(freq) {
-      if (currentListener && currentListener.off) currentListener.off();
-
-      const signalsRef = ref(db, `frequencies/${freq}/signals`);
-      currentListener = signalsRef;
-
-      onChildAdded(signalsRef, async (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-
-        travelerSound.pause();
-        travelerSound.currentTime = 0;
-        travelerSound.volume = 1.0;
-        travelerSound.play().catch(() => {});
-
-        const code = data.decrypted || data.code || "UNKNOWN";
-        const codeRef = ref(db, `codes/${code}`);
-        const snap = await get(codeRef);
-
-        let statusText = "Received Unknown";
-        let owner = "UNKNOWN";
-        let statusClass = "unknown";
-
-        if (snap.exists()) {
-          const val = snap.val();
-          owner = val.owner || "UNKNOWN";
-          if (val.access === true) {
-            statusText = "Received and Verified";
-            statusClass = "verified";
-          } else if (val.access === false) {
-            statusText = "Received INVALID";
-            statusClass = "invalid";
-          }
-        }
-
-        showMessage(`Owner: ${owner}\nCode: ${code}\nStatus: ${statusText}`);
-        triggerGlow(statusClass);
-
-        setTimeout(() => {
-          remove(snapshot.ref).catch(console.error);
-        }, 15000);
-      });
-
-      clearMessage();
-    }
-
-    signInBtn.onclick = () => signInWithPopup(auth, provider).catch(console.error);
-    signOutBtn.onclick = () => signOut(auth).catch(console.error);
-    frequencySelect.onchange = () => listenToFrequency(frequencySelect.value);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        authSection.style.display = "none";
-        mainInterface.style.display = "block";
-        listenToFrequency(frequencySelect.value);
-      } else {
-        authSection.style.display = "block";
-        mainInterface.style.display = "none";
-        if (currentListener && currentListener.off) currentListener.off();
-      }
+  // Monitor
+  btnMonitor.onclick=()=>startMonitor();
+  selFreq.addEventListener('change',()=>startMonitor());
+  function startMonitor(){
+    stopMonitor();
+    const ch=`${selFreq.value}`, path=`frequencies/${ch}/signals`;
+    stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
+    unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
+      const data=snap.val(); await handleIncomingSignal(ch,data);
+      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s
     });
-  </script>
+  }
+  function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
+
+  // Incoming pipeline
+  async function handleIncomingSignal(ch,sig){
+    const banner=document.getElementById('incomingBanner'), snd=document.getElementById('sndIncoming');
+    banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
+    setTimeout(()=>banner.classList.remove('show'),3850);
+    try{ snd.currentTime=0; await snd.play(); }catch{}
+
+    const code=(sig?.code||'').toString().trim();
+    const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
+
+    sigStatus.textContent=`INCOMING on ${ch}`;
+    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag resultBig warn';
+
+    await sleep(200); encView.textContent=encrypted;
+    sigStatus.textContent='DECRYPTING…';
+    await sleep(520); decView.textContent=code;
+
+    const sc=await get(child(ref(db),'codes/'+code));
+    let label='UNKNOWN', cls='warn', owner='—';
+    if (sc.exists()){ const c=sc.val(); owner=c.owner||'—'; label=(c.access===true)?'ALLOWED':'DENIED'; cls=(c.access===true)?'ok':'bad'; }
+    ownerView.textContent=owner; resView.textContent=label; resView.className=`tag resultBig ${cls}`;
+  }
+
+  // ===== Management: Alarms (1–9) =====
+  async function buildAlarmUI(){
+    let container=document.getElementById('alarmsContainer');
+    if (container) container.remove();
+    container=document.createElement('div'); container.id='alarmsContainer';
+
+    // read current once
+    const snap=await get(ref(db,'alerts')); const alerts=snap.exists()?snap.val():{};
+    for(let i=1;i<=9;i++){
+      const code=`CODE ${i}`; const node=alerts[code]||{};
+      container.appendChild(mkAlarmRow(code, !!node.active, node.desc ?? DEFAULT_DESCS[code]));
+    }
+    alertsPanel.appendChild(container);
+
+    // toggle logic: click -> if already active => all OFF; if inactive => only that ON
+    container.addEventListener('click', async e=>{
+      const btn=e.target.closest('button[data-k="toggle"]'); if(!btn) return;
+      const code=btn.getAttribute('data-code');
+      // is it currently active?
+      const actSnap=await get(ref(db,`alerts/${code}/active`));
+      const isActive=actSnap.exists()?!!actSnap.val():false;
+
+      const updates={};
+      for(let i=1;i<=9;i++){ updates[`alerts/CODE ${i}/active`]=false; }
+      if (!isActive){ updates[`alerts/${code}/active`]=true; }  // else: all go OFF
+
+      await update(ref(db), updates);
+
+      // refresh UI locally
+      container.querySelectorAll('button[data-k="toggle"]').forEach(b=>{
+        const c=b.getAttribute('data-code'); const badge=document.getElementById('badge-'+c);
+        const active = (!isActive && c===code) ? true : false;
+        b.textContent = active?'Turn OFF':'Turn ON';
+        badge.textContent = active?`${c} ACTIVE`:`${c} OFF`;
+      });
+    });
+
+    container.addEventListener('change', async e=>{
+      const inp=e.target.closest('input[data-k="desc"]'); if(!inp) return;
+      const code=inp.getAttribute('data-code');
+      await set(ref(db,`alerts/${code}/desc`), inp.value.trim());
+    });
+  }
+
+  function mkAlarmRow(code, active, descVal){
+    const row=document.createElement('div'); row.className='row'; row.style.cssText='gap:8px;align-items:stretch;margin-top:8px';
+    row.innerHTML=`
+      <div style="min-width:95px;display:flex;align-items:center"><b>${code}</b></div>
+      <input data-k="desc" data-code="${code}" value="${(descVal||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:240px"/>
+      <button data-k="toggle" data-code="${code}">${active?'Turn OFF':'Turn ON'}</button>
+      <span class="badge" id="badge-${code}">${active?code+' ACTIVE':code+' OFF'}</span>
+    `;
+    return row;
+  }
+
+  // Codes CRUD
+  btnAddCode.onclick=async()=>{
+    const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
+    const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
+    await set(ref(db,'codes/'+code),{ owner, access });
+    codeInput.value=''; ownerInput.value=''; accessInput.value='true';
+    await refreshCodesTable();
+  };
+  btnRefreshCodes.onclick=refreshCodesTable;
+
+  async function refreshCodesTable(){
+    const snap=await get(ref(db,'codes'));
+    const data=snap.exists()?snap.val():{};
+    const entries=Object.entries(data);
+    const tbl=document.getElementById('codesTable');
+    if (entries.length===0){ tbl.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
+    tbl.innerHTML = entries.map(([code,rec])=>{
+      const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
+      return `
+        <div class="trow">
+          <div class="tcell mono">${escapeHtml(code)}</div>
+          <div class="tcell">${escapeHtml(owner)}</div>
+          <div class="tcell"><span class="tag ${access==='true'?'ok':'bad'}">${access}</span></div>
+          <div class="tcell">
+            <button data-act="toggle" data-code="${attr(code)}">${access==='true'?'Disable':'Enable'}</button>
+            <button data-act="edit" data-code="${attr(code)}">Edit</button>
+            <button data-act="del" data-code="${attr(code)}" style="border-color:#ff3b3b;color:#ff3b3b">Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('codesWrap').addEventListener('click', async (e)=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const code=btn.getAttribute('data-code'); const act=btn.getAttribute('data-act');
+    if (act==='toggle'){
+      const sc=await get(ref(db,'codes/'+code));
+      if (sc.exists()){ const current=!!sc.val().access; await update(ref(db,'codes/'+code),{ access:!current }); await refreshCodesTable(); }
+    } else if (act==='edit'){
+      const sc=await get(ref(db,'codes/'+code));
+      if (sc.exists()){ const rec=sc.val(); codeInput.value=code; ownerInput.value=rec.owner||''; accessInput.value=rec.access===true?'true':'false'; activateTab('mgmt'); window.scrollTo({top:0,behavior:'smooth'}); }
+    } else if (act==='del'){
+      if (confirm(`Delete code ${code}?`)){ await set(ref(db,'codes/'+code),null); await refreshCodesTable(); }
+    }
+  });
+
+  function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+  function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+  function attr(s){return String(s).replace(/"/g,'&quot;')}
+</script>
 </body>
 </html>
