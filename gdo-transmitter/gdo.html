@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="cs">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>GDO Transmitter</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -51,52 +50,44 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getDatabase, ref, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // === CONFIG (STEJNÝ jako Listener) ===
+  // === TVŮJ KONFIG ===
   const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "YOUR_PROJECT",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
+    authDomain: "project-gdo.firebaseapp.com",
+    databaseURL: "https://project-gdo-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "project-gdo",
+    storageBucket: "project-gdo.appspot.com",
+    messagingSenderId: "758705115255",
+    appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  const codeEl = document.getElementById('code');
-  const freqEl = document.getElementById('freq');
-  const sendBtn = document.getElementById('send');
-  const stEl = document.getElementById('status');
-  const encEl = document.getElementById('enc');
-  const decEl = document.getElementById('dec');
+  const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
+  const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
+  let cooldown=false;
 
-  let cooldown = false;
-
-  sendBtn.onclick = async () => {
+  sendBtn.onclick = async ()=>{
     if (cooldown) return;
-    const code = (codeEl.value||"").trim();
-    const ch = freqEl.value;
-    if (!code) { stEl.textContent = "Enter code"; stEl.className='warn'; return; }
+    const code=(codeEl.value||"").trim(), ch=freqEl.value;
+    if (!code){ stEl.textContent="Enter code"; stEl.className='warn'; return; }
 
-    cooldown = true; sendBtn.disabled = true;
-    stEl.textContent = "Encrypting…"; stEl.className='';
-    decEl.textContent = code;
+    cooldown=true; sendBtn.disabled=true;
+    stEl.textContent="Encrypting…"; stEl.className=''; decEl.textContent=code;
 
-    // fake encryption: Base64 + malé zpoždění
     const encrypted = btoa(unescape(encodeURIComponent(code)));
-    await new Promise(r => setTimeout(r, 400));
-    encEl.textContent = encrypted;
+    await new Promise(r=>setTimeout(r,400)); encEl.textContent=encrypted;
 
-    const path = `frequencies/${ch}/signals`;
-    const newRef = push(ref(db, path));
+    const newRef = push(ref(db, `frequencies/${ch}/signals`));
     await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
 
-    stEl.textContent = "Transmitted"; stEl.className='ok';
-    await new Promise(r => setTimeout(r, 900));
-    stEl.textContent = "Cooldown 10s…"; stEl.className='';
+    stEl.textContent="Transmitted"; stEl.className='ok';
+    await new Promise(r=>setTimeout(r,900));
+    stEl.textContent="Cooldown 10s…"; stEl.className='';
 
-    for (let i=10;i>0;i--){ stEl.textContent = `Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
-    stEl.textContent = "Idle"; cooldown = false; sendBtn.disabled = false;
+    for (let i=10;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
+    stEl.textContent="Idle"; cooldown=false; sendBtn.disabled=false;
   };
 </script>
 </body>
