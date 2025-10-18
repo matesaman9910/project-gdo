@@ -4,7 +4,6 @@
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>GDO Transmitter</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
-
 <style>
   :root{--fg:#d9faff;--bg:#000;--panel:#0f1b23;--line:#12313a;--accent:#00e6e6}
   *{box-sizing:border-box}
@@ -28,15 +27,23 @@
   #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
   #alertOverlay.show{display:flex}
   .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900}
-  .alertTitle .base{font-size:min(14vw,120px);letter-spacing:4px}
-  .alertTitle .alert{font-size:min(14vw,120px);letter-spacing:4px;margin-top:8px}
+  /* alternating fade: BASE ⇄ ALERT (CODE 9 box stays steady) */
+  .alertTitle .base, .alertTitle .alert{letter-spacing:4px; font-size:min(14vw,120px)}
+  .alertTitle .base{animation:baseCycle 4s linear infinite}
+  .alertTitle .alert{margin-top:8px; animation:alertCycle 4s linear infinite}
+  @keyframes baseCycle{
+    0%{opacity:1} 20%{opacity:0} 40%{opacity:0} 60%{opacity:1} 80%{opacity:1} 100%{opacity:0}
+  }
+  @keyframes alertCycle{
+    0%{opacity:1} 20%{opacity:1} 40%{opacity:0} 60%{opacity:0} 80%{opacity:1} 100%{opacity:1}
+  }
   .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;
     font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset, 0 0 20px #900}
 
-  /* small banner prompting first click to enable audio */
-  .soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
-    padding:8px 12px;border-radius:10px;font-size:14px;display:none;z-index:10000}
-  .soundBanner.show{display:block}
+  /* click-to-enable audio banner */
+  #soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
+    padding:10px 14px;border-radius:12px;font-size:14px;z-index:10000;display:none;cursor:pointer}
+  #soundBanner.show{display:block}
 </style>
 </head>
 <body>
@@ -79,14 +86,14 @@
   </div>
   <div class="codeBox">CODE 9</div>
 </div>
-<div class="soundBanner" id="soundBanner">Click anywhere to enable sounds</div>
+
+<div id="soundBanner" title="Enable audio">🔊 This page plays alarm sounds. Due to browser policy, click here once to enable sound.</div>
 <audio id="sndBase" preload="auto" loop src="https://file.garden/aACuwggY3QmuIi9B/basealert.mp3"></audio>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  /* Firebase (your project) */
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
     authDomain: "project-gdo.firebaseapp.com",
@@ -99,7 +106,6 @@
   const app = initializeApp(firebaseConfig);
   const db  = getDatabase(app);
 
-  // UI
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
   const overlay=document.getElementById('alertOverlay'), sndBase=document.getElementById('sndBase'), soundBanner=document.getElementById('soundBanner');
@@ -107,60 +113,58 @@
   let soundsEnabled=false;
   let code9Active=false;
 
-  // First click enables audio (autoplay policy). If CODE 9 is already active, start immediately.
-  window.addEventListener('pointerdown', async ()=>{
-    if (soundsEnabled) return;
-    soundsEnabled=true;
-    soundBanner.classList.remove('show');
-    if (code9Active){
-      try{ sndBase.currentTime=0; await sndBase.play(); }catch{}
-    }
-  }, { once:true });
-
   function showOverlay(active){ overlay.classList.toggle('show', !!active); }
-  async function startSiren(){
-    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
-    try{ sndBase.currentTime=0; await sndBase.play(); }catch{}
-  }
-  function stopSirenImmediate(){
-    try{ sndBase.pause(); sndBase.currentTime=0; sndBase.load(); }catch{}
-    soundBanner.classList.remove('show');
-  }
+  async function startSiren(){ if (!soundsEnabled){ soundBanner.classList.add('show'); return; } try{ sndBase.currentTime=0; await sndBase.play(); }catch{} }
+  function stopSirenImmediate(){ try{ sndBase.pause(); sndBase.currentTime=0; sndBase.load(); }catch{} soundBanner.classList.remove('show'); }
 
-  // --- CODE 9 sync: initial read + realtime (no polling) ---
-  (async ()=>{
+  // banner: click to enable sounds, disappears after click
+  function enableSound(){ if (soundsEnabled) return; soundsEnabled=true; soundBanner.classList.remove('show'); if (code9Active){ try{ sndBase.currentTime=0; sndBase.play(); }catch{} } }
+  soundBanner.addEventListener('click', enableSound);
+  window.addEventListener('pointerdown', enableSound, { once:true });
+
+  // Prefer new path alerts/CODE 9/active; fallback to legacy alerts/"CODE 9"
+  async function initialCode9(){
     try{
-      const snap = await get(ref(db,'alerts/CODE 9'));
-      code9Active = snap.exists() ? (typeof snap.val()==='boolean' ? snap.val() : !!(snap.val() && snap.val().value===true)) : false;
-      showOverlay(code9Active);
-      if (code9Active) startSiren(); else stopSirenImmediate();
-    }catch{/* ignore permission errors if rules not updated yet */}
+      let snap = await get(ref(db,'alerts/CODE 9/active'));
+      if (snap.exists()) return !!snap.val();
+      snap = await get(ref(db,'alerts/CODE 9')); // legacy bool
+      if (snap.exists()) return !!snap.val();
+    }catch{}
+    return false;
+  }
+  (async ()=>{
+    code9Active = await initialCode9();
+    showOverlay(code9Active);
+    if (code9Active) startSiren(); else stopSirenImmediate();
   })();
 
+  onValue(ref(db,'alerts/CODE 9/active'), snap=>{
+    if (!snap.exists()) return;
+    code9Active = !!snap.val();
+    showOverlay(code9Active);
+    if (code9Active) startSiren(); else stopSirenImmediate();
+  });
   onValue(ref(db,'alerts/CODE 9'), snap=>{
-    const v = snap.val();
-    code9Active = (typeof v === 'boolean') ? v : !!(v && v.value === true);
+    // legacy mirror support (only if /active not used)
+    if (!snap.exists()) return;
+    if (document.readyState !== 'complete') return;
+    code9Active = !!snap.val();
     showOverlay(code9Active);
     if (code9Active) startSiren(); else stopSirenImmediate();
   });
 
-  // --- Transmit flow with 15s cooldown ---
+  // Transmit flow with 15s cooldown
   let cooldown=false;
   sendBtn.onclick = async ()=>{
     if (cooldown) return;
     const code=(codeEl.value||"").trim(), ch=freqEl.value;
     if (!code){ stEl.textContent="Enter code"; stEl.className='warn'; return; }
-
     cooldown=true; sendBtn.disabled=true;
     stEl.textContent="ENCRYPTING…"; stEl.className=''; decEl.textContent=code;
-
     const encrypted = btoa(unescape(encodeURIComponent(code)));
-    await new Promise(r=>setTimeout(r,400));
-    encEl.textContent=encrypted;
-
+    await new Promise(r=>setTimeout(r,400)); encEl.textContent=encrypted;
     const newRef = push(ref(db, `frequencies/${ch}/signals`));
     await set(newRef, { code, decrypted: code, encrypted, timestamp: serverTimestamp() });
-
     stEl.textContent="Transmitted"; stEl.className='ok';
     await new Promise(r=>setTimeout(r,900));
     for (let i=15;i>0;i--){ stEl.textContent=`Cooldown ${i}s…`; await new Promise(r=>setTimeout(r,1000)); }
