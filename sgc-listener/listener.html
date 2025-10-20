@@ -1,72 +1,56 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>SGC Listener</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#000;--panel:#0c1620;--panel-2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6;--alertBlue:#1d8bd6}
+  :root{--bg:#000;--panel:#0c1620;--panel2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .page{min-height:100dvh;display:grid;place-items:center;position:relative;overflow:hidden}
-  .page:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),radial-gradient(1200px 800px at 20% 10%,#08131a 0%,#000 55%)}
-  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel-2));box-shadow:0 0 60px #00e6e633;padding:18px}
-  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .page{min-height:100dvh;display:grid;place-items:center;overflow:hidden}
+  .shell{z-index:1;width:min(1200px,96vw);border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,var(--panel),var(--panel2));box-shadow:0 0 60px #00e6e633;padding:18px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   h1{margin:0;color:var(--accent);letter-spacing:2px;text-shadow:0 0 14px #00e6e63d}
-  .tabs{display:flex;gap:10px}
+  .tabs{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
   .tab{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:#0b141c;cursor:pointer}
   .tab.active{outline:2px solid #1e94aa}
-  .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px}
+  .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px;margin-top:10px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
+  button,select,input,textarea{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
   .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
-  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .view{display:none}.view.active{display:block}
   .pipe{display:grid;gap:10px;margin-top:10px}
   .step{border:1px dashed #27596a;border-radius:12px;padding:10px;background:#0a1219}
-  .emph{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .ownerBig{font-size:22px}
-  .resultBig{font-size:26px;padding:8px 14px;border-radius:12px;border:2px solid transparent}
-  .tag{border-radius:999px;padding:6px 12px;border:1px solid transparent;font-size:16px}
+  .emph{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+  .ownerBig{font-size:32px;font-weight:800;color:#00e6e6;text-shadow:0 0 10px #00e6e650}
+  .resultBig{font-size:42px;font-weight:900;letter-spacing:2px;padding:10px 20px;border-radius:14px;border:3px solid transparent;text-transform:uppercase}
   .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
-
-  /* Strict tabbed views */
-  .view{display:none}
-  .view.active{display:block}
-
-  /* INCOMING banner */
-  #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:var(--alertBlue);color:#fff;z-index:9000;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;letter-spacing:1px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
-  #incomingBanner .t1{display:block;font-weight:900;color:#ff3b3b;text-shadow:0 0 6px #7a0000}
-  #incomingBanner .t2{display:block;font-weight:800;color:#ff3b3b}
-  #incomingBanner.show{animation:bannerIn .35s ease-out forwards,bannerHold 3.15s linear .35s,bannerOut .35s ease-in 3.5s forwards}
-  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
-
-  /* Codes table */
-  .table{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .thead,.trow{display:grid;grid-template-columns:160px 1fr 140px 210px;gap:8px}
-  .thead{background:#0e1a20;font-weight:700}
-  .tcell{padding:10px 14px;border-top:1px solid #102028}
-  .thead .tcell{border-top:none}
+  .codeRow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #123}
+  .codeRow b{min-width:140px}
+  .descRow{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:center;padding:6px 0}
+  .descRow label{opacity:.9}
 </style>
 </head>
 <body>
 <main class="page">
   <div class="shell">
     <div class="topbar">
-      <div class="row">
-        <h1>SGC Listener</h1>
-        <div class="tabs">
-          <button id="tabListener" class="tab active">Listener View</button>
-          <button id="tabMgmt" class="tab">Management</button>
-        </div>
-      </div>
-      <div class="row">
+      <h1>SGC Listener</h1>
+      <div>
         <button id="btnLogin">Sign in with Google</button>
         <button id="btnLogout" style="display:none">Sign out</button>
       </div>
     </div>
 
-    <!-- LISTENER VIEW -->
+    <div class="tabs">
+      <button id="tabListener" class="tab active">Listener</button>
+      <button id="tabMgmt" class="tab">Management</button>
+    </div>
+
+    <!-- LISTENER -->
     <section id="viewListener" class="view active">
       <div class="panel">
         <div class="row">
@@ -76,17 +60,16 @@
             <option value="bravo-2">bravo-2</option>
             <option value="charlie-3">charlie-3</option>
           </select>
-          <button id="btnMonitor" disabled>Monitor</button>
           <div id="state" class="status">Sign in required</div>
         </div>
 
         <div class="pipe">
           <div class="step"><b>Status:</b> <span id="sigStatus">Idle</span></div>
-          <div class="step"><b>Encrypted:</b> <span id="encView" class="mono">—</span></div>
-          <div class="step"><b>Decrypted:</b> <span id="decView" class="mono">—</span></div>
+          <div class="step"><b>Encrypted:</b> <span id="encView">—</span></div>
+          <div class="step"><b>Decrypted:</b> <span id="decView">—</span></div>
           <div class="step emph">
             <div><b>Owner:</b> <span id="ownerView" class="ownerBig">—</span></div>
-            <div><b>Result:</b> <span id="resView" class="tag resultBig warn">—</span></div>
+            <div><b>Result:</b> <span id="resView" class="resultBig warn">—</span></div>
           </div>
         </div>
       </div>
@@ -94,48 +77,33 @@
 
     <!-- MANAGEMENT -->
     <section id="viewMgmt" class="view">
-      <div class="panel" id="alertsPanel">
-        <h3 style="margin:0 0 10px">Alarms (Codes 1–9)</h3>
-        <!-- rows injected -->
-      </div>
+      <div class="panel" id="alertsPanel"><h3 style="margin:0 0 10px">Alarms — Codes 1–9 + Specials</h3></div>
 
       <div class="panel" style="margin-top:12px">
         <h3 style="margin:0 0 10px">Access Codes</h3>
         <div class="row">
-          <div style="min-width:200px">
-            <label style="display:block;margin-bottom:6px">Code</label>
-            <input id="codeInput" placeholder="e.g. 256525457454">
-          </div>
-          <div style="min-width:200px">
-            <label style="display:block;margin-bottom:6px">Owner</label>
-            <input id="ownerInput" placeholder="e.g. SG-1">
-          </div>
-          <div>
-            <label style="display:block;margin-bottom:6px">Access</label>
-            <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
-          </div>
+          <input id="codeInput" placeholder="Code">
+          <input id="ownerInput" placeholder="Owner">
+          <select id="accessInput"><option value="true">true</option><option value="false">false</option></select>
           <button id="btnAddCode">Add / Update</button>
           <button id="btnRefreshCodes">Refresh</button>
         </div>
-
-        <div class="table" id="codesWrap">
-          <div class="thead">
-            <div class="tcell">Code</div><div class="tcell">Owner</div><div class="tcell">Access</div><div class="tcell">Actions</div>
-          </div>
-          <div id="codesTable"></div>
-        </div>
+        <div id="codesTable" style="margin-top:10px"></div>
       </div>
     </section>
   </div>
 </main>
 
-<div id="incomingBanner"><span class="t1">ALERT</span><span class="t2">INCOMING TRAVELLER</span></div>
-<audio id="sndIncoming" preload="auto" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"></audio>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-  import { getDatabase, ref, onChildAdded, get, child, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+  import { getDatabase, ref, onChildAdded, get, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+
+  // Alarms order (priority)
+  const ALARM_KEYS = [
+    "CODE 1","CODE 2","CODE 3","CODE 4","CODE 5","CODE 6","CODE 7","CODE 8","CODE 9",
+    "BIOHAZARD","POWER FAILURE","COMMUNICATIONS FAILURE","EVAC","SELF-DESTRUCT"
+  ];
 
   const firebaseConfig = {
     apiKey: "AIzaSyAn5rsOUfkKBYhpQb3qwdUTElJP8Kg0dW0",
@@ -146,217 +114,203 @@
     messagingSenderId: "758705115255",
     appId: "1:758705115255:web:878f5e64c164b75c507672"
   };
-
-  const DEFAULT_DESCS = {
-    "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
-    "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
-    "CODE 3":"Unidentified Anomaly Detected — Unknown phenomenon or entity inside the base; not yet confirmed hostile.",
-    "CODE 4":"Strategic Muster / Gate Room Conflict — Combat or confrontation occurring in or near the Gate Room.",
-    "CODE 5":"Active Combat in Facility — Confirmed armed engagement within base sectors.",
-    "CODE 6":"Hostile Force Mobilization — External enemy force preparing to attack or raid the base.",
-    "CODE 7":"Lockdown Directive — Full internal lockdown active; no entry or exit permitted.",
-    "CODE 8":"Unauthorized Breach / Forced Entry — Confirmed external or off-world hostile entry into the facility.",
-    "CODE 9":"Rogue or Compromised Personnel — One or more base members confirmed rogue or under external control."
-  };
-
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db   = getDatabase(app);
 
-  // ----- Strict tabs (only here controls visibility) -----
-  const tabListener=document.getElementById('tabListener');
-  const tabMgmt=document.getElementById('tabMgmt');
-  const viewListener=document.getElementById('viewListener');
-  const viewMgmt=document.getElementById('viewMgmt');
+  // Tabs
+  const tabListener = document.getElementById('tabListener');
+  const tabMgmt     = document.getElementById('tabMgmt');
+  const viewListener= document.getElementById('viewListener');
+  const viewMgmt    = document.getElementById('viewMgmt');
   function activateTab(which){
     tabListener.classList.toggle('active', which==='listener');
     tabMgmt.classList.toggle('active', which==='mgmt');
     viewListener.classList.toggle('active', which==='listener');
     viewMgmt.classList.toggle('active', which==='mgmt');
   }
-  tabListener.onclick=()=>activateTab('listener');
-  tabMgmt.onclick=()=>activateTab('mgmt');
+  tabListener.onclick = () => activateTab('listener');
+  tabMgmt.onclick     = () => activateTab('mgmt');
 
-  // Elements (listener)
-  const selFreq=document.getElementById('selFreq'), btnMonitor=document.getElementById('btnMonitor'), stateEl=document.getElementById('state');
-  const sigStatus=document.getElementById('sigStatus'), encView=document.getElementById('encView'), decView=document.getElementById('decView');
-  const ownerView=document.getElementById('ownerView'), resView=document.getElementById('resView');
+  // Listener refs
+  const selFreq   = document.getElementById('selFreq');
+  const stateEl   = document.getElementById('state');
+  const sigStatus = document.getElementById('sigStatus');
+  const encView   = document.getElementById('encView');
+  const decView   = document.getElementById('decView');
+  const ownerView = document.getElementById('ownerView');
+  const resView   = document.getElementById('resView');
 
-  // Elements (codes)
-  const codeInput=document.getElementById('codeInput'), ownerInput=document.getElementById('ownerInput'), accessInput=document.getElementById('accessInput');
-  const btnAddCode=document.getElementById('btnAddCode'), btnRefreshCodes=document.getElementById('btnRefreshCodes'), codesTable=document.getElementById('codesTable');
+  // Auth buttons
+  const btnLogin  = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('btnLogout');
+  btnLogin.onclick  = () => signInWithPopup(auth, new GoogleAuthProvider());
+  btnLogout.onclick = () => signOut(auth);
 
-  // Elements (alerts mgmt)
-  const alertsPanel=document.getElementById('alertsPanel');
+  let unsubFreq = null;
 
-  // Auth
-  const btnLogin=document.getElementById('btnLogin'), btnLogout=document.getElementById('btnLogout');
-  btnLogin.onclick=async()=>{ await signInWithPopup(auth,new GoogleAuthProvider()); };
-  btnLogout.onclick=()=>signOut(auth);
-
-  let unsubFreq=null;
-
-  onAuthStateChanged(auth, async (user)=>{
+  onAuthStateChanged(auth, async user=>{
     stopMonitor();
     if (user){
-      btnLogin.style.display='none'; btnLogout.style.display='inline-block';
-      selFreq.disabled=false; btnMonitor.disabled=false;
-      selFreq.value='alpha-1'; startMonitor();
-      stateEl.textContent='Monitoring: alpha-1'; stateEl.classList.add('blink');
-
-      await buildAlarmUI();
-      await refreshCodesTable();
+      btnLogin.style.display='none';
+      btnLogout.style.display='inline-block';
+      selFreq.disabled=false;
+      selFreq.value='alpha-1';
+      startMonitor();
+      stateEl.textContent='Monitoring alpha-1'; stateEl.classList.add('blink');
+      await buildAlarms();
+      await buildCodes();
     } else {
-      btnLogin.style.display='inline-block'; btnLogout.style.display='none';
-      selFreq.disabled=true; btnMonitor.disabled=true;
+      btnLogin.style.display='inline-block';
+      btnLogout.style.display='none';
+      selFreq.disabled=true;
       stateEl.textContent='Sign in required'; stateEl.classList.remove('blink');
-      codesTable.innerHTML='';
-      const ac=document.getElementById('alarmsContainer'); if(ac) ac.remove();
       activateTab('listener');
     }
   });
 
-  // Monitor
-  btnMonitor.onclick=()=>startMonitor();
-  selFreq.addEventListener('change',()=>startMonitor());
+  selFreq.addEventListener('change', ()=> startMonitor());
+
   function startMonitor(){
     stopMonitor();
-    const ch=`${selFreq.value}`, path=`frequencies/${ch}/signals`;
-    stateEl.textContent=`Monitoring: ${ch}`; stateEl.classList.add('blink');
-    unsubFreq=onChildAdded(ref(db,path), async (snap)=>{
-      const data=snap.val(); await handleIncomingSignal(ch,data);
-      setTimeout(()=>remove(ref(db,`${path}/${snap.key}`)).catch(()=>{}),10000); // 10s
+    const ch = selFreq.value;
+    const path = `frequencies/${ch}/signals`;
+    stateEl.textContent = `Monitoring: ${ch}`; stateEl.classList.add('blink');
+    unsubFreq = onChildAdded(ref(db, path), async (snap)=>{
+      const data = snap.val();
+      await handleSignal(ch, data);
+      setTimeout(()=> remove(ref(db, `${path}/${snap.key}`)).catch(()=>{}), 10000);
     });
   }
-  function stopMonitor(){ if (unsubFreq){unsubFreq();unsubFreq=null;} }
+  function stopMonitor(){ if (unsubFreq){ unsubFreq(); unsubFreq = null; } }
 
-  // Incoming pipeline
-  async function handleIncomingSignal(ch,sig){
-    const banner=document.getElementById('incomingBanner'), snd=document.getElementById('sndIncoming');
-    banner.classList.remove('show'); void banner.offsetWidth; banner.classList.add('show');
-    setTimeout(()=>banner.classList.remove('show'),3850);
-    try{ snd.currentTime=0; await snd.play(); }catch{}
+  async function handleSignal(ch, sig){
+    const code = (sig?.code || '').trim();
+    const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
-    const code=(sig?.code||'').toString().trim();
-    const encrypted=sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
+    sigStatus.textContent = `INCOMING on ${ch}`;
+    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='resultBig warn';
+    await new Promise(r=>setTimeout(r,200));
+    encView.textContent = encrypted;
+    sigStatus.textContent = 'DECRYPTING…';
+    await new Promise(r=>setTimeout(r,520));
+    decView.textContent = code;
 
-    sigStatus.textContent=`INCOMING on ${ch}`;
-    encView.textContent='…'; decView.textContent='…'; ownerView.textContent='—'; resView.textContent='—'; resView.className='tag resultBig warn';
-
-    await sleep(200); encView.textContent=encrypted;
-    sigStatus.textContent='DECRYPTING…';
-    await sleep(520); decView.textContent=code;
-
-    const sc=await get(child(ref(db),'codes/'+code));
+    const sc = await get(ref(db, 'codes/'+code));
     let label='UNKNOWN', cls='warn', owner='—';
-    if (sc.exists()){ const c=sc.val(); owner=c.owner||'—'; label=(c.access===true)?'ALLOWED':'DENIED'; cls=(c.access===true)?'ok':'bad'; }
-    ownerView.textContent=owner; resView.textContent=label; resView.className=`tag resultBig ${cls}`;
-  }
-
-  // ===== Management: Alarms (1–9) =====
-  async function buildAlarmUI(){
-    let container=document.getElementById('alarmsContainer');
-    if (container) container.remove();
-    container=document.createElement('div'); container.id='alarmsContainer';
-
-    // read current once
-    const snap=await get(ref(db,'alerts')); const alerts=snap.exists()?snap.val():{};
-    for(let i=1;i<=9;i++){
-      const code=`CODE ${i}`; const node=alerts[code]||{};
-      container.appendChild(mkAlarmRow(code, !!node.active, node.desc ?? DEFAULT_DESCS[code]));
+    if (sc.exists()){
+      const c = sc.val();
+      owner = c.owner || '—';
+      label = (c.access===true) ? 'ALLOWED' : 'DENIED';
+      cls   = (c.access===true) ? 'ok'      : 'bad';
     }
-    alertsPanel.appendChild(container);
-
-    // toggle logic: click -> if already active => all OFF; if inactive => only that ON
-    container.addEventListener('click', async e=>{
-      const btn=e.target.closest('button[data-k="toggle"]'); if(!btn) return;
-      const code=btn.getAttribute('data-code');
-      // is it currently active?
-      const actSnap=await get(ref(db,`alerts/${code}/active`));
-      const isActive=actSnap.exists()?!!actSnap.val():false;
-
-      const updates={};
-      for(let i=1;i<=9;i++){ updates[`alerts/CODE ${i}/active`]=false; }
-      if (!isActive){ updates[`alerts/${code}/active`]=true; }  // else: all go OFF
-
-      await update(ref(db), updates);
-
-      // refresh UI locally
-      container.querySelectorAll('button[data-k="toggle"]').forEach(b=>{
-        const c=b.getAttribute('data-code'); const badge=document.getElementById('badge-'+c);
-        const active = (!isActive && c===code) ? true : false;
-        b.textContent = active?'Turn OFF':'Turn ON';
-        badge.textContent = active?`${c} ACTIVE`:`${c} OFF`;
-      });
-    });
-
-    container.addEventListener('change', async e=>{
-      const inp=e.target.closest('input[data-k="desc"]'); if(!inp) return;
-      const code=inp.getAttribute('data-code');
-      await set(ref(db,`alerts/${code}/desc`), inp.value.trim());
-    });
+    ownerView.textContent = owner;
+    resView.textContent   = label;
+    resView.className     = `resultBig ${cls}`;
   }
 
-  function mkAlarmRow(code, active, descVal){
-    const row=document.createElement('div'); row.className='row'; row.style.cssText='gap:8px;align-items:stretch;margin-top:8px';
-    row.innerHTML=`
-      <div style="min-width:95px;display:flex;align-items:center"><b>${code}</b></div>
-      <input data-k="desc" data-code="${code}" value="${(descVal||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:240px"/>
-      <button data-k="toggle" data-code="${code}">${active?'Turn OFF':'Turn ON'}</button>
-      <span class="badge" id="badge-${code}">${active?code+' ACTIVE':code+' OFF'}</span>
-    `;
-    return row;
-  }
+  // --------- Management ----------
+  const codeInput   = document.getElementById('codeInput');
+  const ownerInput  = document.getElementById('ownerInput');
+  const accessInput = document.getElementById('accessInput');
+  const btnAddCode  = document.getElementById('btnAddCode');
+  const btnRefresh  = document.getElementById('btnRefreshCodes');
+  const codesTable  = document.getElementById('codesTable');
+  const alertsPanel = document.getElementById('alertsPanel');
 
-  // Codes CRUD
-  btnAddCode.onclick=async()=>{
-    const code=(codeInput.value||'').trim(); if(!code) return alert('Code required');
-    const owner=(ownerInput.value||'').trim()||'—'; const access=accessInput.value==='true';
-    await set(ref(db,'codes/'+code),{ owner, access });
+  btnAddCode.onclick = async ()=>{
+    const code=(codeInput.value||'').trim();
+    if(!code) return alert('Code required');
+    const owner=(ownerInput.value||'').trim()||'—';
+    const access=(accessInput.value==='true');
+    await set(ref(db, 'codes/'+code), { owner, access });
     codeInput.value=''; ownerInput.value=''; accessInput.value='true';
-    await refreshCodesTable();
+    await buildCodes();
   };
-  btnRefreshCodes.onclick=refreshCodesTable;
+  btnRefresh.onclick = buildCodes;
 
-  async function refreshCodesTable(){
-    const snap=await get(ref(db,'codes'));
-    const data=snap.exists()?snap.val():{};
-    const entries=Object.entries(data);
-    const tbl=document.getElementById('codesTable');
-    if (entries.length===0){ tbl.innerHTML=`<div class="tcell" style="grid-column:1/5;opacity:.7">No codes</div>`; return; }
-    tbl.innerHTML = entries.map(([code,rec])=>{
-      const access=rec && rec.access===true ? 'true':'false'; const owner=(rec && rec.owner)||'—';
-      return `
-        <div class="trow">
-          <div class="tcell mono">${escapeHtml(code)}</div>
-          <div class="tcell">${escapeHtml(owner)}</div>
-          <div class="tcell"><span class="tag ${access==='true'?'ok':'bad'}">${access}</span></div>
-          <div class="tcell">
-            <button data-act="toggle" data-code="${attr(code)}">${access==='true'?'Disable':'Enable'}</button>
-            <button data-act="edit" data-code="${attr(code)}">Edit</button>
-            <button data-act="del" data-code="${attr(code)}" style="border-color:#ff3b3b;color:#ff3b3b">Delete</button>
-          </div>
+  async function buildAlarms(){
+    alertsPanel.innerHTML = '<h3 style="margin:0 0 10px">Alarms — Codes 1–9 + Specials</h3>';
+
+    // descriptions current state
+    const descSnap = await get(ref(db, 'alerts'));
+    const a = descSnap.exists()? descSnap.val() : {};
+
+    for (const key of ALARM_KEYS){
+      const act = !!(a[key]?.active);
+      const desc = (a[key]?.desc) || '';
+      const row = document.createElement('div');
+      row.className='descRow';
+      row.innerHTML = `
+        <label><b>${key}</b></label>
+        <input data-k="desc" data-code="${key}" placeholder="Description…" value="${(desc+'').replace(/"/g,'&quot;')}"/>
+        <div style="display:flex;gap:6px">
+          <button data-k="save" data-code="${key}">Save</button>
+          <button data-k="toggle" data-code="${key}">${act?'Turn OFF':'Turn ON'}</button>
+          <span id="badge-${key}" style="align-self:center">${act?key+' ACTIVE':key+' OFF'}</span>
         </div>`;
-    }).join('');
+      alertsPanel.appendChild(row);
+    }
+
+    alertsPanel.onclick = async e=>{
+      const save = e.target.closest('button[data-k="save"]');
+      if (save){
+        const code = save.getAttribute('data-code');
+        const input = alertsPanel.querySelector(`input[data-code="${CSS.escape(code)}"]`);
+        await update(ref(db, `alerts/${code}`), { desc: input.value || '' });
+        return;
+      }
+      const toggle = e.target.closest('button[data-k="toggle"]');
+      if (toggle){
+        const code = toggle.getAttribute('data-code');
+        const actSnap = await get(ref(db, `alerts/${code}/active`));
+        const isActive = actSnap.exists()? !!actSnap.val() : false;
+
+        // one active at a time
+        const updates = {};
+        for (const k of ALARM_KEYS){ updates[`alerts/${k}/active`] = false; }
+        if (!isActive) updates[`alerts/${code}/active`] = true;
+
+        await update(ref(db), updates);
+        await buildAlarms();
+      }
+    };
   }
 
-  document.getElementById('codesWrap').addEventListener('click', async (e)=>{
-    const btn=e.target.closest('button'); if(!btn) return;
-    const code=btn.getAttribute('data-code'); const act=btn.getAttribute('data-act');
-    if (act==='toggle'){
-      const sc=await get(ref(db,'codes/'+code));
-      if (sc.exists()){ const current=!!sc.val().access; await update(ref(db,'codes/'+code),{ access:!current }); await refreshCodesTable(); }
-    } else if (act==='edit'){
-      const sc=await get(ref(db,'codes/'+code));
-      if (sc.exists()){ const rec=sc.val(); codeInput.value=code; ownerInput.value=rec.owner||''; accessInput.value=rec.access===true?'true':'false'; activateTab('mgmt'); window.scrollTo({top:0,behavior:'smooth'}); }
-    } else if (act==='del'){
-      if (confirm(`Delete code ${code}?`)){ await set(ref(db,'codes/'+code),null); await refreshCodesTable(); }
+  async function buildCodes(){
+    codesTable.innerHTML='';
+    const snap = await get(ref(db, 'codes'));
+    if(!snap.exists()){ codesTable.innerHTML='<i>No codes.</i>'; return; }
+    const data = snap.val();
+    for (const [code, v] of Object.entries(data)){
+      const row = document.createElement('div');
+      row.className='codeRow';
+      row.innerHTML = `
+        <b>${code}</b>
+        <span>${v.owner||'—'}</span>
+        <span>Access: ${v.access}</span>
+        <button data-toggle="${code}">Toggle Access</button>
+        <button data-del="${code}">Delete</button>`;
+      codesTable.appendChild(row);
     }
-  });
-
-  function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-  function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-  function attr(s){return String(s).replace(/"/g,'&quot;')}
+    codesTable.querySelectorAll('button[data-del]').forEach(b=>{
+      b.onclick = async ()=>{
+        const id = b.dataset.del;
+        await remove(ref(db, 'codes/'+id));
+        await buildCodes();
+      };
+    });
+    codesTable.querySelectorAll('button[data-toggle]').forEach(b=>{
+      b.onclick = async ()=>{
+        const id = b.dataset.toggle;
+        const s = await get(ref(db, 'codes/'+id));
+        if(!s.exists()) return;
+        const val = s.val();
+        await update(ref(db, 'codes/'+id), { owner: val.owner||'—', access: !val.access });
+        await buildCodes();
+      };
+    });
+  }
 </script>
 </body>
 </html>
