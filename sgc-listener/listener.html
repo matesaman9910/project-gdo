@@ -6,7 +6,11 @@
 <title>SGC Listener</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#000;--panel:#0c1620;--panel2:#091217;--line:#133645;--fg:#d9faff;--ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6}
+  :root{
+    --bg:#000;--panel:#0c1620;--panel2:#091217;--line:#133645;--fg:#d9faff;
+    --ok:#2ee66b;--warn:#ffb02e;--bad:#ff3b3b;--accent:#00e6e6;
+    --muted:#7ba4b3;--chip:#0f1b23
+  }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:#000;color:var(--fg);font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .page{min-height:100dvh;display:grid;place-items:center;overflow:hidden}
@@ -18,7 +22,7 @@
   .tab.active{outline:2px solid #1e94aa}
   .panel{border:1px solid var(--line);border-radius:16px;background:#0b141c;padding:14px;margin-top:10px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button,select,input,textarea{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
+  button,select,input{background:#0d1a23;color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-family:inherit;letter-spacing:1px}
   .status{padding:10px 14px;border-radius:10px;background:#0f1b23;border:1px solid var(--line)}
   .blink{animation:blink 1s infinite}@keyframes blink{50%{opacity:.35}}
   .view{display:none}.view.active{display:block}
@@ -30,8 +34,15 @@
   .ok{border-color:var(--ok);color:#0f0}.bad{border-color:var(--bad);color:#ff3b3b}.warn{border-color:var(--warn);color:#ffb02e}
   .codeRow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #123}
   .codeRow b{min-width:140px}
-  .descRow{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:center;padding:6px 0}
-  .descRow label{opacity:.9}
+  .chip{padding:4px 10px;border-radius:999px;font-size:12px;background:var(--chip);border:1px solid #214b56}
+  .chip.ok{background:#062312;border-color:#0b6d2c;color:#7ef3a2}
+  .chip.bad{background:#2a0b0b;border-color:#7c1b1b;color:#ff9a9a}
+  .descRow{display:grid;grid-template-columns:220px 1fr auto;gap:10px;align-items:center;padding:6px 0}
+  .descView{background:#0b141c;border:1px dashed #214b56;border-radius:12px;padding:10px;color:#c8e7f1;font-size:12px}
+  /* Incoming Traveller banner (blue) */
+  #incomingBanner{position:fixed;left:50%;transform:translateX(-50%) translateY(-120%);top:10px;background:#1d8bd6;color:#fff;z-index:9999;border:3px solid #cfe8ff;border-radius:8px;padding:10px 18px;box-shadow:0 6px 22px rgba(0,0,0,.6)}
+  #incomingBanner.show{animation:bannerIn .35s ease-out forwards,bannerHold 3.4s linear .35s,bannerOut .35s ease-in 3.75s forwards}
+  @keyframes bannerIn{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerHold{to{transform:translateX(-50%) translateY(0)}}@keyframes bannerOut{to{transform:translateX(-50%) translateY(-120%)}}
 </style>
 </head>
 <body>
@@ -94,12 +105,15 @@
   </div>
 </main>
 
+<!-- Incoming traveller banner + sound -->
+<div id="incomingBanner"><b>ALERT</b> – INCOMING TRAVELLER</div>
+<audio id="sndIncoming" preload="auto" src="https://file.garden/aACuwggY3QmuIi9B/Incoming%20traveller.mp3"></audio>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
   import { getDatabase, ref, onChildAdded, get, remove, set, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // Alarms order (priority)
   const ALARM_KEYS = [
     "CODE 1","CODE 2","CODE 3","CODE 4","CODE 5","CODE 6","CODE 7","CODE 8","CODE 9",
     "BIOHAZARD","POWER FAILURE","COMMUNICATIONS FAILURE","EVAC","SELF-DESTRUCT"
@@ -140,6 +154,10 @@
   const decView   = document.getElementById('decView');
   const ownerView = document.getElementById('ownerView');
   const resView   = document.getElementById('resView');
+
+  // Incoming banner sound
+  const sndIncoming = document.getElementById('sndIncoming');
+  const incomingBanner = document.getElementById('incomingBanner');
 
   // Auth buttons
   const btnLogin  = document.getElementById('btnLogin');
@@ -185,6 +203,10 @@
   function stopMonitor(){ if (unsubFreq){ unsubFreq(); unsubFreq = null; } }
 
   async function handleSignal(ch, sig){
+    // Show incoming banner + sound
+    incomingBanner.classList.remove('show'); void incomingBanner.offsetWidth; incomingBanner.classList.add('show');
+    try{ sndIncoming.currentTime=0; await sndIncoming.play(); }catch{}
+
     const code = (sig?.code || '').trim();
     const encrypted = sig?.encrypted || btoa(unescape(encodeURIComponent(code)));
 
@@ -232,48 +254,38 @@
   async function buildAlarms(){
     alertsPanel.innerHTML = '<h3 style="margin:0 0 10px">Alarms — Codes 1–9 + Specials</h3>';
 
-    // descriptions current state
-    const descSnap = await get(ref(db, 'alerts'));
-    const a = descSnap.exists()? descSnap.val() : {};
+    const snap = await get(ref(db, 'alerts'));
+    const a = snap.exists()? snap.val() : {};
 
     for (const key of ALARM_KEYS){
       const act = !!(a[key]?.active);
-      const desc = (a[key]?.desc) || '';
+      const desc = a[key]?.desc || '—';
       const row = document.createElement('div');
       row.className='descRow';
       row.innerHTML = `
-        <label><b>${key}</b></label>
-        <input data-k="desc" data-code="${key}" placeholder="Description…" value="${(desc+'').replace(/"/g,'&quot;')}"/>
-        <div style="display:flex;gap:6px">
-          <button data-k="save" data-code="${key}">Save</button>
+        <div><b>${key}</b></div>
+        <div class="descView">${desc}</div>
+        <div style="display:flex;gap:6px;align-items:center">
           <button data-k="toggle" data-code="${key}">${act?'Turn OFF':'Turn ON'}</button>
-          <span id="badge-${key}" style="align-self:center">${act?key+' ACTIVE':key+' OFF'}</span>
+          <span class="chip ${act?'ok':'bad'}">${act?'ACTIVE':'OFF'}</span>
         </div>`;
       alertsPanel.appendChild(row);
     }
 
     alertsPanel.onclick = async e=>{
-      const save = e.target.closest('button[data-k="save"]');
-      if (save){
-        const code = save.getAttribute('data-code');
-        const input = alertsPanel.querySelector(`input[data-code="${CSS.escape(code)}"]`);
-        await update(ref(db, `alerts/${code}`), { desc: input.value || '' });
-        return;
-      }
       const toggle = e.target.closest('button[data-k="toggle"]');
-      if (toggle){
-        const code = toggle.getAttribute('data-code');
-        const actSnap = await get(ref(db, `alerts/${code}/active`));
-        const isActive = actSnap.exists()? !!actSnap.val() : false;
+      if (!toggle) return;
+      const code = toggle.getAttribute('data-code');
+      const actSnap = await get(ref(db, `alerts/${code}/active`));
+      const isActive = actSnap.exists()? !!actSnap.val() : false;
 
-        // one active at a time
-        const updates = {};
-        for (const k of ALARM_KEYS){ updates[`alerts/${k}/active`] = false; }
-        if (!isActive) updates[`alerts/${code}/active`] = true;
+      // enforce single-active across all
+      const updates = {};
+      for (const k of ALARM_KEYS){ updates[`alerts/${k}/active`] = false; }
+      if (!isActive) updates[`alerts/${code}/active`] = true;
 
-        await update(ref(db), updates);
-        await buildAlarms();
-      }
+      await update(ref(db), updates);
+      await buildAlarms();
     };
   }
 
@@ -287,8 +299,8 @@
       row.className='codeRow';
       row.innerHTML = `
         <b>${code}</b>
-        <span>${v.owner||'—'}</span>
-        <span>Access: ${v.access}</span>
+        <span class="chip" style="background:#0c1420;border-color:#244;color:#8bd">${v.owner||'—'}</span>
+        <span class="chip ${v.access?'ok':'bad'}">${v.access?'ALLOWED':'DENIED'}</span>
         <button data-toggle="${code}">Toggle Access</button>
         <button data-del="${code}">Delete</button>`;
       codesTable.appendChild(row);
