@@ -23,18 +23,40 @@
   .out{margin-top:10px;font-size:12px;word-break:break-all}
   .ok{color:#2ee66b}.warn{color:#ffb02e}
 
-  /* Overlay */
-  #alertOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
-  #alertOverlay.show{display:flex}
-  .alertTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative;height:min(14vw,120px)}
-  .alertWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;top:0;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
+  /* Overlays */
+  #overlayRoot{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:#000000eb;z-index:9999}
+  #overlayRoot.show{display:flex}
+
+  /* BASE/ALERT (Codes 1–9 only) */
+  .baTitle{color:#ff2a2a;font-weight:900;text-transform:uppercase;text-align:center;line-height:.92;text-shadow:0 0 22px #900;position:relative;height:min(14vw,120px)}
+  .baWord{letter-spacing:4px;font-size:min(14vw,120px);position:absolute;left:50%;top:0;transform:translateX(-50%);animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
   @keyframes baseFade{0%{opacity:1}49%{opacity:1}50%{opacity:0}99%{opacity:0}}
   @keyframes alertFade{0%{opacity:0}49%{opacity:0}50%{opacity:1}99%{opacity:1}}
-  .alertWord.base{animation-name:baseFade}
-  .alertWord.alert{animation-name:alertFade}
+  .baWord.base{animation-name:baseFade}
+  .baWord.alert{animation-name:alertFade}
   .codeBox{margin-top:24px;border:12px solid #ff2a2a;color:#ff2a2a;padding:10px 28px;font-weight:900;
     font-size:min(12vw,100px);letter-spacing:6px;box-shadow:0 0 28px #900 inset,0 0 20px #900}
   .desc{margin-top:12px;max-width:min(900px,92vw);text-align:center;font-size:min(4vw,22px);opacity:.95}
+
+  /* Special-box (BIOHAZARD / POWER FAILURE / COMMS FAILURE) */
+  .specBox{display:none;text-align:center;border:4px solid #1bc5d1;border-radius:12px;background:#0b1f26;padding:16px 24px}
+  .specBox.show{display:block;animation:blinkSpec 1s infinite}
+  @keyframes blinkSpec {50%{opacity:.5}}
+  .specTitle{font-size:min(9vw,72px);letter-spacing:3px;color:#1fe3ff;font-weight:900}
+  .specDesc{margin-top:6px;font-size:min(4vw,22px);opacity:.9}
+
+  /* EVAC overlay */
+  .evac{display:none;text-align:center}
+  .evac.show{display:block}
+  .evacText{font-size:min(20vw,180px);color:#ff2a2a;font-weight:900;letter-spacing:10px;animation:evacPulse 1.4s infinite}
+  @keyframes evacPulse {0%{opacity:1}50%{opacity:0.2}100%{opacity:1}}
+  .evacDesc{margin-top:8px;opacity:.95}
+
+  /* Self-destruct overlay */
+  .sd{display:none;text-align:center}
+  .sd.show{display:block}
+  .sdTimer{font-size:min(18vw,160px);font-weight:900;color:#ff3b3b;letter-spacing:4px;text-shadow:0 0 30px #a00}
+  .sdLabel{margin-top:6px;color:#ff6868;font-weight:800;letter-spacing:2px}
 
   /* Click-to-enable banner */
   #soundBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#0f1b23;border:1px solid #12313a;
@@ -74,14 +96,36 @@
   </div>
 </main>
 
-<!-- Overlay + sounds -->
-<div id="alertOverlay" aria-hidden="true">
-  <div class="alertTitle" aria-live="polite">
-    <div class="alertWord base">BASE</div>
-    <div class="alertWord alert">ALERT</div>
+<!-- Overlays root -->
+<div id="overlayRoot" aria-hidden="true">
+  <!-- BASE/ALERT -->
+  <div id="baWrap" style="display:none;text-align:center">
+    <div class="baTitle">
+      <div class="baWord base">BASE</div>
+      <div class="baWord alert">ALERT</div>
+    </div>
+    <div id="baCode" class="codeBox">CODE 9</div>
+    <div id="baDesc" class="desc">—</div>
   </div>
-  <div id="codeBox" class="codeBox">CODE 9</div>
-  <div id="descBox" class="desc">—</div>
+
+  <!-- Special box -->
+  <div id="specWrap" class="specBox">
+    <div id="specTitle" class="specTitle">BIOHAZARD</div>
+    <div id="specDesc" class="specDesc">—</div>
+  </div>
+
+  <!-- EVAC -->
+  <div id="evacWrap" class="evac">
+    <div class="evacText">EVAC</div>
+    <div id="evacDesc" class="evacDesc">—</div>
+  </div>
+
+  <!-- SELF-DESTRUCT -->
+  <div id="sdWrap" class="sd">
+    <div id="sdTimer" class="sdTimer">05:00</div>
+    <div class="sdLabel">AUTODESTRUCT IN PROGRESS</div>
+    <div id="sdDesc" class="desc" style="margin-top:8px">—</div>
+  </div>
 </div>
 
 <div id="soundBanner" title="Enable audio">🔊 This page plays alarm sounds. Due to browser policy, click here once to enable audio.</div>
@@ -94,18 +138,12 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import { getDatabase, ref, push, set, serverTimestamp, onValue, get } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
-  // Alarms order (priority)
   const ALARM_KEYS = [
     "CODE 1","CODE 2","CODE 3","CODE 4","CODE 5","CODE 6","CODE 7","CODE 8","CODE 9",
     "BIOHAZARD","POWER FAILURE","COMMUNICATIONS FAILURE","EVAC","SELF-DESTRUCT"
   ];
 
-  /* =======================
-     🔊 EASY SOUND SWAPS
-     LOOP: per-alarm looping sound
-     ANN:  per-alarm one-shot announcement (optional)
-     Omit key or set to "" to silence that sound (no crash).
-     ======================= */
+  // EASY SOUND SWAPS (leave "" or omit key for silence; ANN is one-shot)
   const SOUNDS = {
     LOOP: {
       "CODE 1": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/panicalarm_realistic.mp3",
@@ -117,7 +155,6 @@
       "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/Emergency%20Lockdown%20Alarm%20%5B1ua4r3mhW3U%5D.mp3",
       "CODE 8": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/doorsalarm_realistic.mp3",
       "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_alarms/evac_realistic.mp3",
-
       "BIOHAZARD": "",
       "POWER FAILURE": "",
       "COMMUNICATIONS FAILURE": "",
@@ -131,16 +168,14 @@
       "CODE 6": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%206%20Stargate%20Horizons%20%5B3t7YH6A0cxc%5D.mp3",
       "CODE 7": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%207%20Stargate%20Horizons%20%5B0l5vnUf6ypg%5D.mp3",
       "CODE 9": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/Code%209%20Stargate%20Horizons%20%5B-0tvyBMhnNA%5D.mp3",
-
       "BIOHAZARD": "",
       "POWER FAILURE": "",
       "COMMUNICATIONS FAILURE": "",
-      "EVAC": "",
+      "EVAC": "https://file.garden/aACuwggY3QmuIi9B/code_announcments/evac_a.mp3",
       "SELF-DESTRUCT": ""
     }
   };
 
-  // Default descriptions (used when /alerts/<KEY>/desc is missing)
   const DEFAULT_DESC = {
     "CODE 1":"Personnel Panic Alert — Panic button pressed; unknown immediate danger nearby.",
     "CODE 2":"Medical Emergency — Serious medical incident or injury within the facility.",
@@ -173,70 +208,95 @@
   // UI refs
   const codeEl=document.getElementById('code'), freqEl=document.getElementById('freq'), sendBtn=document.getElementById('send');
   const stEl=document.getElementById('status'), encEl=document.getElementById('enc'), decEl=document.getElementById('dec');
-  const overlay=document.getElementById('alertOverlay'), codeBox=document.getElementById('codeBox'), descBox=document.getElementById('descBox');
+
+  const overlayRoot=document.getElementById('overlayRoot');
+  const baWrap=document.getElementById('baWrap'), baCode=document.getElementById('baCode'), baDesc=document.getElementById('baDesc');
+  const specWrap=document.getElementById('specWrap'), specTitle=document.getElementById('specTitle'), specDesc=document.getElementById('specDesc');
+  const evacWrap=document.getElementById('evacWrap'), evacDesc=document.getElementById('evacDesc');
+  const sdWrap=document.getElementById('sdWrap'), sdTimer=document.getElementById('sdTimer'), sdDesc=document.getElementById('sdDesc');
+
   const sndLoop=document.getElementById('sndLoop'), sndAnn=document.getElementById('sndAnn'), soundBanner=document.getElementById('soundBanner');
 
-  let soundsEnabled=false;
-  let currentActive=null;  // active alarm key
-  let announcedFor=null;   // one-shot announcement guard
+  let soundsEnabled=false, currentActive=null, announcedFor=null, sdInterval=null, sdEndsAt=0;
 
-  // Banner shows immediately
   soundBanner.classList.add('show');
   function enableAudio(){
     if (soundsEnabled) return;
     soundsEnabled=true;
     soundBanner.classList.remove('show');
-    if (currentActive){
-      startLoop(currentActive);
-      playAnnouncement(currentActive);
-    }
+    if (currentActive){ startLoop(currentActive); playAnnouncement(currentActive); }
   }
   soundBanner.addEventListener('click', enableAudio);
   window.addEventListener('pointerdown', enableAudio, { once:true });
 
-  // Audio helpers
-  function stopAllAudio(){
-    try{ sndLoop.pause(); }catch{}
-    try{ sndAnn.pause(); }catch{}
-    try{ sndLoop.currentTime=0; }catch{}
-    try{ sndAnn.currentTime=0; }catch{}
-  }
-  async function playWithRetry(audioEl){
-    for (let i=0;i<3;i++){
-      try{ await audioEl.play(); return; }catch{ await new Promise(r=>setTimeout(r,150)); }
-    }
-  }
+  function stopAllAudio(){ try{sndLoop.pause();sndAnn.pause();sndLoop.currentTime=0;sndAnn.currentTime=0;}catch{} }
+  async function playWithRetry(el){ for(let i=0;i<3;i++){ try{await el.play();return;}catch{await new Promise(r=>setTimeout(r,150));} } }
   function startLoop(key){
-    if (!soundsEnabled){ soundBanner.classList.add('show'); return; }
-    const url = SOUNDS.LOOP[key];
-    if (!url){ stopAllAudio(); return; }
-    if (sndLoop.src !== url){ sndLoop.src = url; sndLoop.load(); }
-    sndLoop.loop = true;
-    sndLoop.volume = 1.0;
-    sndLoop.currentTime = 0;
-    playWithRetry(sndLoop);
+    if(!soundsEnabled){soundBanner.classList.add('show');return;}
+    const url=SOUNDS.LOOP[key];
+    if(!url){stopAllAudio();return;}
+    if(sndLoop.src!==url){sndLoop.src=url;sndLoop.load();}
+    sndLoop.loop=true;sndLoop.volume=1.0;sndLoop.currentTime=0;playWithRetry(sndLoop);
   }
   function playAnnouncement(key){
-    const url = SOUNDS.ANN[key];
-    if (!url || !soundsEnabled) return;
-    if (announcedFor === key) return;
-    announcedFor = key;
-    sndAnn.src = url; sndAnn.load();
-    sndAnn.currentTime = 0;
-    playWithRetry(sndAnn);
+    const url=SOUNDS.ANN[key];
+    if(!url||!soundsEnabled) return;
+    if(announcedFor===key) return;
+    announcedFor=key; sndAnn.src=url; sndAnn.load(); sndAnn.currentTime=0; playWithRetry(sndAnn);
   }
-  sndLoop.addEventListener('ended', ()=>{ try{ sndLoop.currentTime=0; sndLoop.play(); }catch{} });
-  document.addEventListener('visibilitychange', ()=>{
-    if (document.visibilityState==='visible' && currentActive && soundsEnabled){
-      startLoop(currentActive);
-    }
-  });
+  sndLoop.addEventListener('ended',()=>{try{sndLoop.currentTime=0;sndLoop.play();}catch{}});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&currentActive&&soundsEnabled){startLoop(currentActive);}});
 
-  function showOverlay(active, key, desc){
-    if (!active){ overlay.classList.remove('show'); return; }
-    codeBox.textContent = key || '';
-    descBox.textContent = (desc && desc.trim()) || DEFAULT_DESC[key] || '—';
-    overlay.classList.add('show');
+  function hideAll(){
+    baWrap.style.display='none';
+    specWrap.classList.remove('show');
+    evacWrap.classList.remove('show');
+    sdWrap.classList.remove('show');
+    overlayRoot.classList.remove('show');
+    if(sdInterval){ clearInterval(sdInterval); sdInterval=null; }
+  }
+
+  function renderOverlay(key, desc){
+    hideAll();
+    if(!key){ stopAllAudio(); return; }
+    overlayRoot.classList.add('show');
+
+    // Codes 1–9 → BASE/ALERT
+    if(/^CODE [1-9]$/.test(key)){
+      baWrap.style.display='block';
+      baCode.textContent=key;
+      baDesc.textContent=(desc||DEFAULT_DESC[key]||'—');
+      return;
+    }
+
+    // EVAC overlay
+    if(key==="EVAC"){
+      evacWrap.classList.add('show');
+      evacDesc.textContent=(desc||DEFAULT_DESC[key]||'—');
+      return;
+    }
+
+    // SELF-DESTRUCT overlay with 5:00 countdown
+    if(key==="SELF-DESTRUCT"){
+      sdWrap.classList.add('show');
+      sdDesc.textContent=(desc||DEFAULT_DESC[key]||'—');
+      sdEndsAt = Date.now() + 5*60*1000;
+      const tick=()=>{
+        const remain = Math.max(0, sdEndsAt - Date.now());
+        const m = Math.floor(remain/60000);
+        const s = Math.floor((remain%60000)/1000);
+        sdTimer.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        if(remain<=0 && sdInterval){ clearInterval(sdInterval); sdInterval=null; }
+      };
+      tick();
+      sdInterval=setInterval(tick, 250);
+      return;
+    }
+
+    // Other specials → blinking box
+    specWrap.classList.add('show');
+    specTitle.textContent=key;
+    specDesc.textContent=(desc||DEFAULT_DESC[key]||'—');
   }
 
   function activeFrom(alerts){
@@ -247,7 +307,6 @@
     return null;
   }
 
-  // Initial read then subscribe
   (async ()=>{
     try{
       const first = await get(ref(db,'alerts'));
@@ -255,30 +314,22 @@
       const act = activeFrom(a);
       currentActive = act ? act.key : null;
       announcedFor = null;
-      showOverlay(!!act, act?.key||'', act?.desc||'');
-      if (currentActive){
-        if (soundsEnabled){ startLoop(currentActive); playAnnouncement(currentActive); }
-      } else {
-        stopAllAudio();
-      }
+      renderOverlay(act?.key||null, act?.desc||'');
+      if(currentActive && soundsEnabled){ startLoop(currentActive); playAnnouncement(currentActive); }
+      else if(!currentActive){ stopAllAudio(); }
     }catch{}
     onValue(ref(db,'alerts'), snap=>{
       const a = snap.exists()? snap.val() : {};
       const act = activeFrom(a);
       const next = act ? act.key : null;
 
-      showOverlay(!!act, act?.key||'', act?.desc||'');
+      renderOverlay(act?.key||null, act?.desc||'');
 
-      if (next !== currentActive){
-        currentActive = next;
-        announcedFor = null;
-        if (currentActive && soundsEnabled){
-          startLoop(currentActive);
-          playAnnouncement(currentActive);
-        } else if (!currentActive){
-          stopAllAudio();
-        }
-      } else if (currentActive && soundsEnabled){
+      if(next !== currentActive){
+        currentActive = next; announcedFor = null;
+        if(currentActive && soundsEnabled){ startLoop(currentActive); playAnnouncement(currentActive); }
+        else if(!currentActive){ stopAllAudio(); }
+      } else if(currentActive && soundsEnabled){
         startLoop(currentActive);
       }
     });
